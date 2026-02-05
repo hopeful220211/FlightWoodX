@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Card } from '../../../components/common/Card'
 import { featuredWorks } from '../../../data/featuredWorks'
 
@@ -13,13 +12,9 @@ export function StudentShowcaseSection() {
         {/* 水平滚动传送带 */}
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 md:gap-6">
-            {featuredWorks.slice(0, 8).map((work, idx) => (
-              <motion.div
+            {featuredWorks.slice(0, 8).map((work) => (
+              <div
                 key={work.id}
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1, duration: 0.5 }}
                 className="w-[240px] flex-shrink-0"
               >
                 <Card hoverable>
@@ -27,6 +22,7 @@ export function StudentShowcaseSection() {
                     <img
                       src={work.thumbnailUrl}
                       alt={work.name}
+                      loading="eager"
                       className="h-full w-full object-cover transition-transform hover:scale-105"
                     />
                   </div>
@@ -39,7 +35,7 @@ export function StudentShowcaseSection() {
                     </p>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
