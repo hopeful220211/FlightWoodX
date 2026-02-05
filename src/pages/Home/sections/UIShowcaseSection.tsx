@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 const uiScreenshots = [
   { name: '设计工作台', img: '/resource/picture/UI/design_ui.jpg' },
@@ -40,28 +40,34 @@ export function UIShowcaseSection() {
         {/* 设备模型 + 轮播 */}
         <div className="relative mx-auto max-w-4xl">
           <div className="relative rounded-2xl bg-slate-800/50 p-8 backdrop-blur-sm">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.5 }}
-                className="overflow-hidden rounded-xl shadow-2xl"
-              >
-                <img
-                  src={uiScreenshots[currentIndex].img}
-                  alt={uiScreenshots[currentIndex].name}
-                  className="h-auto w-full"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.src = `data:image/svg+xml;utf8,${encodeURIComponent(
-                      `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#1e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Inter" font-size="24" fill="#94a3b8">${uiScreenshots[currentIndex].name}</text></svg>`
-                    )}`
+            <div className="relative overflow-hidden rounded-xl shadow-2xl aspect-video">
+              {uiScreenshots.map((screenshot, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={false}
+                  animate={{
+                    opacity: idx === currentIndex ? 1 : 0,
+                    scale: idx === currentIndex ? 1 : 0.95,
                   }}
-                />
-              </motion.div>
-            </AnimatePresence>
+                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                  className="absolute inset-0"
+                  style={{ pointerEvents: idx === currentIndex ? 'auto' : 'none' }}
+                >
+                  <img
+                    src={screenshot.img}
+                    alt={screenshot.name}
+                    className="h-full w-full object-cover"
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = `data:image/svg+xml;utf8,${encodeURIComponent(
+                        `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#1e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Inter" font-size="24" fill="#94a3b8">${screenshot.name}</text></svg>`
+                      )}`
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </div>
 
             {/* 指示器 */}
             <div className="mt-6 flex justify-center gap-2">
