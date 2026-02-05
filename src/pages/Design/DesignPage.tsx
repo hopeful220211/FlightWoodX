@@ -523,8 +523,10 @@ export function DesignPage() {
         {partDetail ? (
           <div className="space-y-3">
             {/* 3D 预览 */}
-            <div className="h-64 w-full rounded-2xl bg-slate-50/60 ring-1 ring-black/5 dark:bg-slate-950/60 dark:ring-white/10 overflow-hidden">
-              <PartPreview3D modelUrl={partDetail.modelUrl} autoRotate size={400} />
+            <div className="aspect-video w-full rounded-2xl bg-slate-50/60 ring-1 ring-black/5 dark:bg-slate-950/60 dark:ring-white/10 overflow-hidden">
+              <div className="h-full w-full">
+                <PartPreview3D modelUrl={partDetail.modelUrl} autoRotate />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="rounded-2xl bg-wood-50 p-3 dark:bg-slate-900">

@@ -72,10 +72,14 @@ function LoadingFallback() {
 }
 
 // 占位符预览
-function FallbackPreview({ size }: { size: number }) {
+function FallbackPreview({ size }: { size?: number }) {
+  const containerStyle = size
+    ? { width: size, height: size }
+    : { width: '100%', height: '100%' }
+
   return (
     <div
-      style={{ width: size, height: size }}
+      style={containerStyle}
       className="rounded-xl overflow-hidden bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center"
     >
       <div className="w-8 h-8 border-2 border-wood-300 border-dashed rounded animate-pulse" />
@@ -83,7 +87,7 @@ function FallbackPreview({ size }: { size: number }) {
   )
 }
 
-export function PartPreview3D({ modelUrl, autoRotate = true, size = 120 }: PartPreview3DProps) {
+export function PartPreview3D({ modelUrl, autoRotate = true, size }: PartPreview3DProps) {
   const [isClient, setIsClient] = useState(false)
 
   // 确保只在客户端渲染
@@ -98,9 +102,14 @@ export function PartPreview3D({ modelUrl, autoRotate = true, size = 120 }: PartP
     return <FallbackPreview size={size} />
   }
 
+  // 使用 size 或 100% 填充
+  const containerStyle = size
+    ? { width: size, height: size }
+    : { width: '100%', height: '100%' }
+
   return (
     <ErrorBoundary fallback={<FallbackPreview size={size} />}>
-      <div style={{ width: size, height: size }} className="rounded-xl overflow-hidden bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900">
+      <div style={containerStyle} className="rounded-xl overflow-hidden bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900">
         <Canvas
           camera={{
             position: [0.4, 0.3, 0.4],
