@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles, Play } from 'lucide-react'
 import { Button } from '../../../components/common/Button'
 import { AuthModal } from '../../../components/features/auth/AuthModal'
+import { VideoModal } from '../../../components/common/VideoModal'
 
 // 使用项目中实际存在的图片路径
 const heroImage = '/resource/picture/flight_png/untitled.297.png'
+// 演示视频路径
+const demoVideoUrl = '/resource/videos/demo.mp4'
 
 export function HeroSection() {
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showVideoModal, setShowVideoModal] = useState(false)
 
   return (
     <>
@@ -64,9 +68,8 @@ export function HeroSection() {
                 <Button
                   size="lg"
                   variant="outline"
-                  onClick={() => {
-                    // 观看视频功能，可以后续添加
-                  }}
+                  leftIcon={<Play size={20} />}
+                  onClick={() => setShowVideoModal(true)}
                   className="border-2 border-gray-200 bg-white text-gray-700 hover:border-wood-500 hover:text-wood-500"
                 >
                   <span className="text-lg">观看视频</span>
@@ -125,6 +128,12 @@ export function HeroSection() {
       </section>
 
       <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <VideoModal
+        open={showVideoModal}
+        onClose={() => setShowVideoModal(false)}
+        videoUrl={demoVideoUrl}
+        title="FlightWoodX 产品演示"
+      />
     </>
   )
 }
