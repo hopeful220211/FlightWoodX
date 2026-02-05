@@ -7,7 +7,7 @@ import { VideoModal } from '../../../components/common/VideoModal'
 // 使用项目中实际存在的图片路径
 const heroImage = '/resource/picture/flight_png/untitled.297.png'
 // 演示视频路径
-const demoVideoUrl = '/resource/videos/demo.mp4'
+const demoVideoUrl = '/resource/videos/example.mp4'
 
 export function HeroSection() {
   const [showAuthModal, setShowAuthModal] = useState(false)
