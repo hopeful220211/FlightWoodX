@@ -10,6 +10,7 @@ import { Modal } from '../../components/common/Modal'
 import { Tabs } from '../../components/common/Tabs'
 import { featuredWorks } from '../../data/featuredWorks'
 import { useDesignStore } from '../../stores/designStore'
+import { DesignPreview3D } from '../../components/design/DesignPreview3D'
 import type { Design } from '../../types/design'
 import { useToast } from '../../components/common/Toast'
 
@@ -130,12 +131,18 @@ export function GalleryPage() {
                   className="group relative cursor-pointer overflow-hidden"
                   onClick={() => handleOpenDesign(work)}
                 >
-                <div className="aspect-video overflow-hidden rounded-xl">
-                  <img
-                    src={('likes' in work ? work.thumbnailUrl : work.thumbnail) || '/placeholder.svg'}
-                    alt={work.name}
-                    className="h-full w-full object-cover transition-transform hover:scale-105"
-                  />
+                <div className="aspect-video overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900">
+                  {isFeatured ? (
+                    <img
+                      src={work.thumbnailUrl || '/placeholder.svg'}
+                      alt={work.name}
+                      className="h-full w-full object-cover transition-transform hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <DesignPreview3D design={work} size={320} />
+                    </div>
+                  )}
                 </div>
                 <div className="p-4">
                   <h3 className="mb-1 truncate text-lg font-extrabold text-wood-900 dark:text-white">
@@ -220,12 +227,18 @@ export function GalleryPage() {
       >
         {selectedWork && (
           <div className="space-y-4">
-            <div className="aspect-video overflow-hidden rounded-xl">
-              <img
-                src={('likes' in selectedWork ? selectedWork.thumbnailUrl : selectedWork.thumbnail) || '/placeholder.svg'}
-                alt={selectedWork.name}
-                className="h-full w-full object-cover"
-              />
+            <div className="aspect-video overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900">
+              {'likes' in selectedWork ? (
+                <img
+                  src={selectedWork.thumbnailUrl || '/placeholder.svg'}
+                  alt={selectedWork.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <DesignPreview3D design={selectedWork} size={500} />
+                </div>
+              )}
             </div>
             <div>
               <p className="text-sm text-slate-600 dark:text-slate-300">

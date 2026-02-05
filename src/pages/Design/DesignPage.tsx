@@ -30,6 +30,8 @@ import { partsData } from '../../data/parts'
 import { ThreeCanvas } from '../../components/design/ThreeCanvas'
 import { DraggablePartCard } from './components/DraggablePartCard'
 import { DragPreview } from '../../components/design/DragPreview'
+import { PartPreview3D } from '../../components/design/PartPreview3D'
+import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
 import type { CameraView } from '../../components/design/CameraController'
 
 export function DesignPage() {
@@ -468,26 +470,34 @@ export function DesignPage() {
                 <div className="text-sm font-extrabold">已使用零件</div>
                 <div className="mt-2 space-y-1">
                   {usedParts.length ? (
-                    usedParts.map((inst) => (
-                      <div
-                        key={inst.instanceId}
-                        className="flex items-center justify-between gap-2 rounded-xl px-2 py-1 hover:bg-wood-50 dark:hover:bg-slate-900"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-bold">{partById.get(inst.partId)?.name ?? '未知零件'}</div>
-                          <div className="truncate text-xs text-slate-600 dark:text-slate-300">{inst.instanceId}</div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="rounded-full"
-                          onClick={() => removePartFromActiveDesign(inst.instanceId)}
-                          aria-label="删除"
+                    usedParts.map((inst) => {
+                      const part = partById.get(inst.partId)
+                      const connectorCount = part ? getCachedPartConnectors(part.modelUrl).length : 0
+                      return (
+                        <div
+                          key={inst.instanceId}
+                          className="flex items-center justify-between gap-2 rounded-xl px-2 py-1 hover:bg-wood-50 dark:hover:bg-slate-900"
                         >
-                          <X size={16} />
-                        </Button>
-                      </div>
-                    ))
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-bold">{part?.name ?? '未知零件'}</div>
+                            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                              <span>{part?.weight ?? 0}g</span>
+                              <span>·</span>
+                              <span>{connectorCount} 个连接点</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-full"
+                            onClick={() => removePartFromActiveDesign(inst.instanceId)}
+                            aria-label="删除"
+                          >
+                            <X size={16} />
+                          </Button>
+                        </div>
+                      )
+                    })
                   ) : (
                     <div className="text-sm text-slate-600 dark:text-slate-300">暂无</div>
                   )}
@@ -512,7 +522,10 @@ export function DesignPage() {
       <Modal open={partDetail !== null} onClose={() => setPartDetail(null)} title={partDetail?.name ?? ''}>
         {partDetail ? (
           <div className="space-y-3">
-            <img src={partDetail.thumbnailUrl} alt={partDetail.name} className="h-44 w-full rounded-2xl object-cover ring-1 ring-black/5 dark:ring-white/10" />
+            {/* 3D 预览 */}
+            <div className="h-64 w-full rounded-2xl bg-slate-50/60 ring-1 ring-black/5 dark:bg-slate-950/60 dark:ring-white/10 overflow-hidden">
+              <PartPreview3D modelUrl={partDetail.modelUrl} autoRotate size={400} />
+            </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="rounded-2xl bg-wood-50 p-3 dark:bg-slate-900">
                 <div className="text-xs text-slate-600 dark:text-slate-300">重量</div>
@@ -520,7 +533,7 @@ export function DesignPage() {
               </div>
               <div className="rounded-2xl bg-wood-50 p-3 dark:bg-slate-900">
                 <div className="text-xs text-slate-600 dark:text-slate-300">连接点</div>
-                <div className="mt-1 font-extrabold">{partDetail.connectors?.length ?? 0} 个</div>
+                <div className="mt-1 font-extrabold">{getCachedPartConnectors(partDetail.modelUrl).length} 个</div>
               </div>
             </div>
             <div className="flex items-center justify-end gap-2">
