@@ -12,7 +12,7 @@ export function StudentShowcaseSection() {
 
         {/* 水平滚动传送带 */}
         <div className="overflow-x-auto pb-4">
-          <div className="flex gap-6 md:gap-8">
+          <div className="flex gap-4 md:gap-6">
             {featuredWorks.slice(0, 8).map((work, idx) => (
               <motion.div
                 key={work.id}
@@ -20,21 +20,21 @@ export function StudentShowcaseSection() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1, duration: 0.5 }}
-                className="min-w-[280px] flex-shrink-0 md:min-w-[320px]"
+                className="w-[240px] flex-shrink-0"
               >
                 <Card hoverable>
-                  <div className="aspect-video overflow-hidden rounded-xl">
+                  <div className="h-[135px] overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
                     <img
                       src={work.thumbnailUrl}
                       alt={work.name}
                       className="h-full w-full object-cover transition-transform hover:scale-105"
                     />
                   </div>
-                  <div className="p-4">
-                    <h3 className="mb-1 truncate text-lg font-extrabold text-wood-900 dark:text-white">
+                  <div className="p-3">
+                    <h3 className="mb-1 truncate text-base font-extrabold text-wood-900 dark:text-white">
                       {work.name}
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
                       设计师：{work.authorName}
                     </p>
                   </div>
