@@ -137,8 +137,6 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
       onPointerUp={handlePointerUp}
     >
       <primitive name={instance.instanceId} object={clonedScene} />
-      {/* 局部坐标系辅助线：红=X, 绿=Y, 蓝=Z，禁用射线检测避免干扰选择 */}
-      <axesHelper args={[0.15]} raycast={() => null} />
     </group>
   );
 }

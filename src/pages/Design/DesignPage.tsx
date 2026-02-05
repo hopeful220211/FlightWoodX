@@ -30,7 +30,6 @@ import { partsData } from '../../data/parts'
 import { ThreeCanvas } from '../../components/design/ThreeCanvas'
 import { DraggablePartCard } from './components/DraggablePartCard'
 import { DragPreview } from '../../components/design/DragPreview'
-import { ConnectorDebugPanel } from '../../components/design/ConnectorDebugPanel'
 import type { CameraView } from '../../components/design/CameraController'
 
 export function DesignPage() {
@@ -560,9 +559,6 @@ export function DesignPage() {
           position={dragPreview.position}
         />
       )}
-
-      {/* 连接点调试面板 */}
-      <ConnectorDebugPanel />
     </div>
   )
 }
