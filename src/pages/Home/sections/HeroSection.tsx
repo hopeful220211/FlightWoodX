@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Sparkles, Play } from 'lucide-react'
 import { Button } from '../../../components/common/Button'
-import { AuthModal } from '../../../components/features/auth/AuthModal'
 import { VideoModal } from '../../../components/common/VideoModal'
 
 // 使用项目中实际存在的图片路径
@@ -10,7 +10,7 @@ const heroImage = '/resource/picture/flight_png/untitled.297.png'
 const demoVideoUrl = '/resource/videos/example.mp4'
 
 export function HeroSection() {
-  const [showAuthModal, setShowAuthModal] = useState(false)
+  const navigate = useNavigate()
   const [showVideoModal, setShowVideoModal] = useState(false)
 
   return (
@@ -60,7 +60,7 @@ export function HeroSection() {
                       className="transition-transform group-hover:translate-x-1"
                     />
                   }
-                  onClick={() => setShowAuthModal(true)}
+                  onClick={() => navigate('/auth')}
                   className="group bg-wood-500 hover:bg-wood-600 hover:shadow-lg hover:shadow-wood-500/30"
                 >
                   <span className="text-lg">开始探索</span>
@@ -127,7 +127,6 @@ export function HeroSection() {
         </div>
       </section>
 
-      <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
       <VideoModal
         open={showVideoModal}
         onClose={() => setShowVideoModal(false)}

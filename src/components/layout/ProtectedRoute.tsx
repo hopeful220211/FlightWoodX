@@ -5,8 +5,8 @@ export default function ProtectedRoute() {
   const { isAuthenticated } = useAuthStore()
 
   if (!isAuthenticated) {
-    // 如果用户未登录，重定向到首页
-    return <Navigate to="/" replace />
+    // 如果用户未登录，重定向到登录页面
+    return <Navigate to="/auth" replace />
   }
 
   return <Outlet />

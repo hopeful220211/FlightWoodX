@@ -1,0 +1,281 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Card } from '../../components/common/Card'
+import { Button } from '../../components/common/Button'
+import { useToast } from '../../components/common/Toast'
+import { useAuthStore } from '../../stores/authStore'
+import { LogIn, UserPlus } from 'lucide-react'
+
+export function AuthPage() {
+  const navigate = useNavigate()
+  const toast = useToast()
+  const { login, register } = useAuthStore()
+
+  const [isLogin, setIsLogin] = useState(true)
+  const [loading, setLoading] = useState(false)
+
+  // 登录表单
+  const [loginData, setLoginData] = useState({
+    username: '',
+    password: '',
+  })
+
+  // 注册表单
+  const [registerData, setRegisterData] = useState({
+    username: '',
+    nickname: '',
+    password: '',
+    confirmPassword: '',
+  })
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const result = login(loginData.username, loginData.password)
+
+      if (result.success) {
+        toast.push('success', '登录成功！')
+        // 跳转到首页
+        navigate('/')
+      } else {
+        toast.push('error', result.message)
+      }
+    } catch (error: any) {
+      toast.push('error', error.message || '登录失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // 验证两次密码是否一致
+    if (registerData.password !== registerData.confirmPassword) {
+      toast.push('error', '两次输入的密码不一致')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const result = register(
+        registerData.username,
+        registerData.nickname,
+        registerData.password
+      )
+
+      if (result.success) {
+        toast.push('success', '注册成功！')
+        // 跳转到首页
+        navigate('/')
+      } else {
+        toast.push('error', result.message)
+      }
+    } catch (error: any) {
+      toast.push('error', error.message || '注册失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const switchMode = () => {
+    setIsLogin(!isLogin)
+    // 清空表单
+    setLoginData({ username: '', password: '' })
+    setRegisterData({ username: '', nickname: '', password: '', confirmPassword: '' })
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-wood-50 via-gray-50 to-wood-100 dark:from-slate-900 dark:to-slate-800 p-4">
+      <Card className="w-full max-w-md">
+        <div className="p-8">
+          {/* Logo 和标题 */}
+          <div className="text-center mb-8">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-wood-200 mb-4 shadow-md dark:bg-slate-800">
+              <img
+                src="/web_logo.png"
+                alt="FlightWoodX Logo"
+                className="h-12 w-12 object-contain"
+              />
+            </div>
+            <h1 className="text-3xl font-extrabold mb-2 text-gray-900 dark:text-white">
+              {isLogin ? '登录' : '注册'} FlightWoodX
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400">
+              {isLogin ? '欢迎回来！' : '开启你的创意飞行之旅'}
+            </p>
+          </div>
+
+          {/* 登录表单 */}
+          {isLogin ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  用户名
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={loginData.username}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, username: e.target.value.trim() })
+                  }
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
+                  placeholder="请输入用户名"
+                  autoComplete="username"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  密码
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, password: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
+                  placeholder="至少6个字符"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full bg-wood-500 hover:bg-wood-600 mt-6"
+                disabled={loading || !loginData.username || !loginData.password}
+                leftIcon={<LogIn size={18} />}
+              >
+                {loading ? '登录中...' : '登录'}
+              </Button>
+            </form>
+          ) : (
+            /* 注册表单 */
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  用户名
+                </label>
+                <input
+                  type="text"
+                  required
+                  minLength={3}
+                  value={registerData.username}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, username: e.target.value.trim() })
+                  }
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
+                  placeholder="至少3个字符"
+                  autoComplete="username"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  昵称
+                </label>
+                <input
+                  type="text"
+                  required
+                  minLength={2}
+                  value={registerData.nickname}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, nickname: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
+                  placeholder="至少2个字符"
+                  autoComplete="nickname"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  密码
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={registerData.password}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, password: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
+                  placeholder="至少6个字符"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  确认密码
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={registerData.confirmPassword}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, confirmPassword: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
+                  placeholder="再次输入密码"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full bg-wood-500 hover:bg-wood-600 mt-6"
+                disabled={
+                  loading ||
+                  !registerData.username ||
+                  !registerData.nickname ||
+                  !registerData.password ||
+                  !registerData.confirmPassword
+                }
+                leftIcon={<UserPlus size={18} />}
+              >
+                {loading ? '注册中...' : '注册'}
+              </Button>
+            </form>
+          )}
+
+          {/* 切换登录/注册 */}
+          <div className="mt-6 text-center text-sm">
+            <span className="text-slate-600 dark:text-slate-400">
+              {isLogin ? '还没有账号？' : '已有账号？'}
+            </span>
+            <button
+              type="button"
+              onClick={switchMode}
+              className="ml-2 font-semibold text-wood-600 hover:text-wood-700 dark:text-wood-400 dark:hover:text-wood-300"
+            >
+              {isLogin ? '立即注册' : '去登录'}
+            </button>
+          </div>
+
+          {/* 返回首页 */}
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            >
+              返回首页
+            </button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}

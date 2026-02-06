@@ -1,9 +1,8 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { Menu, X, User, LogOut } from 'lucide-react'
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { Button } from '../common/Button'
 import { useAuthStore } from '../../stores/authStore'
-import { AuthModal } from '../features/auth/AuthModal'
 
 const navItems = [
   { to: '/learn', label: '学习中心' },
@@ -12,8 +11,8 @@ const navItems = [
 ] as const
 
 export function Navbar() {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const [showAuthModal, setShowAuthModal] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -62,8 +61,8 @@ export function Navbar() {
             className="touch-target inline-flex items-center gap-2 rounded-xl px-2 text-base font-extrabold tracking-tight text-wood-800 dark:text-wood-200"
             onClick={() => setOpen(false)}
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-wood-200 text-wood-900 shadow-sm dark:bg-slate-800 dark:text-white">
-              榫
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-wood-200 shadow-sm dark:bg-slate-800 overflow-hidden">
+              <img src="/web_logo.png" alt="FlightWoodX Logo" className="h-full w-full object-contain" />
             </span>
             FlightWoodX
           </NavLink>
@@ -103,6 +102,13 @@ export function Navbar() {
                     >
                       个人中心
                     </NavLink>
+                    <NavLink
+                      to="/admin"
+                      className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      管理后台
+                    </NavLink>
                     <button
                       type="button"
                       onClick={handleLogout}
@@ -117,7 +123,7 @@ export function Navbar() {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setShowAuthModal(true)} className="hidden md:inline-flex">
+              <Button size="sm" onClick={() => navigate('/auth')} className="hidden md:inline-flex">
                 登录 / 注册
               </Button>
               <button
@@ -135,15 +141,13 @@ export function Navbar() {
         {open && !isAuthenticated ? (
           <div className="border-t border-black/5 bg-white dark:border-white/10 dark:bg-slate-950 md:hidden">
             <div className="mx-auto max-w-6xl px-4 py-3">
-              <Button className="w-full" onClick={() => setShowAuthModal(true)}>
+              <Button className="w-full" onClick={() => navigate('/auth')}>
                 登录 / 注册
               </Button>
             </div>
           </div>
         ) : null}
       </header>
-
-      <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </>
   )
 }
