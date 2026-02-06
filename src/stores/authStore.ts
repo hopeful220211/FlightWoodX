@@ -13,8 +13,8 @@ export interface AuthState {
   user: User | null
   token: string | null
   isAuthenticated: boolean
-  login: (username: string, password: string) => Promise<{ success: boolean; message: string }>
-  register: (username: string, nickname: string, password: string) => Promise<{ success: boolean; message: string }>
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
+  register: (username: string, email: string, password: string) => Promise<{ success: boolean; message: string }>
   logout: () => void
   setUser: (user: User) => void
 }
@@ -29,20 +29,20 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
 
-      register: async (username, nickname, password) => {
+      register: async (username, email, password) => {
         // 验证输入
         if (!username || username.length < 3) {
           return { success: false, message: '用户名至少需要3个字符' }
         }
-        if (!nickname || nickname.length < 2) {
-          return { success: false, message: '昵称至少需要2个字符' }
+        if (!email || !email.includes('@')) {
+          return { success: false, message: '请输入有效的邮箱地址' }
         }
         if (!password || password.length < 6) {
           return { success: false, message: '密码至少需要6个字符' }
         }
 
         // 调用后端 API 注册
-        const result = await apiRegister({ username, nickname, password })
+        const result = await apiRegister({ username, email, password })
 
         if (result.success && result.data) {
           // 保存用户信息和 token
@@ -59,14 +59,14 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      login: async (username, password) => {
+      login: async (email, password) => {
         // 验证输入
-        if (!username || !password) {
-          return { success: false, message: '请输入用户名和密码' }
+        if (!email || !password) {
+          return { success: false, message: '请输入邮箱和密码' }
         }
 
         // 调用后端 API 登录
-        const result = await apiLogin({ username, password })
+        const result = await apiLogin({ email, password })
 
         if (result.success && result.data) {
           // 保存用户信息和 token

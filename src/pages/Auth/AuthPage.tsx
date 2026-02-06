@@ -16,16 +16,15 @@ export function AuthPage() {
 
   // 登录表单
   const [loginData, setLoginData] = useState({
-    username: '',
+    email: '',
     password: '',
   })
 
   // 注册表单
   const [registerData, setRegisterData] = useState({
     username: '',
-    nickname: '',
+    email: '',
     password: '',
-    confirmPassword: '',
   })
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -33,7 +32,7 @@ export function AuthPage() {
     setLoading(true)
 
     try {
-      const result = await login(loginData.username, loginData.password)
+      const result = await login(loginData.email, loginData.password)
 
       if (result.success) {
         toast.push('success', '登录成功！')
@@ -51,19 +50,12 @@ export function AuthPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // 验证两次密码是否一致
-    if (registerData.password !== registerData.confirmPassword) {
-      toast.push('error', '两次输入的密码不一致')
-      return
-    }
-
     setLoading(true)
 
     try {
       const result = await register(
         registerData.username,
-        registerData.nickname,
+        registerData.email,
         registerData.password
       )
 
@@ -84,8 +76,8 @@ export function AuthPage() {
   const switchMode = () => {
     setIsLogin(!isLogin)
     // 清空表单
-    setLoginData({ username: '', password: '' })
-    setRegisterData({ username: '', nickname: '', password: '', confirmPassword: '' })
+    setLoginData({ email: '', password: '' })
+    setRegisterData({ username: '', email: '', password: '' })
   }
 
   return (
@@ -114,18 +106,18 @@ export function AuthPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  用户名
+                  邮箱
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   required
-                  value={loginData.username}
+                  value={loginData.email}
                   onChange={(e) =>
-                    setLoginData({ ...loginData, username: e.target.value.trim() })
+                    setLoginData({ ...loginData, email: e.target.value.trim() })
                   }
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
-                  placeholder="请输入用户名"
-                  autoComplete="username"
+                  placeholder="your@email.com"
+                  autoComplete="email"
                 />
               </div>
 
@@ -151,7 +143,7 @@ export function AuthPage() {
                 type="submit"
                 variant="primary"
                 className="w-full bg-wood-500 hover:bg-wood-600 mt-6"
-                disabled={loading || !loginData.username || !loginData.password}
+                disabled={loading || !loginData.email || !loginData.password}
                 leftIcon={<LogIn size={18} />}
               >
                 {loading ? '登录中...' : '登录'}
@@ -180,19 +172,18 @@ export function AuthPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  昵称
+                  邮箱
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   required
-                  minLength={2}
-                  value={registerData.nickname}
+                  value={registerData.email}
                   onChange={(e) =>
-                    setRegisterData({ ...registerData, nickname: e.target.value })
+                    setRegisterData({ ...registerData, email: e.target.value.trim() })
                   }
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
-                  placeholder="至少2个字符"
-                  autoComplete="nickname"
+                  placeholder="your@email.com"
+                  autoComplete="email"
                 />
               </div>
 
@@ -214,24 +205,6 @@ export function AuthPage() {
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  确认密码
-                </label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={registerData.confirmPassword}
-                  onChange={(e) =>
-                    setRegisterData({ ...registerData, confirmPassword: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm transition focus:border-wood-500 focus:outline-none focus:ring-2 focus:ring-wood-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-wood-400"
-                  placeholder="再次输入密码"
-                  autoComplete="new-password"
-                />
-              </div>
-
               <Button
                 type="submit"
                 variant="primary"
@@ -239,9 +212,8 @@ export function AuthPage() {
                 disabled={
                   loading ||
                   !registerData.username ||
-                  !registerData.nickname ||
-                  !registerData.password ||
-                  !registerData.confirmPassword
+                  !registerData.email ||
+                  !registerData.password
                 }
                 leftIcon={<UserPlus size={18} />}
               >
