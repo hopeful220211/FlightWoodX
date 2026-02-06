@@ -90,7 +90,7 @@ export function Navbar() {
                       <User size={14} />
                     )}
                   </div>
-                  <span className="hidden md:inline">{user?.nickname || '个人中心'}</span>
+                  <span className="hidden md:inline">{user?.username || user?.nickname || '用户'}</span>
                 </button>
 
                 {showUserMenu && (
