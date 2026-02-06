@@ -2,38 +2,39 @@ import { useEffect, useState } from 'react'
 import { Card } from '../../components/common/Card'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
+import { getAllUsers } from '../../utils/api'
+import type { UserResponse } from '../../utils/api'
 import { Users, Calendar, Clock, Shield } from 'lucide-react'
 
-interface StoredUser {
-  username: string
-  nickname: string
-  password: string
-  createdAt: string
-  lastLogin?: string
+// 扩展用户响应接口，包含管理后台需要的字段
+interface AdminUserResponse extends UserResponse {
   role?: 'student' | 'teacher' | 'admin'
+  lastLogin?: string
 }
 
 export function AdminPage() {
   const toast = useToast()
   const { user: currentUser } = useAuthStore()
-  const [users, setUsers] = useState<StoredUser[]>([])
+  const [users, setUsers] = useState<AdminUserResponse[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadUsers()
   }, [])
 
-  const loadUsers = () => {
+  const loadUsers = async () => {
     try {
-      // 从 localStorage 读取所有用户
-      const stored = localStorage.getItem('flightwoodx-users')
-      if (stored) {
-        const usersObj = JSON.parse(stored)
-        const usersList = Object.values(usersObj) as StoredUser[]
-        setUsers(usersList)
+      setLoading(true)
+      // 从后端 API 获取所有用户
+      const result = await getAllUsers()
+
+      if (result.success && result.data) {
+        setUsers(result.data)
+      } else {
+        toast.push('error', result.error || '加载用户列表失败')
       }
     } catch (error: any) {
-      toast.push('error', '加载用户列表失败')
+      toast.push('error', error.message || '加载用户列表失败')
     } finally {
       setLoading(false)
     }
@@ -282,14 +283,6 @@ export function AdminPage() {
             )}
           </div>
         </Card>
-
-        {/* 说明信息 */}
-        <div className="mt-6 rounded-lg bg-wood-100 p-4 dark:bg-slate-800">
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            💡 <strong>提示：</strong>
-            当前用户数据存储在本地浏览器中。连接后端 API 后，将显示服务器端的完整用户数据。
-          </p>
-        </div>
       </div>
     </div>
   )
