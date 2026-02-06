@@ -17,6 +17,7 @@ export function AdminPage() {
   const { user: currentUser } = useAuthStore()
   const [users, setUsers] = useState<AdminUserResponse[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadUsers()
@@ -25,16 +26,21 @@ export function AdminPage() {
   const loadUsers = async () => {
     try {
       setLoading(true)
+      setError(null)
       // 从后端 API 获取所有用户
       const result = await getAllUsers()
 
       if (result.success && result.data) {
         setUsers(result.data)
       } else {
-        toast.push('error', result.error || '加载用户列表失败')
+        const errorMsg = result.error || '加载用户列表失败'
+        setError(errorMsg)
+        toast.push('error', errorMsg)
       }
     } catch (error: any) {
-      toast.push('error', error.message || '加载用户列表失败')
+      const errorMsg = error.message || '加载用户列表失败'
+      setError(errorMsg)
+      toast.push('error', errorMsg)
     } finally {
       setLoading(false)
     }
@@ -77,11 +83,35 @@ export function AdminPage() {
     )
   }
 
-  // 统计数据
-  const totalUsers = users.length
-  const studentsCount = users.filter((u) => u.role === 'student').length
-  const teachersCount = users.filter((u) => u.role === 'teacher').length
-  const adminsCount = users.filter((u) => u.role === 'admin').length
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-wood-50 via-gray-50 to-wood-100 dark:from-slate-900 dark:to-slate-800">
+        <Card className="max-w-md">
+          <div className="p-8 text-center">
+            <div className="mb-4 text-4xl">⚠️</div>
+            <h2 className="mb-2 text-xl font-extrabold text-gray-900 dark:text-white">
+              加载失败
+            </h2>
+            <p className="mb-6 text-slate-600 dark:text-slate-400">
+              {error}
+            </p>
+            <button
+              onClick={loadUsers}
+              className="rounded-lg bg-wood-500 px-6 py-2 text-white transition hover:bg-wood-600"
+            >
+              重试
+            </button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // 统计数据（安全处理）
+  const totalUsers = Array.isArray(users) ? users.length : 0
+  const studentsCount = Array.isArray(users) ? users.filter((u) => u?.role === 'student').length : 0
+  const teachersCount = Array.isArray(users) ? users.filter((u) => u?.role === 'teacher').length : 0
+  const adminsCount = Array.isArray(users) ? users.filter((u) => u?.role === 'admin').length : 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-wood-50 via-gray-50 to-wood-100 dark:from-slate-900 dark:to-slate-800">
