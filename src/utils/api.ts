@@ -141,7 +141,7 @@ export async function logoutApi(): Promise<ApiResponse> {
  * 获取所有用户（管理员）
  */
 export async function getAllUsers(): Promise<ApiResponse<UserResponse[]>> {
-  return apiFetch<UserResponse[]>('/users')
+  return apiFetch<UserResponse[]>('/auth/users')
 }
 
 /**
