@@ -84,12 +84,19 @@ async function apiFetch<T = any>(
       }
     }
 
+    // 兼容不同的后端响应格式
+    // 1. { data: [...] }
+    // 2. { users: [...] }
+    // 3. 直接返回数组 [...]
+    let data = result.data || result.users || result
+
     return {
       success: true,
-      data: result.data || result,
+      data: data,
       message: result.message,
     }
   } catch (error) {
+    console.error('API fetch error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : '网络请求失败',

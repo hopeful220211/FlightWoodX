@@ -27,18 +27,26 @@ export function AdminPage() {
     try {
       setLoading(true)
       setError(null)
+
       // 从后端 API 获取所有用户
       const result = await getAllUsers()
 
+      console.log('getAllUsers result:', result)
+
       if (result.success && result.data) {
-        setUsers(result.data)
+        // 后端可能返回 { data: users } 或 { users: users }
+        const usersData = Array.isArray(result.data) ? result.data : []
+        console.log('Users data:', usersData)
+        setUsers(usersData)
       } else {
         const errorMsg = result.error || '加载用户列表失败'
+        console.error('API error:', errorMsg)
         setError(errorMsg)
         toast.push('error', errorMsg)
       }
     } catch (error: any) {
       const errorMsg = error.message || '加载用户列表失败'
+      console.error('Exception:', error)
       setError(errorMsg)
       toast.push('error', errorMsg)
     } finally {
