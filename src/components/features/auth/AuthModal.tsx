@@ -25,8 +25,8 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
   const [registerPassword, setRegisterPassword] = useState('')
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState('')
 
-  const handleLogin = () => {
-    const result = login(loginUsername, loginPassword)
+  const handleLogin = async () => {
+    const result = await login(loginUsername, loginPassword)
     toast.push(result.success ? 'success' : 'error', result.message)
     if (result.success) {
       onClose()
@@ -35,13 +35,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     }
   }
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (registerPassword !== registerPasswordConfirm) {
       toast.push('error', '两次输入的密码不一致')
       return
     }
 
-    const result = register(registerUsername, registerNickname, registerPassword)
+    const result = await register(registerUsername, registerNickname, registerPassword)
     toast.push(result.success ? 'success' : 'error', result.message)
     if (result.success) {
       onClose()

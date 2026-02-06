@@ -33,7 +33,7 @@ export function AuthPage() {
     setLoading(true)
 
     try {
-      const result = login(loginData.username, loginData.password)
+      const result = await login(loginData.username, loginData.password)
 
       if (result.success) {
         toast.push('success', '登录成功！')
@@ -61,7 +61,7 @@ export function AuthPage() {
     setLoading(true)
 
     try {
-      const result = register(
+      const result = await register(
         registerData.username,
         registerData.nickname,
         registerData.password
