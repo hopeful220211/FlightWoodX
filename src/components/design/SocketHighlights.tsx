@@ -46,10 +46,13 @@ export function SocketHighlights() {
       // 第二个机身需要显示连接点，继续执行
     }
 
-    // 检查拖拽零件是否有 plug
+    // 查找拖拽零件的连接器（优先 plug，如果没有则用 socket）
     const draggingConnectors = getCachedPartConnectors(draggingPart.modelUrl)
-    const hasPlug = draggingConnectors.some((c) => c.type === 'plug')
-    if (!hasPlug) return []
+    const draggingPlugConnector = draggingConnectors.find((c) => c.type === 'plug')
+    const draggingSocketConnector = draggingConnectors.find((c) => c.type === 'socket')
+    const draggingConnector = draggingPlugConnector || draggingSocketConnector
+
+    if (!draggingConnector) return []
 
     // 计算已占用的插座
     const occupiedSockets = new Set<string>()
@@ -73,8 +76,19 @@ export function SocketHighlights() {
       }
 
       const connectors = getCachedPartConnectors(partData.modelUrl)
-      // 同时查找 socket 和 plug 作为连接目标
-      const partConnectors = connectors.filter((c) => c.type === 'socket' || c.type === 'plug')
+
+      // 根据拖拽连接器类型过滤目标连接点
+      // - 如果拖拽的是 plug：可以连接到 socket 或 plug
+      // - 如果拖拽的是 socket：只能连接到 plug（禁止 socket-to-socket）
+      const partConnectors = connectors.filter((c) => {
+        if (draggingConnector.type === 'plug') {
+          // plug 可以连接到 socket 或 plug
+          return c.type === 'socket' || c.type === 'plug'
+        } else {
+          // socket 只能连接到 plug
+          return c.type === 'plug'
+        }
+      })
 
       const instPos = new THREE.Vector3(...inst.position)
       const instQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...inst.rotation))

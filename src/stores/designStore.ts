@@ -186,9 +186,22 @@ export const useDesignStore = create<DesignState>()(
           }
         }
 
-        // 寻找第一个空闲且合法的 SOCKET（遍历所有零件）
+        // 寻找第一个空闲且合法的连接点（遍历所有零件）
         console.log('--- [Find Socket] Starting ---')
         console.log(`[Find Socket] Current parts in scene: ${activeDesign.parts.length}`)
+
+        // 首先确定新零件的连接器（优先 plug，如果没有则用 socket）
+        const childConns = getCachedPartConnectors(partData.modelUrl)
+        const childPlugConnector = childConns.find((c) => c.type === 'plug')
+        const childSocketConnector = childConns.find((c) => c.type === 'socket')
+        const childConnector = childPlugConnector || childSocketConnector
+
+        if (!childConnector) {
+          console.error('[Find Socket] EXIT: No connector found in child part.')
+          // eslint-disable-next-line no-alert
+          alert('该零件没有可用的连接器。')
+          return
+        }
 
         // 计算已占用的插座
         const occupiedSockets = new Set<string>()
@@ -199,7 +212,7 @@ export const useDesignStore = create<DesignState>()(
           }
         }
 
-        // 遍历所有已放置的零件，寻找可用插座
+        // 遍历所有已放置的零件，寻找可用连接点
         let targetParent: PartInstance | null = null
         let targetSocketId: string | null = null
 
@@ -207,22 +220,31 @@ export const useDesignStore = create<DesignState>()(
           const instPartData = partsData.find((p) => p.id === inst.partId)
           if (!instPartData) continue
 
-          // 检查连接规则：hub和body的插座不能相互连接
+          // 检查连接规则
           if (!isConnectionAllowed(partData.category, instPartData.category)) {
             console.log(`[Find Socket] Skipping ${instPartData.category} - connection not allowed with ${partData.category}`)
             continue
           }
 
           const connectors = getCachedPartConnectors(instPartData.modelUrl)
-          // 同时查找 socket 和 plug 作为连接目标
-          const availableConnectors = connectors.filter((c) => c.type === 'socket' || c.type === 'plug')
+
+          // 根据子零件连接器类型过滤目标连接点
+          // - 如果子零件是 plug：可以连接到 socket 或 plug
+          // - 如果子零件是 socket：只能连接到 plug（禁止 socket-to-socket）
+          const availableConnectors = connectors.filter((c) => {
+            if (childConnector.type === 'plug') {
+              return c.type === 'socket' || c.type === 'plug'
+            } else {
+              return c.type === 'plug'
+            }
+          })
 
           for (const connector of availableConnectors) {
             const key = `${inst.instanceId}::${connector.id}`
             if (!occupiedSockets.has(key)) {
               targetParent = inst
               targetSocketId = connector.id
-              console.log(`[Find Socket] SUCCESS: Found available ${connector.type} on ${instPartData.category} part`)
+              console.log(`[Find Socket] SUCCESS: Found available ${connector.type} on ${instPartData.category} part (child connector: ${childConnector.type})`)
               break
             }
           }
@@ -231,51 +253,41 @@ export const useDesignStore = create<DesignState>()(
         }
 
         if (!targetParent || !targetSocketId) {
-          console.error('[Find Socket] FAILURE: No available sockets found.')
+          console.error('[Find Socket] FAILURE: No available connectors found.')
           // eslint-disable-next-line no-alert
           alert('没有可用的连接点。')
           return
         }
 
-        // 找到新零件的第一个 PLUG
-        const childConns = getCachedPartConnectors(partData.modelUrl)
-        const plug = childConns.find((c) => c.type === 'plug')
-        if (!plug) {
-          console.error('[Find Socket] EXIT: No plug found in child part.')
-          // eslint-disable-next-line no-alert
-          alert('该零件没有可用的连接插头。')
-          return
-        }
-
-        // ✅ 对齐计算：使用新的 calculateSnapTransform 函数
+        // ✅ 对齐计算：使用 computeSnapTransform 函数
         const parentPart = partsData.find((p) => p.id === targetParent.partId)
         if (!parentPart) {
           console.error('[Add Part] Parent part not found.')
           return
         }
         const parentConns = getCachedPartConnectors(parentPart.modelUrl)
-        const socket = parentConns.find((c) => c.id === targetSocketId)
-        if (!socket) {
-          console.error('[Add Part] Socket not found in parent connectors.')
+        const parentConnector = parentConns.find((c) => c.id === targetSocketId)
+        if (!parentConnector) {
+          console.error('[Add Part] Parent connector not found.')
           return
         }
 
-        // 计算插座的世界坐标变换
+        // 计算父连接器的世界坐标变换
         const parentPos = new THREE.Vector3(...targetParent.position)
         const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...targetParent.rotation))
-        const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-        const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+        const parentConnectorWorldPosition = parentConnector.position.clone().applyQuaternion(parentQuat).add(parentPos)
+        const parentConnectorWorldQuaternion = parentQuat.clone().multiply(parentConnector.quaternion.clone())
 
-        // 插头的本地变换（已经是相对于子零件的）
-        const plugLocalPosition = plug.position.clone()
-        const plugLocalQuaternion = plug.quaternion.clone()
+        // 子连接器的本地变换（已经是相对于子零件的）
+        const childConnectorLocalPosition = childConnector.position.clone()
+        const childConnectorLocalQuaternion = childConnector.quaternion.clone()
 
         // 使用 computeSnapTransform 函数计算基础对齐
         const { quaternion: baseQuaternion } = computeSnapTransform({
-          socketWorldPosition,
-          socketWorldQuaternion,
-          plugLocalPosition,
-          plugLocalQuaternion,
+          socketWorldPosition: parentConnectorWorldPosition,
+          socketWorldQuaternion: parentConnectorWorldQuaternion,
+          plugLocalPosition: childConnectorLocalPosition,
+          plugLocalQuaternion: childConnectorLocalQuaternion,
         })
 
         // 额外旋转：先绕X轴旋转180度，再绕Z轴旋转90度
@@ -285,15 +297,15 @@ export const useDesignStore = create<DesignState>()(
 
         const newQuaternion = baseQuaternion.clone().multiply(extraRotation)
 
-        // 重新计算位置（因为旋转改变后，插头偏移也要重新计算）
-        const plugOffsetRotated = plugLocalPosition.clone().applyQuaternion(newQuaternion)
-        const newPosition = socketWorldPosition.clone().sub(plugOffsetRotated)
+        // 重新计算位置（因为旋转改变后，连接器偏移也要重新计算）
+        const childConnectorOffsetRotated = childConnectorLocalPosition.clone().applyQuaternion(newQuaternion)
+        const newPosition = parentConnectorWorldPosition.clone().sub(childConnectorOffsetRotated)
 
         state.addPartToActiveDesign({
           partId,
           position: [newPosition.x, newPosition.y, newPosition.z],
           rotation: quaternionToEuler(newQuaternion),
-          activeConnectorId: plug.id,
+          activeConnectorId: childConnector.id,
           attachedTo: {
             parentInstanceId: targetParent.instanceId,
             parentConnectorId: targetSocketId,
