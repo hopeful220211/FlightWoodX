@@ -23,10 +23,28 @@ function getCategoryIcon(category: string): string {
   return iconMap[category] || '📦'
 }
 
-// 缩略图组件 - 使用简单的 CSS 渲染避免 WebGL context 限制
-function PartThumb({ name, category }: { name: string; category: string }) {
+// 缩略图组件 - 优先使用静态图片，回退到图标
+function PartThumb({ id, name, category, thumbnailUrl }: { id: string; name: string; category: string; thumbnailUrl?: string }) {
   const icon = getCategoryIcon(category)
 
+  // 如果有预渲染的缩略图，使用静态图片
+  if (thumbnailUrl) {
+    return (
+      <img
+        src={thumbnailUrl}
+        alt={name}
+        className="w-full h-full object-contain bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900"
+        draggable={false}
+        onError={(e) => {
+          // 图片加载失败，显示图标回退
+          e.currentTarget.style.display = 'none';
+          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+        }}
+      />
+    )
+  }
+
+  // 回退方案：图标 + 文字
   return (
     <div className="w-full h-full bg-gradient-to-br from-wood-100 to-wood-200 dark:from-slate-700 dark:to-slate-800 flex flex-col items-center justify-center gap-1 p-2">
       <span className="text-3xl">{icon}</span>
@@ -79,7 +97,7 @@ export function DraggablePartCard({ part, onClick, onDragStart, onTouchDragStart
       className="flex flex-col items-center gap-1.5 cursor-grab active:cursor-grabbing"
     >
       <div className="w-[100px] h-[100px] overflow-hidden rounded-2xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] hover:shadow-md dark:ring-white/10">
-        <PartThumb name={part.name} category={part.category} />
+        <PartThumb id={part.id} name={part.name} category={part.category} thumbnailUrl={part.thumbnailUrl} />
       </div>
       <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate max-w-[100px] text-center">
         {part.name}

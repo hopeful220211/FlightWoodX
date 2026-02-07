@@ -10,6 +10,7 @@ export const partsData: Part[] = [
     category: 'body',
     weight: 50,
     modelUrl: '/models/core_plate_01.glb',
+    thumbnailUrl: '/thumbnails/core_plate_01.png',
     isEssential: true,
   },
   {
@@ -18,6 +19,7 @@ export const partsData: Part[] = [
     category: 'body',
     weight: 48,
     modelUrl: '/models/core_plate_02.glb',
+    thumbnailUrl: '/thumbnails/core_plate_02.png',
     isEssential: true,
   },
   {
@@ -26,6 +28,7 @@ export const partsData: Part[] = [
     category: 'body',
     weight: 52,
     modelUrl: '/models/core_plate_04.glb',
+    thumbnailUrl: '/thumbnails/core_plate_04.png',
     isEssential: true,
   },
   {
@@ -34,6 +37,7 @@ export const partsData: Part[] = [
     category: 'body',
     weight: 51,
     modelUrl: '/models/core_plate_06.glb',
+    thumbnailUrl: '/thumbnails/core_plate_06.png',
     isEssential: true,
   },
   {
@@ -42,6 +46,7 @@ export const partsData: Part[] = [
     category: 'body',
     weight: 49,
     modelUrl: '/models/core_plate_07.glb',
+    thumbnailUrl: '/thumbnails/core_plate_07.png',
     isEssential: true,
   },
   {
@@ -50,6 +55,7 @@ export const partsData: Part[] = [
     category: 'body',
     weight: 53,
     modelUrl: '/models/core_plate_08.glb',
+    thumbnailUrl: '/thumbnails/core_plate_08.png',
     isEssential: true,
   },
 
@@ -60,6 +66,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 30,
     modelUrl: '/models/core_hub_01.glb',
+    thumbnailUrl: '/thumbnails/core_hub_01.png',
   },
   {
     id: 'core_hub_02',
@@ -67,6 +74,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 32,
     modelUrl: '/models/core_hub_02.glb',
+    thumbnailUrl: '/thumbnails/core_hub_02.png',
   },
   {
     id: 'core_hub_03',
@@ -74,6 +82,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 31,
     modelUrl: '/models/core_hub_03.glb',
+    thumbnailUrl: '/thumbnails/core_hub_03.png',
   },
   {
     id: 'core_hub_04',
@@ -81,6 +90,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 33,
     modelUrl: '/models/core_hub_04.glb',
+    thumbnailUrl: '/thumbnails/core_hub_04.png',
   },
   {
     id: 'core_hub_05',
@@ -88,6 +98,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 29,
     modelUrl: '/models/core_hub_05.glb',
+    thumbnailUrl: '/thumbnails/core_hub_05.png',
   },
   {
     id: 'core_hub_06',
@@ -95,6 +106,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 34,
     modelUrl: '/models/core_hub_06.glb',
+    thumbnailUrl: '/thumbnails/core_hub_06.png',
   },
   {
     id: 'core_hub_07',
@@ -102,6 +114,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 28,
     modelUrl: '/models/core_hub_07.glb',
+    thumbnailUrl: '/thumbnails/core_hub_07.png',
   },
   {
     id: 'core_hub_08',
@@ -109,6 +122,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 35,
     modelUrl: '/models/core_hub_08.glb',
+    thumbnailUrl: '/thumbnails/core_hub_08.png',
   },
   {
     id: 'core_hub_09',
@@ -116,6 +130,7 @@ export const partsData: Part[] = [
     category: 'hub',
     weight: 30,
     modelUrl: '/models/core_hub_09.glb',
+    thumbnailUrl: '/thumbnails/core_hub_09.png',
   },
 
   // ==================== 机臂 (Arm) ====================
@@ -125,6 +140,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_01.glb',
+    thumbnailUrl: '/thumbnails/arm_01.png',
     isEssential: true,
   },
   {
@@ -133,6 +149,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 12,
     modelUrl: '/models/arm_02.glb',
+    thumbnailUrl: '/thumbnails/arm_02.png',
     isEssential: true,
   },
   {
@@ -141,6 +158,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_03.glb',
+    thumbnailUrl: '/thumbnails/arm_03.png',
   },
   {
     id: 'arm_04',
@@ -148,6 +166,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 13,
     modelUrl: '/models/arm_04.glb',
+    thumbnailUrl: '/thumbnails/arm_04.png',
   },
   {
     id: 'arm_05',
@@ -155,6 +174,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 16,
     modelUrl: '/models/arm_05.glb',
+    thumbnailUrl: '/thumbnails/arm_05.png',
   },
   {
     id: 'arm_06',
@@ -162,6 +182,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_06.glb',
+    thumbnailUrl: '/thumbnails/arm_06.png',
   },
   {
     id: 'arm_07',
@@ -169,6 +190,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_07.glb',
+    thumbnailUrl: '/thumbnails/arm_07.png',
   },
   {
     id: 'arm_08',
@@ -176,6 +198,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 13,
     modelUrl: '/models/arm_08.glb',
+    thumbnailUrl: '/thumbnails/arm_08.png',
   },
   {
     id: 'arm_09',
@@ -183,6 +206,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_09.glb',
+    thumbnailUrl: '/thumbnails/arm_09.png',
   },
   {
     id: 'arm_10',
@@ -190,6 +214,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 12,
     modelUrl: '/models/arm_10.glb',
+    thumbnailUrl: '/thumbnails/arm_10.png',
   },
   {
     id: 'arm_11',
@@ -197,6 +222,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_11.glb',
+    thumbnailUrl: '/thumbnails/arm_11.png',
   },
   {
     id: 'arm_12',
@@ -204,6 +230,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 16,
     modelUrl: '/models/arm_12.glb',
+    thumbnailUrl: '/thumbnails/arm_12.png',
   },
   {
     id: 'arm_13',
@@ -211,6 +238,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 13,
     modelUrl: '/models/arm_13.glb',
+    thumbnailUrl: '/thumbnails/arm_13.png',
   },
   {
     id: 'arm_14',
@@ -218,6 +246,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_14.glb',
+    thumbnailUrl: '/thumbnails/arm_14.png',
   },
   {
     id: 'arm_15',
@@ -225,6 +254,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_15.glb',
+    thumbnailUrl: '/thumbnails/arm_15.png',
   },
   {
     id: 'arm_16',
@@ -232,6 +262,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 12,
     modelUrl: '/models/arm_16.glb',
+    thumbnailUrl: '/thumbnails/arm_16.png',
   },
   {
     id: 'arm_17',
@@ -239,6 +270,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_17.glb',
+    thumbnailUrl: '/thumbnails/arm_17.png',
   },
   {
     id: 'arm_18',
@@ -246,6 +278,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 13,
     modelUrl: '/models/arm_18.glb',
+    thumbnailUrl: '/thumbnails/arm_18.png',
   },
   {
     id: 'arm_19',
@@ -253,6 +286,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_19.glb',
+    thumbnailUrl: '/thumbnails/arm_19.png',
   },
   {
     id: 'arm_20',
@@ -260,6 +294,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 16,
     modelUrl: '/models/arm_20.glb',
+    thumbnailUrl: '/thumbnails/arm_20.png',
   },
   {
     id: 'arm_21',
@@ -267,6 +302,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_21.glb',
+    thumbnailUrl: '/thumbnails/arm_21.png',
   },
   {
     id: 'arm_22',
@@ -274,6 +310,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 12,
     modelUrl: '/models/arm_22.glb',
+    thumbnailUrl: '/thumbnails/arm_22.png',
   },
   {
     id: 'arm_23',
@@ -281,6 +318,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_23.glb',
+    thumbnailUrl: '/thumbnails/arm_23.png',
   },
   {
     id: 'arm_24',
@@ -288,6 +326,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 13,
     modelUrl: '/models/arm_24.glb',
+    thumbnailUrl: '/thumbnails/arm_24.png',
   },
   {
     id: 'arm_25',
@@ -295,6 +334,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_25.glb',
+    thumbnailUrl: '/thumbnails/arm_25.png',
   },
   {
     id: 'arm_26',
@@ -302,6 +342,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_26.glb',
+    thumbnailUrl: '/thumbnails/arm_26.png',
   },
   {
     id: 'arm_27',
@@ -309,6 +350,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 16,
     modelUrl: '/models/arm_27.glb',
+    thumbnailUrl: '/thumbnails/arm_27.png',
   },
   {
     id: 'arm_28',
@@ -316,6 +358,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 13,
     modelUrl: '/models/arm_28.glb',
+    thumbnailUrl: '/thumbnails/arm_28.png',
   },
   {
     id: 'arm_29',
@@ -323,6 +366,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_29.glb',
+    thumbnailUrl: '/thumbnails/arm_29.png',
   },
   {
     id: 'arm_30',
@@ -330,6 +374,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 12,
     modelUrl: '/models/arm_30.glb',
+    thumbnailUrl: '/thumbnails/arm_30.png',
   },
   {
     id: 'arm_31',
@@ -337,6 +382,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_31.glb',
+    thumbnailUrl: '/thumbnails/arm_31.png',
   },
   {
     id: 'arm_32',
@@ -344,6 +390,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 15,
     modelUrl: '/models/arm_32.glb',
+    thumbnailUrl: '/thumbnails/arm_32.png',
   },
   {
     id: 'arm_33',
@@ -351,6 +398,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 13,
     modelUrl: '/models/arm_33.glb',
+    thumbnailUrl: '/thumbnails/arm_33.png',
   },
   {
     id: 'arm_34',
@@ -358,6 +406,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 16,
     modelUrl: '/models/arm_34.glb',
+    thumbnailUrl: '/thumbnails/arm_34.png',
   },
   {
     id: 'arm_35',
@@ -365,6 +414,7 @@ export const partsData: Part[] = [
     category: 'arm',
     weight: 14,
     modelUrl: '/models/arm_35.glb',
+    thumbnailUrl: '/thumbnails/arm_35.png',
   },
 
   // ==================== 连接件 (Joint) ====================
@@ -374,6 +424,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 8,
     modelUrl: '/models/joint_01.glb',
+    thumbnailUrl: '/thumbnails/joint_01.png',
   },
   {
     id: 'joint_03',
@@ -381,6 +432,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 7,
     modelUrl: '/models/joint_03.glb',
+    thumbnailUrl: '/thumbnails/joint_03.png',
   },
   {
     id: 'joint_11',
@@ -388,6 +440,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 9,
     modelUrl: '/models/joint_11.glb',
+    thumbnailUrl: '/thumbnails/joint_11.png',
   },
   {
     id: 'joint_12',
@@ -395,6 +448,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 8,
     modelUrl: '/models/joint_12.glb',
+    thumbnailUrl: '/thumbnails/joint_12.png',
   },
   {
     id: 'joint_13',
@@ -402,6 +456,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 7,
     modelUrl: '/models/joint_13.glb',
+    thumbnailUrl: '/thumbnails/joint_13.png',
   },
   {
     id: 'joint_14',
@@ -409,6 +464,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 9,
     modelUrl: '/models/joint_14.glb',
+    thumbnailUrl: '/thumbnails/joint_14.png',
   },
   {
     id: 'joint_16',
@@ -416,6 +472,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 8,
     modelUrl: '/models/joint_16.glb',
+    thumbnailUrl: '/thumbnails/joint_16.png',
   },
   {
     id: 'joint_17',
@@ -423,6 +480,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 7,
     modelUrl: '/models/joint_17.glb',
+    thumbnailUrl: '/thumbnails/joint_17.png',
   },
   {
     id: 'joint_18',
@@ -430,6 +488,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 8,
     modelUrl: '/models/joint_18.glb',
+    thumbnailUrl: '/thumbnails/joint_18.png',
   },
   {
     id: 'joint_19',
@@ -437,6 +496,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 9,
     modelUrl: '/models/joint_19.glb',
+    thumbnailUrl: '/thumbnails/joint_19.png',
   },
   {
     id: 'joint_20',
@@ -444,6 +504,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 7,
     modelUrl: '/models/joint_20.glb',
+    thumbnailUrl: '/thumbnails/joint_20.png',
   },
   {
     id: 'joint_25',
@@ -451,6 +512,7 @@ export const partsData: Part[] = [
     category: 'joint',
     weight: 8,
     modelUrl: '/models/joint_25.glb',
+    thumbnailUrl: '/thumbnails/joint_25.png',
   },
 
   // ==================== 装饰件 (Decoration) ====================
@@ -460,6 +522,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 3,
     modelUrl: '/models/deco_01.glb',
+    thumbnailUrl: '/thumbnails/deco_01.png',
   },
   {
     id: 'deco_02',
@@ -467,6 +530,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 4,
     modelUrl: '/models/deco_02.glb',
+    thumbnailUrl: '/thumbnails/deco_02.png',
   },
   {
     id: 'deco_03',
@@ -474,6 +538,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 3,
     modelUrl: '/models/deco_03.glb',
+    thumbnailUrl: '/thumbnails/deco_03.png',
   },
   {
     id: 'deco_04',
@@ -481,6 +546,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 5,
     modelUrl: '/models/deco_04.glb',
+    thumbnailUrl: '/thumbnails/deco_04.png',
   },
   {
     id: 'deco_05',
@@ -488,6 +554,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 3,
     modelUrl: '/models/deco_05.glb',
+    thumbnailUrl: '/thumbnails/deco_05.png',
   },
   {
     id: 'deco_06',
@@ -495,6 +562,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 4,
     modelUrl: '/models/deco_06.glb',
+    thumbnailUrl: '/thumbnails/deco_06.png',
   },
   {
     id: 'deco_07',
@@ -502,6 +570,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 3,
     modelUrl: '/models/deco_07.glb',
+    thumbnailUrl: '/thumbnails/deco_07.png',
   },
   {
     id: 'deco_08',
@@ -509,6 +578,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 4,
     modelUrl: '/models/deco_08.glb',
+    thumbnailUrl: '/thumbnails/deco_08.png',
   },
   {
     id: 'deco_09',
@@ -516,6 +586,7 @@ export const partsData: Part[] = [
     category: 'decoration',
     weight: 5,
     modelUrl: '/models/deco_09.glb',
+    thumbnailUrl: '/thumbnails/deco_09.png',
   },
 
   // ==================== 起落架 (Landing) ====================
@@ -525,6 +596,7 @@ export const partsData: Part[] = [
     category: 'landing',
     weight: 20,
     modelUrl: '/models/Landing_03.glb',
+    thumbnailUrl: '/thumbnails/Landing_03.png',
   },
   {
     id: 'Landing_04',
@@ -532,6 +604,7 @@ export const partsData: Part[] = [
     category: 'landing',
     weight: 22,
     modelUrl: '/models/Landing_04.glb',
+    thumbnailUrl: '/thumbnails/Landing_04.png',
   },
   {
     id: 'Landing_06',
@@ -539,6 +612,7 @@ export const partsData: Part[] = [
     category: 'landing',
     weight: 21,
     modelUrl: '/models/Landing_06.glb',
+    thumbnailUrl: '/thumbnails/Landing_06.png',
   },
   {
     id: 'Landing_08',
@@ -546,6 +620,7 @@ export const partsData: Part[] = [
     category: 'landing',
     weight: 23,
     modelUrl: '/models/Landing_08.glb',
+    thumbnailUrl: '/thumbnails/Landing_08.png',
   },
   {
     id: 'Landing_09',
@@ -553,6 +628,7 @@ export const partsData: Part[] = [
     category: 'landing',
     weight: 20,
     modelUrl: '/models/Landing_09.glb',
+    thumbnailUrl: '/thumbnails/Landing_09.png',
   },
   {
     id: 'Landing_10',
@@ -560,5 +636,6 @@ export const partsData: Part[] = [
     category: 'landing',
     weight: 24,
     modelUrl: '/models/Landing_10.glb',
+    thumbnailUrl: '/thumbnails/Landing_10.png',
   },
 ];
