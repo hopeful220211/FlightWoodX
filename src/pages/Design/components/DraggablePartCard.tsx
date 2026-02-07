@@ -1,11 +1,7 @@
 // src/pages/Design/components/DraggablePartCard.tsx
 // 注意：此组件需要在 Canvas 外部使用，使用 HTML5 drag and drop
 // 拖拽逻辑在 ThreeCanvas 的 DragHandler 中处理
-import { lazy, Suspense } from 'react'
 import type { Part } from '../../../types/design'
-
-// 懒加载 3D 预览组件，避免首次加载时的性能问题
-const PartPreview3D = lazy(() => import('../../../components/design/PartPreview3D').then(m => ({ default: m.PartPreview3D })))
 
 interface DraggablePartCardProps {
   part: Part
@@ -14,47 +10,35 @@ interface DraggablePartCardProps {
   onTouchDragStart?: (part: Part, x: number, y: number) => void
 }
 
-// 判断是否为有效的 3D 模型
-function hasValid3DModel(modelUrl: string): boolean {
-  return Boolean(modelUrl && !modelUrl.includes('placeholder'))
-}
-
-// 占位符缩略图
-function PlaceholderThumb({ name, thumbnailUrl }: { name: string; thumbnailUrl?: string }) {
-  if (thumbnailUrl) {
-    return (
-      <img
-        src={thumbnailUrl}
-        alt={name}
-        className="w-full h-full object-cover"
-        draggable={false}
-      />
-    )
+// 根据零件类别生成图标
+function getCategoryIcon(category: string): string {
+  const iconMap: Record<string, string> = {
+    body: '🔲',
+    hub: '⚙️',
+    arm: '📏',
+    joint: '🔗',
+    decoration: '✨',
+    landing: '🛬',
   }
-  return (
-    <div className="w-full h-full bg-gradient-to-br from-wood-100 to-wood-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
-      <span className="text-xs text-wood-600 dark:text-slate-400 text-center px-1">{name}</span>
-    </div>
-  )
+  return iconMap[category] || '📦'
 }
 
-// 加载中占位符
-function LoadingPlaceholder() {
+// 缩略图组件 - 使用简单的 CSS 渲染避免 WebGL context 限制
+function PartThumb({ name, category }: { name: string; category: string }) {
+  const icon = getCategoryIcon(category)
+
   return (
-    <div className="w-full h-full bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-wood-300 border-dashed rounded animate-spin" />
+    <div className="w-full h-full bg-gradient-to-br from-wood-100 to-wood-200 dark:from-slate-700 dark:to-slate-800 flex flex-col items-center justify-center gap-1 p-2">
+      <span className="text-3xl">{icon}</span>
+      <span className="text-[10px] text-wood-600 dark:text-slate-400 text-center leading-tight">{name}</span>
     </div>
   )
 }
 
 export function DraggablePartCard({ part, onClick, onDragStart, onTouchDragStart }: DraggablePartCardProps) {
-  const has3DModel = hasValid3DModel(part.modelUrl)
-
   const handleTouchStart = (e: React.TouchEvent) => {
-    // 防止触发点击事件
     const touch = e.touches[0]
     if (touch && onTouchDragStart) {
-      // 延迟一点启动拖拽，避免误触
       const startX = touch.clientX
       const startY = touch.clientY
 
@@ -92,18 +76,12 @@ export function DraggablePartCard({ part, onClick, onDragStart, onTouchDragStart
       onTouchStart={handleTouchStart}
       onClick={onClick}
       style={{ touchAction: 'none' }}
-      className="flex flex-col items-center gap-1.5"
+      className="flex flex-col items-center gap-1.5 cursor-grab active:cursor-grabbing"
     >
-      <div className="w-[100px] h-[100px] overflow-hidden rounded-2xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] dark:ring-white/10">
-        {has3DModel ? (
-          <Suspense fallback={<LoadingPlaceholder />}>
-            <PartPreview3D modelUrl={part.modelUrl} size={100} />
-          </Suspense>
-        ) : (
-          <PlaceholderThumb name={part.name} thumbnailUrl={part.thumbnailUrl} />
-        )}
+      <div className="w-[100px] h-[100px] overflow-hidden rounded-2xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] hover:shadow-md dark:ring-white/10">
+        <PartThumb name={part.name} category={part.category} />
       </div>
-      <span className="text-xs text-slate-600 dark:text-slate-300 truncate max-w-[100px] text-center">
+      <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate max-w-[100px] text-center">
         {part.name}
       </span>
     </div>
