@@ -47,6 +47,29 @@ function Model({ modelUrl }: { modelUrl: string }) {
   useEffect(() => {
     if (!groupRef.current) return
 
+    // 应用木质材质到所有 mesh
+    const woodColor = new THREE.Color('#A0826D')
+    groupRef.current.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        const materials = Array.isArray(child.material) ? child.material : [child.material]
+        materials.forEach((mat) => {
+          if (mat instanceof THREE.MeshStandardMaterial ||
+              mat instanceof THREE.MeshPhysicalMaterial) {
+            // 应用木质颜色
+            if (mat.color) {
+              mat.color.multiply(woodColor)
+            } else {
+              mat.color = woodColor.clone()
+            }
+            // 木质材质特性
+            mat.roughness = 0.85
+            mat.metalness = 0
+            mat.needsUpdate = true
+          }
+        })
+      }
+    })
+
     // 计算模型的边界盒
     const box = new THREE.Box3().setFromObject(groupRef.current)
     const center = box.getCenter(new THREE.Vector3())

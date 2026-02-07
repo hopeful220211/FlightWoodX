@@ -78,19 +78,46 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
     pointerDownPos.current = null;
   }, [instance.instanceId, setSelectedInstanceId]);
 
-  // 克隆场景以创建独立实例
+  // 克隆场景以创建独立实例，并应用木质材质
   const clonedScene = useMemo(() => {
     const cloned = scene.clone();
-    // 深度克隆材质，避免影响其他实例
+
+    // 木质材质的基础颜色（温暖的浅棕色）
+    const woodColor = new THREE.Color('#A0826D');
+
+    // 深度克隆材质，避免影响其他实例，并应用木质效果
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map((m) => m.clone());
-        } else {
-          child.material = child.material.clone();
-        }
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+        const processedMaterials = materials.map((mat) => {
+          const clonedMat = mat.clone();
+
+          // 应用木质材质属性
+          if (clonedMat instanceof THREE.MeshStandardMaterial ||
+              clonedMat instanceof THREE.MeshPhysicalMaterial) {
+            // 设置木质颜色（保留原材质的颜色信息，与木色混合）
+            if (clonedMat.color) {
+              clonedMat.color.multiply(woodColor);
+            } else {
+              clonedMat.color = woodColor.clone();
+            }
+
+            // 木质材质特性
+            clonedMat.roughness = 0.85;  // 木头表面粗糙
+            clonedMat.metalness = 0;     // 木头不是金属
+
+            // 保存原始颜色用于高亮效果
+            clonedMat.userData.originalColor = clonedMat.color.clone();
+          }
+
+          return clonedMat;
+        });
+
+        child.material = Array.isArray(child.material) ? processedMaterials : processedMaterials[0];
       }
     });
+
     return cloned;
   }, [scene]);
 
