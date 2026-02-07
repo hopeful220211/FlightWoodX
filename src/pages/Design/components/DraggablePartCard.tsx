@@ -14,8 +14,8 @@ interface DraggablePartCardProps {
 // 根据零件类别生成图标
 function getCategoryIcon(category: string): string {
   const iconMap: Record<string, string> = {
-    body: '🔲',
-    hub: '⚙️',
+    hub: '⚙️',     // 机身
+    body: '🛡️',    // 保护板
     arm: '📏',
     joint: '🔗',
     decoration: '✨',

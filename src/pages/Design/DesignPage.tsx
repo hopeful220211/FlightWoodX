@@ -47,7 +47,7 @@ export function DesignPage() {
   const removePartFromActiveDesign = useDesignStore((s) => s.removePartFromActiveDesign)
   const setDraggingPartId = useDesignStore((s) => s.setDraggingPartId)
 
-  const [category, setCategory] = useState<string>('body')
+  const [category, setCategory] = useState<string>('hub')
   const [query, setQuery] = useState('')
   const [partDetail, setPartDetail] = useState<Part | null>(null)
   const [previewHintOpen, setPreviewHintOpen] = useState(false)
@@ -211,8 +211,8 @@ export function DesignPage() {
   }, [partById, totalWeight, usedCount, usedParts])
 
   const categoryItems = [
-    { value: 'body', label: '核心板' },
-    { value: 'hub', label: '中心枢纽' },
+    { value: 'hub', label: '机身' },
+    { value: 'body', label: '保护板' },
     { value: 'arm', label: '机臂' },
     { value: 'joint', label: '连接件' },
     { value: 'decoration', label: '装饰件' },
@@ -230,8 +230,8 @@ export function DesignPage() {
   }
 
   const categoryIcon: Record<string, React.ReactNode> = {
-    body: <Box size={18} />,
-    hub: <Compass size={18} />,
+    hub: <Box size={18} />,
+    body: <Compass size={18} />,
     arm: <Share2 size={18} />,
     joint: <SlidersHorizontal size={18} />,
     decoration: <ChevronRight size={18} />,

@@ -14,6 +14,26 @@ import { computeSnapTransform, quaternionToEuler } from './snap'
 // 点击检测阈值（像素）
 const CLICK_THRESHOLD = 5
 
+/**
+ * 检查两个零件类别之间是否允许连接
+ * @param childCategory - 要连接的子零件类别（带 plug 的零件）
+ * @param parentCategory - 父零件类别（带 socket 的零件）
+ * @returns 是否允许连接
+ */
+function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
+  // 禁止的连接组合
+  const forbiddenPairs = [
+    ['hub', 'hub'],      // 机身不能连接机身
+    ['hub', 'body'],     // 机身不能连接保护板
+    ['body', 'hub'],     // 保护板不能连接机身
+    ['body', 'body'],    // 保护板不能连接保护板
+  ]
+
+  return !forbiddenPairs.some(([child, parent]) =>
+    child === childCategory && parent === parentCategory
+  )
+}
+
 // 全局指针位置追踪（用于区分点击和拖拽）
 let pointerDownPosition: { x: number; y: number } | null = null
 
@@ -149,7 +169,8 @@ function DragHandler() {
       setGhostPart({ partId, position: [pos.x, 0.1, pos.z] })
 
       const draggingPart = partsData.find((p) => p.id === partId)
-      if (!draggingPart || draggingPart.category === 'body') {
+      if (!draggingPart || draggingPart.category === 'hub') {
+        // hub (机身) 不需要吸附到其他零件，直接放置即可
         setHighlightedSocket(null)
         return
       }
@@ -182,6 +203,11 @@ function DragHandler() {
       for (const inst of currentActiveDesign.parts) {
         const partData = partsData.find((p) => p.id === inst.partId)
         if (!partData) continue
+
+        // 检查连接规则：hub和body的插座不能相互连接
+        if (!isConnectionAllowed(draggingPart.category, partData.category)) {
+          continue
+        }
 
         const connectors = getCachedPartConnectors(partData.modelUrl)
         const partSockets = connectors.filter((c) => c.type === 'socket')
@@ -256,6 +282,16 @@ function DragHandler() {
           const parentPart = parentInst ? partsData.find((p) => p.id === parentInst.partId) : null
 
           if (childPart && parentInst && parentPart) {
+            // 验证连接是否允许
+            if (!isConnectionAllowed(childPart.category, parentPart.category)) {
+              console.warn(`[Drop] Connection not allowed: ${childPart.category} -> ${parentPart.category}`)
+              // 回退到智能添加（会找到合法的插座）
+              addPartSmart(partId)
+              setGhostPart(null)
+              setHighlightedSocket(null)
+              setDraggingPartId(null)
+              return
+            }
             const childConnectors = getCachedPartConnectors(childPart.modelUrl)
             const parentConnectors = getCachedPartConnectors(parentPart.modelUrl)
 
@@ -353,7 +389,8 @@ function DragHandler() {
       setGhostPart({ partId, position: [pos.x, 0.1, pos.z] })
 
       const draggingPart = partsData.find((p) => p.id === partId)
-      if (!draggingPart || draggingPart.category === 'body') {
+      if (!draggingPart || draggingPart.category === 'hub') {
+        // hub (机身) 不需要吸附到其他零件，直接放置即可
         setHighlightedSocket(null)
         return
       }
@@ -386,6 +423,11 @@ function DragHandler() {
       for (const inst of currentActiveDesign.parts) {
         const partData = partsData.find((p) => p.id === inst.partId)
         if (!partData) continue
+
+        // 检查连接规则：hub和body的插座不能相互连接
+        if (!isConnectionAllowed(draggingPart.category, partData.category)) {
+          continue
+        }
 
         const connectors = getCachedPartConnectors(partData.modelUrl)
         const partSockets = connectors.filter((c) => c.type === 'socket')
@@ -457,6 +499,16 @@ function DragHandler() {
         const parentPart = parentInst ? partsData.find((p) => p.id === parentInst.partId) : null
 
         if (childPart && parentInst && parentPart) {
+          // 验证连接是否允许
+          if (!isConnectionAllowed(childPart.category, parentPart.category)) {
+            console.warn(`[Touch Drop] Connection not allowed: ${childPart.category} -> ${parentPart.category}`)
+            // 回退到智能添加（会找到合法的插座）
+            addPartSmart(partId)
+            setGhostPart(null)
+            setHighlightedSocket(null)
+            setDraggingPartId(null)
+            return
+          }
           const childConnectors = getCachedPartConnectors(childPart.modelUrl)
           const parentConnectors = getCachedPartConnectors(parentPart.modelUrl)
 

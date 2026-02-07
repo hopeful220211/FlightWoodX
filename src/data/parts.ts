@@ -3,90 +3,37 @@ import type { Part } from '../types/design';
 
 // 零件数据源 - 所有零件都使用真实的 3D 模型
 export const partsData: Part[] = [
-  // ==================== 核心板 (Body) ====================
-  {
-    id: 'core_plate_01',
-    name: '核心板01',
-    category: 'body',
-    weight: 50,
-    modelUrl: '/models/core_plate_01.glb',
-    thumbnailUrl: '/thumbnails/core_plate_01.png',
-    isEssential: true,
-  },
-  {
-    id: 'core_plate_02',
-    name: '核心板02',
-    category: 'body',
-    weight: 48,
-    modelUrl: '/models/core_plate_02.glb',
-    thumbnailUrl: '/thumbnails/core_plate_02.png',
-    isEssential: true,
-  },
-  {
-    id: 'core_plate_04',
-    name: '核心板04',
-    category: 'body',
-    weight: 52,
-    modelUrl: '/models/core_plate_04.glb',
-    thumbnailUrl: '/thumbnails/core_plate_04.png',
-    isEssential: true,
-  },
-  {
-    id: 'core_plate_06',
-    name: '核心板06',
-    category: 'body',
-    weight: 51,
-    modelUrl: '/models/core_plate_06.glb',
-    thumbnailUrl: '/thumbnails/core_plate_06.png',
-    isEssential: true,
-  },
-  {
-    id: 'core_plate_07',
-    name: '核心板07',
-    category: 'body',
-    weight: 49,
-    modelUrl: '/models/core_plate_07.glb',
-    thumbnailUrl: '/thumbnails/core_plate_07.png',
-    isEssential: true,
-  },
-  {
-    id: 'core_plate_08',
-    name: '核心板08',
-    category: 'body',
-    weight: 53,
-    modelUrl: '/models/core_plate_08.glb',
-    thumbnailUrl: '/thumbnails/core_plate_08.png',
-    isEssential: true,
-  },
-
-  // ==================== 中心枢纽 (Hub) ====================
+  // ==================== 机身 (Hub - 原中心枢纽) ====================
   {
     id: 'core_hub_01',
-    name: '中心枢纽01',
+    name: '机身01',
     category: 'hub',
     weight: 30,
     modelUrl: '/models/core_hub_01.glb',
     thumbnailUrl: '/thumbnails/core_hub_01.png',
+    isEssential: true,
   },
   {
     id: 'core_hub_02',
-    name: '中心枢纽02',
+    name: '机身02',
     category: 'hub',
     weight: 32,
     modelUrl: '/models/core_hub_02.glb',
     thumbnailUrl: '/thumbnails/core_hub_02.png',
+    isEssential: true,
   },
   {
     id: 'core_hub_03',
-    name: '中心枢纽03',
+    name: '机身03',
     category: 'hub',
     weight: 31,
     modelUrl: '/models/core_hub_03.glb',
     thumbnailUrl: '/thumbnails/core_hub_03.png',
+    isEssential: true,
   },
   {
     id: 'core_hub_04',
-    name: '中心枢纽04',
+    name: '机身04',
     category: 'hub',
     weight: 33,
     modelUrl: '/models/core_hub_04.glb',
@@ -94,7 +41,7 @@ export const partsData: Part[] = [
   },
   {
     id: 'core_hub_05',
-    name: '中心枢纽05',
+    name: '机身05',
     category: 'hub',
     weight: 29,
     modelUrl: '/models/core_hub_05.glb',
@@ -102,7 +49,7 @@ export const partsData: Part[] = [
   },
   {
     id: 'core_hub_06',
-    name: '中心枢纽06',
+    name: '机身06',
     category: 'hub',
     weight: 34,
     modelUrl: '/models/core_hub_06.glb',
@@ -110,7 +57,7 @@ export const partsData: Part[] = [
   },
   {
     id: 'core_hub_07',
-    name: '中心枢纽07',
+    name: '机身07',
     category: 'hub',
     weight: 28,
     modelUrl: '/models/core_hub_07.glb',
@@ -118,7 +65,7 @@ export const partsData: Part[] = [
   },
   {
     id: 'core_hub_08',
-    name: '中心枢纽08',
+    name: '机身08',
     category: 'hub',
     weight: 35,
     modelUrl: '/models/core_hub_08.glb',
@@ -126,11 +73,61 @@ export const partsData: Part[] = [
   },
   {
     id: 'core_hub_09',
-    name: '中心枢纽09',
+    name: '机身09',
     category: 'hub',
     weight: 30,
     modelUrl: '/models/core_hub_09.glb',
     thumbnailUrl: '/thumbnails/core_hub_09.png',
+  },
+
+  // ==================== 保护板 (Body - 原核心板) ====================
+  {
+    id: 'core_plate_01',
+    name: '保护板01',
+    category: 'body',
+    weight: 50,
+    modelUrl: '/models/core_plate_01.glb',
+    thumbnailUrl: '/thumbnails/core_plate_01.png',
+  },
+  {
+    id: 'core_plate_02',
+    name: '保护板02',
+    category: 'body',
+    weight: 48,
+    modelUrl: '/models/core_plate_02.glb',
+    thumbnailUrl: '/thumbnails/core_plate_02.png',
+  },
+  {
+    id: 'core_plate_04',
+    name: '保护板04',
+    category: 'body',
+    weight: 52,
+    modelUrl: '/models/core_plate_04.glb',
+    thumbnailUrl: '/thumbnails/core_plate_04.png',
+  },
+  {
+    id: 'core_plate_06',
+    name: '保护板06',
+    category: 'body',
+    weight: 51,
+    modelUrl: '/models/core_plate_06.glb',
+    thumbnailUrl: '/thumbnails/core_plate_06.png',
+  },
+  {
+    id: 'core_plate_07',
+    name: '保护板07',
+    category: 'body',
+    weight: 49,
+    modelUrl: '/models/core_plate_07.glb',
+    thumbnailUrl: '/thumbnails/core_plate_07.png',
+  },
+  {
+    id: 'core_plate_08',
+    name: '保护板08',
+    category: 'body',
+    weight: 53,
+    modelUrl: '/models/core_plate_08.glb',
+    thumbnailUrl: '/thumbnails/core_plate_08.png',
   },
 
   // ==================== 机臂 (Arm) ====================
@@ -638,4 +635,5 @@ export const partsData: Part[] = [
     modelUrl: '/models/Landing_10.glb',
     thumbnailUrl: '/thumbnails/Landing_10.png',
   },
+
 ];

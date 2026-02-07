@@ -8,6 +8,26 @@ import { getCachedPartConnectors } from '../hooks/usePartConnectors'
 import * as THREE from 'three'
 import { computeSnapTransform, quaternionToEuler } from '../components/design/snap'
 
+/**
+ * 检查两个零件类别之间是否允许连接
+ * @param childCategory - 要连接的子零件类别（带 plug 的零件）
+ * @param parentCategory - 父零件类别（带 socket 的零件）
+ * @returns 是否允许连接
+ */
+function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
+  // 禁止的连接组合
+  const forbiddenPairs = [
+    ['hub', 'hub'],      // 机身不能连接机身
+    ['hub', 'body'],     // 机身不能连接保护板
+    ['body', 'hub'],     // 保护板不能连接机身
+    ['body', 'body'],    // 保护板不能连接保护板
+  ]
+
+  return !forbiddenPairs.some(([child, parent]) =>
+    child === childCategory && parent === parentCategory
+  )
+}
+
 interface DesignState {
   designs: Design[]
   activeDesignId: string | null
@@ -130,18 +150,8 @@ export const useDesignStore = create<DesignState>()(
           return
         }
 
-        // 规则 1：body 直接放到场景中心，但场上只能有一个机身
-        if (partData.category === 'body') {
-          // 检查是否已存在机身
-          const existingBody = activeDesign.parts.find((inst) => {
-            const p = partsData.find((pd) => pd.id === inst.partId)
-            return p?.category === 'body'
-          })
-          if (existingBody) {
-            // eslint-disable-next-line no-alert
-            alert('场上只能存在一个机身，请先删除现有机身后再添加。')
-            return
-          }
+        // 规则 1：hub (机身) 直接放到场景中心
+        if (partData.category === 'hub') {
           state.addPartToActiveDesign({
             partId,
             position: [0, 0, 0],
@@ -150,14 +160,14 @@ export const useDesignStore = create<DesignState>()(
           return
         }
 
-        // 规则 2：非 body 必须先有主板
-        const hasBody = activeDesign.parts.some((inst) => {
+        // 规则 2：非 hub 必须先有机身
+        const hasHub = activeDesign.parts.some((inst) => {
           const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'body'
+          return p?.category === 'hub'
         })
-        if (!hasBody) {
+        if (!hasHub) {
           // eslint-disable-next-line no-alert
-          alert('请先添加主板。')
+          alert('请先添加机身。')
           return
         }
 
@@ -170,56 +180,55 @@ export const useDesignStore = create<DesignState>()(
           }
         }
 
-        // 寻找第一个空闲 SOCKET（使用简化的逻辑）
+        // 寻找第一个空闲且合法的 SOCKET（遍历所有零件）
         console.log('--- [Find Socket] Starting ---')
         console.log(`[Find Socket] Current parts in scene: ${activeDesign.parts.length}`)
 
-        // 找到 body 类型的零件
-        const bodyInstance = activeDesign.parts.find((inst) => {
-          const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'body'
-        })
-
-        if (!bodyInstance) {
-          console.error('[Find Socket] EXIT: No body part found.')
-          // eslint-disable-next-line no-alert
-          alert('请先添加主板。')
-          return
-        }
-
-        const bodyPartInfo = partsData.find((p) => p.id === bodyInstance.partId)
-        if (!bodyPartInfo) {
-          console.error('[Find Socket] EXIT: Body part info not found.')
-          return
-        }
-
-        // 直接调用可靠的工具函数
-        const allConnectors = getCachedPartConnectors(bodyPartInfo.modelUrl)
-        const sockets = allConnectors.filter((c) => c.type === 'socket')
-
-        console.log(`[Find Socket] Found ${sockets.length} total sockets in body model.`)
-
-        // 计算已占用的插座ID
-        const occupiedSocketIds = new Set<string>()
+        // 计算已占用的插座
+        const occupiedSockets = new Set<string>()
         for (const inst of activeDesign.parts) {
           const at = inst.attachedTo
-          if (at?.parentInstanceId === bodyInstance.instanceId && at.parentConnectorId) {
-            occupiedSocketIds.add(at.parentConnectorId)
+          if (at?.parentInstanceId && at.parentConnectorId) {
+            occupiedSockets.add(`${at.parentInstanceId}::${at.parentConnectorId}`)
           }
         }
 
-        const availableSocket = sockets.find((socket) => !occupiedSocketIds.has(socket.id))
+        // 遍历所有已放置的零件，寻找可用插座
+        let targetParent: PartInstance | null = null
+        let targetSocketId: string | null = null
 
-        if (!availableSocket) {
-          console.error('[Find Socket] FAILURE: All sockets are occupied or none were found.')
+        for (const inst of activeDesign.parts) {
+          const instPartData = partsData.find((p) => p.id === inst.partId)
+          if (!instPartData) continue
+
+          // 检查连接规则：hub和body的插座不能相互连接
+          if (!isConnectionAllowed(partData.category, instPartData.category)) {
+            console.log(`[Find Socket] Skipping ${instPartData.category} - connection not allowed with ${partData.category}`)
+            continue
+          }
+
+          const connectors = getCachedPartConnectors(instPartData.modelUrl)
+          const sockets = connectors.filter((c) => c.type === 'socket')
+
+          for (const socket of sockets) {
+            const key = `${inst.instanceId}::${socket.id}`
+            if (!occupiedSockets.has(key)) {
+              targetParent = inst
+              targetSocketId = socket.id
+              console.log(`[Find Socket] SUCCESS: Found available socket on ${instPartData.category} part`)
+              break
+            }
+          }
+
+          if (targetParent && targetSocketId) break
+        }
+
+        if (!targetParent || !targetSocketId) {
+          console.error('[Find Socket] FAILURE: No available sockets found.')
           // eslint-disable-next-line no-alert
           alert('没有可用的连接点。')
           return
         }
-
-        console.log(`[Find Socket] SUCCESS: Found available socket: ${availableSocket.id}`)
-        const targetParent = bodyInstance
-        const targetSocketId = availableSocket.id
 
         // 找到新零件的第一个 PLUG
         const childConns = getCachedPartConnectors(partData.modelUrl)
