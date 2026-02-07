@@ -211,13 +211,12 @@ export function DesignPage() {
   }, [partById, totalWeight, usedCount, usedParts])
 
   const categoryItems = [
-    { value: 'body', label: '机身' },
+    { value: 'body', label: '核心板' },
+    { value: 'hub', label: '中心枢纽' },
     { value: 'arm', label: '机臂' },
-    { value: 'wing', label: '机翼' },
-    { value: 'tail', label: '尾翼' },
-    { value: 'connector', label: '连接件' },
-    { value: 'motor_mount', label: '电机座' },
-    { value: 'other', label: '其他' },
+    { value: 'joint', label: '连接件' },
+    { value: 'decoration', label: '装饰件' },
+    { value: 'landing', label: '起落架' },
   ] as const
 
   const onExport = () => {
@@ -232,12 +231,11 @@ export function DesignPage() {
 
   const categoryIcon: Record<string, React.ReactNode> = {
     body: <Box size={18} />,
+    hub: <Compass size={18} />,
     arm: <Share2 size={18} />,
-    wing: <Compass size={18} />,
-    tail: <ChevronRight size={18} />,
-    connector: <Share2 size={18} />,
-    motor_mount: <SlidersHorizontal size={18} />,
-    other: <List size={18} />,
+    joint: <SlidersHorizontal size={18} />,
+    decoration: <ChevronRight size={18} />,
+    landing: <List size={18} />,
   }
 
   const renderPartThumb = (p: Part) => (
@@ -406,14 +404,16 @@ export function DesignPage() {
               ) : null}
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-4 justify-items-center">
-              {filteredParts.length ? (
-                filteredParts.map(renderPartThumb)
-              ) : (
-                <div className="col-span-2">
-                  <EmptyState icon={<Box size={18} />} title="没有找到零件" description="换个关键词试试，或切换分类。" />
-                </div>
-              )}
+            <div className="mt-3 max-h-[calc(100vh-28rem)] overflow-y-auto overflow-x-hidden pr-1">
+              <div className="grid grid-cols-2 gap-4 justify-items-center">
+                {filteredParts.length ? (
+                  filteredParts.map(renderPartThumb)
+                ) : (
+                  <div className="col-span-2">
+                    <EmptyState icon={<Box size={18} />} title="没有找到零件" description="换个关键词试试，或切换分类。" />
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
         ) : (

@@ -38,7 +38,14 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
   // 预加载连接点数据（调用 hook 以填充缓存）
   usePartConnectors(partData.modelUrl);
 
-  const { scene } = useGLTF(partData.modelUrl);
+  let scene: THREE.Group;
+  try {
+    const gltf = useGLTF(partData.modelUrl);
+    scene = gltf.scene;
+  } catch (error) {
+    console.error(`Failed to load model: ${partData.modelUrl}`, error);
+    return null;
+  }
 
   // 调试日志
   useEffect(() => {
