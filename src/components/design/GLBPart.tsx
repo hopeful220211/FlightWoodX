@@ -31,21 +31,14 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
 
   // 如果找不到 partData，渲染 null
   if (!partData) {
-    console.error(`Part data not found for partId: ${instance.partId}`);
+    console.error(`[GLBPart] Part data not found for partId: ${instance.partId}`);
     return null;
   }
 
   // 预加载连接点数据（调用 hook 以填充缓存）
   usePartConnectors(partData.modelUrl);
 
-  let scene: THREE.Group;
-  try {
-    const gltf = useGLTF(partData.modelUrl);
-    scene = gltf.scene;
-  } catch (error) {
-    console.error(`Failed to load model: ${partData.modelUrl}`, error);
-    return null;
-  }
+  const { scene } = useGLTF(partData.modelUrl);
 
   // 调试日志
   useEffect(() => {

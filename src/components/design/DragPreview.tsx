@@ -1,8 +1,37 @@
 // src/components/design/DragPreview.tsx
-import { Suspense, useRef, useEffect } from 'react'
+import { Suspense, useRef, useEffect, Component, type ReactNode } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+
+// 简单的错误边界组件，用于捕获拖拽预览中的错误
+class DragPreviewErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('[DragPreview] Model loading error:', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // 渲染一个简单的占位符
+      return (
+        <mesh>
+          <boxGeometry args={[0.05, 0.05, 0.05]} />
+          <meshStandardMaterial color="#ff6b6b" wireframe />
+        </mesh>
+      )
+    }
+    return this.props.children
+  }
+}
 
 interface DragPreviewProps {
   modelUrl: string
@@ -88,7 +117,9 @@ export function DragPreview({ modelUrl, position, size = 140 }: DragPreviewProps
           <directionalLight position={[-2, 2, -2]} intensity={0.8} />
 
           <Suspense fallback={<LoadingFallback />}>
-            <Model modelUrl={modelUrl} />
+            <DragPreviewErrorBoundary>
+              <Model modelUrl={modelUrl} />
+            </DragPreviewErrorBoundary>
           </Suspense>
         </Canvas>
       ) : (

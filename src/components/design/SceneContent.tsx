@@ -5,6 +5,7 @@ import { useDesignStore } from '../../stores/designStore'
 import { partsData } from '../../data/parts'
 import { GLBPart } from './GLBPart'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
+import { PartErrorBoundary } from './PartErrorBoundary'
 
 // 幽灵模型组件（拖拽预览）- 暂时禁用
 /* function GhostPart({ partId, position }: { partId: string; position: [number, number, number] }) {
@@ -112,7 +113,11 @@ export function SceneContent() {
       {activeDesign?.parts.map((instance) => {
         const partData = partsData.find((p) => p.id === instance.partId)
         if (!partData) return null
-        return <GLBPart key={instance.instanceId} instance={instance} partData={partData} />
+        return (
+          <PartErrorBoundary key={instance.instanceId} partId={instance.partId}>
+            <GLBPart instance={instance} partData={partData} />
+          </PartErrorBoundary>
+        )
       })}
       {/* 为继续排查 Svg 白屏问题，暂时注释幽灵模型渲染 */}
       {/* {useDesignStore.getState().ghostPart && (
