@@ -21,17 +21,9 @@ const CLICK_THRESHOLD = 5
  * @returns 是否允许连接
  */
 function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
-  // 禁止的连接组合
-  const forbiddenPairs = [
-    ['hub', 'hub'],      // 机身不能连接机身
-    ['hub', 'body'],     // 机身不能连接保护板
-    ['body', 'hub'],     // 保护板不能连接机身
-    ['body', 'body'],    // 保护板不能连接保护板
-  ]
-
-  return !forbiddenPairs.some(([child, parent]) =>
-    child === childCategory && parent === parentCategory
-  )
+  // 移除所有连接限制，允许任意零件之间连接
+  // 包括机身和保护板也可以连接到 plug
+  return true
 }
 
 // 全局指针位置追踪（用于区分点击和拖拽）
@@ -169,10 +161,24 @@ function DragHandler() {
       setGhostPart({ partId, position: [pos.x, 0.1, pos.z] })
 
       const draggingPart = partsData.find((p) => p.id === partId)
-      if (!draggingPart || draggingPart.category === 'hub') {
-        // hub (机身) 不需要吸附到其他零件，直接放置即可
+      if (!draggingPart) {
         setHighlightedSocket(null)
         return
+      }
+
+      // 检查是否是第一个机身（第一个机身不需要连接点）
+      if (draggingPart.category === 'hub') {
+        const existingHub = currentActiveDesign.parts.find((inst) => {
+          const p = partsData.find((pd) => pd.id === inst.partId)
+          return p?.category === 'hub'
+        })
+
+        if (!existingHub) {
+          // 第一个机身不需要吸附，直接放置即可
+          setHighlightedSocket(null)
+          return
+        }
+        // 第二个机身需要连接到现有零件，继续执行下面的逻辑显示连接点
       }
 
       // 检查拖拽零件是否有 plug
@@ -390,10 +396,24 @@ function DragHandler() {
       setGhostPart({ partId, position: [pos.x, 0.1, pos.z] })
 
       const draggingPart = partsData.find((p) => p.id === partId)
-      if (!draggingPart || draggingPart.category === 'hub') {
-        // hub (机身) 不需要吸附到其他零件，直接放置即可
+      if (!draggingPart) {
         setHighlightedSocket(null)
         return
+      }
+
+      // 检查是否是第一个机身（第一个机身不需要连接点）
+      if (draggingPart.category === 'hub') {
+        const existingHub = currentActiveDesign.parts.find((inst) => {
+          const p = partsData.find((pd) => pd.id === inst.partId)
+          return p?.category === 'hub'
+        })
+
+        if (!existingHub) {
+          // 第一个机身不需要吸附，直接放置即可
+          setHighlightedSocket(null)
+          return
+        }
+        // 第二个机身需要连接到现有零件，继续执行下面的逻辑显示连接点
       }
 
       // 检查拖拽零件是否有 plug

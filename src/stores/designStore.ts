@@ -15,17 +15,9 @@ import { computeSnapTransform, quaternionToEuler } from '../components/design/sn
  * @returns 是否允许连接
  */
 function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
-  // 禁止的连接组合
-  const forbiddenPairs = [
-    ['hub', 'hub'],      // 机身不能连接机身
-    ['hub', 'body'],     // 机身不能连接保护板
-    ['body', 'hub'],     // 保护板不能连接机身
-    ['body', 'body'],    // 保护板不能连接保护板
-  ]
-
-  return !forbiddenPairs.some(([child, parent]) =>
-    child === childCategory && parent === parentCategory
-  )
+  // 移除所有连接限制，允许任意零件之间连接
+  // 包括机身和保护板也可以连接到 plug
+  return true
 }
 
 interface DesignState {
@@ -150,18 +142,22 @@ export const useDesignStore = create<DesignState>()(
           return
         }
 
-        // 规则 1：hub (机身) 直接放到场景中心，但场上只能有一个机身
+        // 规则 1：第一个机身可以独立放置，第二个机身必须连接到现有零件
         if (partData.category === 'hub') {
           // 检查是否已存在机身
           const existingHub = activeDesign.parts.find((inst) => {
             const p = partsData.find((pd) => pd.id === inst.partId)
             return p?.category === 'hub'
           })
+
           if (existingHub) {
+            // 第二个机身必须连接到现有零件上，不能独立放置
             // eslint-disable-next-line no-alert
-            alert('场上只能存在一个机身，请先删除现有机身后再添加。')
+            alert('第二个机身必须连接到现有零件的连接点上，请拖拽到高亮的连接点。')
             return
           }
+
+          // 第一个机身：独立放置在场景中心
           state.addPartToActiveDesign({
             partId,
             position: [0, 0, 0],

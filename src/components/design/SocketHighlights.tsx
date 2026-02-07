@@ -10,15 +10,8 @@ import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
  * 检查两个零件类别之间是否允许连接
  */
 function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
-  const forbiddenPairs = [
-    ['hub', 'hub'],
-    ['hub', 'body'],
-    ['body', 'hub'],
-    ['body', 'body'],
-  ]
-  return !forbiddenPairs.some(([child, parent]) =>
-    child === childCategory && parent === parentCategory
-  )
+  // 移除所有连接限制，允许任意零件之间连接
+  return true
 }
 
 interface SocketInfo {
@@ -39,8 +32,19 @@ export function SocketHighlights() {
     const draggingPart = partsData.find((p) => p.id === draggingPartId)
     if (!draggingPart) return []
 
-    // hub (机身) 类型零件不需要连接点
-    if (draggingPart.category === 'hub') return []
+    // 检查是否是第一个机身（第一个机身不需要连接点）
+    if (draggingPart.category === 'hub') {
+      const existingHub = activeDesign.parts.find((inst) => {
+        const p = partsData.find((pd) => pd.id === inst.partId)
+        return p?.category === 'hub'
+      })
+
+      if (!existingHub) {
+        // 第一个机身不需要连接点
+        return []
+      }
+      // 第二个机身需要显示连接点，继续执行
+    }
 
     // 检查拖拽零件是否有 plug
     const draggingConnectors = getCachedPartConnectors(draggingPart.modelUrl)
