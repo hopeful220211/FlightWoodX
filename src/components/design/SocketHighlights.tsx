@@ -6,6 +6,21 @@ import { useDesignStore } from '../../stores/designStore'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
 
+/**
+ * 检查两个零件类别之间是否允许连接
+ */
+function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
+  const forbiddenPairs = [
+    ['hub', 'hub'],
+    ['hub', 'body'],
+    ['body', 'hub'],
+    ['body', 'body'],
+  ]
+  return !forbiddenPairs.some(([child, parent]) =>
+    child === childCategory && parent === parentCategory
+  )
+}
+
 interface SocketInfo {
   instanceId: string
   socketId: string
@@ -24,8 +39,8 @@ export function SocketHighlights() {
     const draggingPart = partsData.find((p) => p.id === draggingPartId)
     if (!draggingPart) return []
 
-    // body 类型零件不需要连接点
-    if (draggingPart.category === 'body') return []
+    // hub (机身) 类型零件不需要连接点
+    if (draggingPart.category === 'hub') return []
 
     // 检查拖拽零件是否有 plug
     const draggingConnectors = getCachedPartConnectors(draggingPart.modelUrl)
@@ -43,26 +58,32 @@ export function SocketHighlights() {
 
     const sockets: SocketInfo[] = []
 
-    // 遍历场景中的所有零件，找出可用的插座
+    // 遍历场景中的所有零件，找出可用的连接点（socket 和 plug）
     for (const inst of activeDesign.parts) {
       const partData = partsData.find((p) => p.id === inst.partId)
       if (!partData) continue
 
+      // 检查连接规则
+      if (!isConnectionAllowed(draggingPart.category, partData.category)) {
+        continue
+      }
+
       const connectors = getCachedPartConnectors(partData.modelUrl)
-      const partSockets = connectors.filter((c) => c.type === 'socket')
+      // 同时查找 socket 和 plug 作为连接目标
+      const partConnectors = connectors.filter((c) => c.type === 'socket' || c.type === 'plug')
 
       const instPos = new THREE.Vector3(...inst.position)
       const instQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...inst.rotation))
 
-      for (const socket of partSockets) {
-        const key = `${inst.instanceId}::${socket.id}`
+      for (const connector of partConnectors) {
+        const key = `${inst.instanceId}::${connector.id}`
         if (occupiedSockets.has(key)) continue
 
-        // 计算插座的世界坐标
-        const worldPos = socket.position.clone().applyQuaternion(instQuat).add(instPos)
+        // 计算连接点的世界坐标
+        const worldPos = connector.position.clone().applyQuaternion(instQuat).add(instPos)
         sockets.push({
           instanceId: inst.instanceId,
-          socketId: socket.id,
+          socketId: connector.id,
           worldPosition: worldPos,
         })
       }

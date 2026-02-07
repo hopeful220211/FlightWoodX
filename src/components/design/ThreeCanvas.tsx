@@ -210,19 +210,20 @@ function DragHandler() {
         }
 
         const connectors = getCachedPartConnectors(partData.modelUrl)
-        const partSockets = connectors.filter((c) => c.type === 'socket')
+        // 同时查找 socket 和 plug 作为连接目标
+        const partConnectors = connectors.filter((c) => c.type === 'socket' || c.type === 'plug')
 
         const instPos = new THREE.Vector3(...inst.position)
         const instQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...inst.rotation))
 
-        for (const socket of partSockets) {
-          const key = `${inst.instanceId}::${socket.id}`
+        for (const connector of partConnectors) {
+          const key = `${inst.instanceId}::${connector.id}`
           if (occupiedSockets.has(key)) continue
 
-          const worldPos = socket.position.clone().applyQuaternion(instQuat).add(instPos)
+          const worldPos = connector.position.clone().applyQuaternion(instQuat).add(instPos)
           currentAvailableSockets.push({
             instanceId: inst.instanceId,
-            socketId: socket.id,
+            socketId: connector.id,
             plugId: firstPlug.id,
             worldPosition: worldPos,
           })
@@ -430,19 +431,20 @@ function DragHandler() {
         }
 
         const connectors = getCachedPartConnectors(partData.modelUrl)
-        const partSockets = connectors.filter((c) => c.type === 'socket')
+        // 同时查找 socket 和 plug 作为连接目标
+        const partConnectors = connectors.filter((c) => c.type === 'socket' || c.type === 'plug')
 
         const instPos = new THREE.Vector3(...inst.position)
         const instQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...inst.rotation))
 
-        for (const socket of partSockets) {
-          const key = `${inst.instanceId}::${socket.id}`
+        for (const connector of partConnectors) {
+          const key = `${inst.instanceId}::${connector.id}`
           if (occupiedSockets.has(key)) continue
 
-          const worldPos = socket.position.clone().applyQuaternion(instQuat).add(instPos)
+          const worldPos = connector.position.clone().applyQuaternion(instQuat).add(instPos)
           currentAvailableSockets.push({
             instanceId: inst.instanceId,
-            socketId: socket.id,
+            socketId: connector.id,
             plugId: firstPlug.id,
             worldPosition: worldPos,
           })

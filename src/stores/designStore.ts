@@ -150,8 +150,18 @@ export const useDesignStore = create<DesignState>()(
           return
         }
 
-        // 规则 1：hub (机身) 直接放到场景中心
+        // 规则 1：hub (机身) 直接放到场景中心，但场上只能有一个机身
         if (partData.category === 'hub') {
+          // 检查是否已存在机身
+          const existingHub = activeDesign.parts.find((inst) => {
+            const p = partsData.find((pd) => pd.id === inst.partId)
+            return p?.category === 'hub'
+          })
+          if (existingHub) {
+            // eslint-disable-next-line no-alert
+            alert('场上只能存在一个机身，请先删除现有机身后再添加。')
+            return
+          }
           state.addPartToActiveDesign({
             partId,
             position: [0, 0, 0],
@@ -208,14 +218,15 @@ export const useDesignStore = create<DesignState>()(
           }
 
           const connectors = getCachedPartConnectors(instPartData.modelUrl)
-          const sockets = connectors.filter((c) => c.type === 'socket')
+          // 同时查找 socket 和 plug 作为连接目标
+          const availableConnectors = connectors.filter((c) => c.type === 'socket' || c.type === 'plug')
 
-          for (const socket of sockets) {
-            const key = `${inst.instanceId}::${socket.id}`
+          for (const connector of availableConnectors) {
+            const key = `${inst.instanceId}::${connector.id}`
             if (!occupiedSockets.has(key)) {
               targetParent = inst
-              targetSocketId = socket.id
-              console.log(`[Find Socket] SUCCESS: Found available socket on ${instPartData.category} part`)
+              targetSocketId = connector.id
+              console.log(`[Find Socket] SUCCESS: Found available ${connector.type} on ${instPartData.category} part`)
               break
             }
           }
