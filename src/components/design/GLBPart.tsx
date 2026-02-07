@@ -11,9 +11,9 @@ import { usePartConnectors } from '../../hooks/usePartConnectors';
 // 点击检测阈值（像素）
 const CLICK_THRESHOLD = 5;
 
-// 高亮颜色 - 温暖的棕色调，与主题配色一致
-const HIGHLIGHT_COLOR = new THREE.Color('#D4A574');
-const HIGHLIGHT_INTENSITY = 0.3;
+// 高亮颜色 - 温暖的金色调，在浅色木质上更醒目
+const HIGHLIGHT_COLOR = new THREE.Color('#FFB74D');
+const HIGHLIGHT_INTENSITY = 0.8;
 
 interface GLBPartProps {
   instance: PartInstance;
@@ -132,19 +132,29 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
         materials.forEach((material) => {
           if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhysicalMaterial) {
             if (isSelected) {
-              // 保存原始自发光颜色（如果还没保存）
+              // 保存原始属性（如果还没保存）
               if (!material.userData.originalEmissive) {
                 material.userData.originalEmissive = material.emissive.clone();
                 material.userData.originalEmissiveIntensity = material.emissiveIntensity;
+                material.userData.originalColor = material.color.clone();
+                material.userData.originalRoughness = material.roughness;
               }
-              // 设置高亮自发光
+              // 设置高亮效果
               material.emissive.copy(HIGHLIGHT_COLOR);
               material.emissiveIntensity = HIGHLIGHT_INTENSITY;
+              // 稍微提亮颜色，增加对比度
+              const brighterColor = material.userData.originalColor.clone();
+              brighterColor.multiplyScalar(1.2);
+              material.color.copy(brighterColor);
+              // 稍微降低粗糙度，增加光泽感
+              material.roughness = Math.max(0.4, material.userData.originalRoughness - 0.3);
             } else {
-              // 恢复原始自发光
+              // 恢复原始属性
               if (material.userData.originalEmissive) {
                 material.emissive.copy(material.userData.originalEmissive);
                 material.emissiveIntensity = material.userData.originalEmissiveIntensity ?? 0;
+                material.color.copy(material.userData.originalColor);
+                material.roughness = material.userData.originalRoughness ?? 0.85;
               }
             }
             material.needsUpdate = true;
