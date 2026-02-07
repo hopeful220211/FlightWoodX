@@ -1,6 +1,7 @@
 // src/pages/Design/components/DraggablePartCard.tsx
 // 注意：此组件需要在 Canvas 外部使用，使用 HTML5 drag and drop
 // 拖拽逻辑在 ThreeCanvas 的 DragHandler 中处理
+import { useState } from 'react'
 import type { Part } from '../../../types/design'
 
 interface DraggablePartCardProps {
@@ -25,20 +26,20 @@ function getCategoryIcon(category: string): string {
 
 // 缩略图组件 - 优先使用静态图片，回退到图标
 function PartThumb({ id, name, category, thumbnailUrl }: { id: string; name: string; category: string; thumbnailUrl?: string }) {
+  const [imageError, setImageError] = useState(false)
   const icon = getCategoryIcon(category)
 
-  // 如果有预渲染的缩略图，使用静态图片
-  if (thumbnailUrl) {
+  // 如果有预渲染的缩略图且未加载失败，使用静态图片
+  if (thumbnailUrl && !imageError) {
     return (
       <img
         src={thumbnailUrl}
         alt={name}
         className="w-full h-full object-contain bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900"
         draggable={false}
-        onError={(e) => {
-          // 图片加载失败，显示图标回退
-          e.currentTarget.style.display = 'none';
-          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+        onError={() => {
+          console.warn(`Failed to load thumbnail: ${thumbnailUrl}`)
+          setImageError(true)
         }}
       />
     )

@@ -17,7 +17,8 @@
       "Bash(test:*)",
       "Bash(node:*)",
       "Bash(gh repo view:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(ls:*)"
     ]
   }
 }
