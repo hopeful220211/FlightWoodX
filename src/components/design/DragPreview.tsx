@@ -47,8 +47,8 @@ function Model({ modelUrl }: { modelUrl: string }) {
   useEffect(() => {
     if (!groupRef.current) return
 
-    // 应用木质材质到所有 mesh
-    const woodColor = new THREE.Color('#A0826D')
+    // 应用木质材质到所有 mesh（浅色原木）
+    const woodColor = new THREE.Color('#E8D4B0')
     groupRef.current.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const materials = Array.isArray(child.material) ? child.material : [child.material]

@@ -82,8 +82,8 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
   const clonedScene = useMemo(() => {
     const cloned = scene.clone();
 
-    // 木质材质的基础颜色（温暖的浅棕色）
-    const woodColor = new THREE.Color('#A0826D');
+    // 木质材质的基础颜色（浅色原木）
+    const woodColor = new THREE.Color('#E8D4B0');
 
     // 深度克隆材质，避免影响其他实例，并应用木质效果
     cloned.traverse((child) => {
