@@ -47,25 +47,23 @@ function Model({ modelUrl }: { modelUrl: string }) {
   useEffect(() => {
     if (!groupRef.current) return
 
-    // 应用木质材质到所有 mesh（浅色原木）
-    const woodColor = new THREE.Color('#E8D4B0')
+    // 应用木质材质到所有 mesh（中等原木色）
+    const woodColor = new THREE.Color('#C4A882')
     groupRef.current.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const materials = Array.isArray(child.material) ? child.material : [child.material]
         materials.forEach((mat) => {
+          // 对所有有 color 属性的材质应用木质颜色
+          if ('color' in mat && mat.color instanceof THREE.Color) {
+            mat.color.lerp(woodColor, 0.7)
+          }
+          // 对支持 PBR 属性的材质设置物理特性
           if (mat instanceof THREE.MeshStandardMaterial ||
               mat instanceof THREE.MeshPhysicalMaterial) {
-            // 应用木质颜色
-            if (mat.color) {
-              mat.color.multiply(woodColor)
-            } else {
-              mat.color = woodColor.clone()
-            }
-            // 木质材质特性
-            mat.roughness = 0.85
+            mat.roughness = 0.82
             mat.metalness = 0
-            mat.needsUpdate = true
           }
+          mat.needsUpdate = true
         })
       }
     })

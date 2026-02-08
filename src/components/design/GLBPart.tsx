@@ -82,8 +82,8 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
   const clonedScene = useMemo(() => {
     const cloned = scene.clone();
 
-    // 木质材质的基础颜色（浅色原木）
-    const woodColor = new THREE.Color('#E8D4B0');
+    // 木质材质的基础颜色（中等原木色，介于浅色和深色之间）
+    const woodColor = new THREE.Color('#C4A882');
 
     // 深度克隆材质，避免影响其他实例，并应用木质效果
     cloned.traverse((child) => {
@@ -93,21 +93,21 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
         const processedMaterials = materials.map((mat) => {
           const clonedMat = mat.clone();
 
-          // 应用木质材质属性
+          // 对所有有 color 属性的材质应用木质颜色
+          if ('color' in clonedMat && clonedMat.color instanceof THREE.Color) {
+            // 用 lerp 插值到木色，保留 30% 原始颜色特征
+            clonedMat.color.lerp(woodColor, 0.7);
+          }
+
+          // 对支持 PBR 属性的材质设置物理特性
           if (clonedMat instanceof THREE.MeshStandardMaterial ||
               clonedMat instanceof THREE.MeshPhysicalMaterial) {
-            // 设置木质颜色（保留原材质的颜色信息，与木色混合）
-            if (clonedMat.color) {
-              clonedMat.color.multiply(woodColor);
-            } else {
-              clonedMat.color = woodColor.clone();
-            }
+            clonedMat.roughness = 0.82;
+            clonedMat.metalness = 0;
+          }
 
-            // 木质材质特性
-            clonedMat.roughness = 0.85;  // 木头表面粗糙
-            clonedMat.metalness = 0;     // 木头不是金属
-
-            // 保存原始颜色用于高亮效果
+          // 保存处理后的颜色用于高亮效果
+          if ('color' in clonedMat && clonedMat.color instanceof THREE.Color) {
             clonedMat.userData.originalColor = clonedMat.color.clone();
           }
 
