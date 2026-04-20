@@ -1,0 +1,51 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: 'class',
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        wood: {
+          50: '#faf6f1',
+          100: '#f0e6d8',
+          200: '#e0ccb0',
+          300: '#cba87a',
+          400: '#b8864f',
+          500: '#a67038',
+          600: '#8a5a2e',
+          700: '#6e4626',
+          800: '#5a3a22',
+          900: '#4a3020',
+        },
+        tech: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        },
+        success: '#22c55e',
+        warning: '#f59e0b',
+        error: '#ef4444',
+      },
+      fontFamily: {
+        sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        soft: '0 10px 30px rgba(0,0,0,.08)',
+        lift: '0 14px 40px rgba(0,0,0,.14)',
+      },
+      borderRadius: {
+        xl: '1rem',
+        '2xl': '1.25rem',
+      },
+    },
+  },
+  plugins: [],
+}
+

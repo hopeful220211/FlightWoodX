@@ -1,0 +1,91 @@
+// src/hooks/useModelData.ts
+
+import { useEffect, useState, useRef } from 'react';
+import { useGLTF } from '@react-three/drei';
+import { usePartStore } from '../stores/partStore';
+import { Connector } from '../types/design';
+import * as THREE from 'three';
+
+// 模块级缓存，防止重复处理
+const processedConnectors = new Map<string, Connector[]>();
+
+const extractConnectorsFromScene = (scene: THREE.Group): Connector[] => {
+  const connectors: Connector[] = [];
+  scene.traverse((object) => {
+    if (object.isObject3D && object.name.toLowerCase().startsWith('conn_')) {
+      const nameParts = object.name.split('_');
+      if (nameParts.length < 3) return;
+      const type = nameParts[1].toLowerCase();
+      if (type === 'socket' || type === 'plug') {
+        console.log(`[Extractor] ✅ Found connector: ${object.name}`);
+        connectors.push({
+          id: object.name,
+          type: type as 'socket' | 'plug',
+          position: object.position.toArray(),
+          rotation: object.rotation.toArray(),
+        });
+      }
+    }
+  });
+  return connectors;
+};
+
+export const useModelData = () => {
+  const { partsData, setConnectors } = usePartStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const hasRun = useRef(false); // 防止重复运行
+
+  useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+
+    console.log('--- [Data Pipeline] HOOK ACTIVATED ---');
+
+    const modelPaths = partsData.map(p => p.modelUrl);
+    console.log(`[Data Pipeline] 1. Found ${modelPaths.length} models to preload.`);
+    useGLTF.preload(modelPaths);
+
+    const processModels = () => {
+      console.log('[Data Pipeline] 3. Starting model processing...');
+      const allConnectors = new Map<string, Connector[]>();
+      const loadedModels = useGLTF.getState().nodes;
+
+      for (const part of partsData) {
+        if (processedConnectors.has(part.modelPath)) {
+            allConnectors.set(part.modelPath, processedConnectors.get(part.modelPath)!);
+            continue;
+        }
+
+        const model = loadedModels[part.modelPath];
+        if (model && model.scene) {
+          const connectors = extractConnectorsFromScene(model.scene);
+          console.log(`[Data Pipeline] ✅ Extracted ${connectors.length} connectors from ${part.modelPath}`);
+          allConnectors.set(part.modelPath, connectors);
+          processedConnectors.set(part.modelPath, connectors);
+        } else {
+            console.error(`[Data Pipeline] ❌ FAILED to find model in cache: ${part.modelPath}`);
+        }
+      }
+
+      setConnectors(allConnectors);
+      setIsLoading(false);
+      console.log('--- [Data Pipeline] FINISHED ---');
+    };
+
+    const checkAndProcess = () => {
+        const loaded = modelPaths.every(path => !!useGLTF.getState().nodes[path]);
+        if(loaded) {
+            console.log('[Data Pipeline] 2. All models are preloaded!');
+            processModels();
+        } else {
+            console.log('[Data Pipeline] ⏳ Waiting for models to preload...');
+            setTimeout(checkAndProcess, 200); // 每200ms检查一次
+        }
+    }
+
+    checkAndProcess();
+
+  }, [partsData, setConnectors]);
+
+  return isLoading;
+};
