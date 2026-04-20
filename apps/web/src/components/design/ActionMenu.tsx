@@ -19,10 +19,10 @@ export function ActionMenu() {
   const instance = activeDesign.parts.find((p) => p.instanceId === selectedInstanceId)
   if (!instance) return null
 
-  // 将菜单定位在零件上方一点的位置
+  // Position menu above the selected part
   const menuPosition: [number, number, number] = [
     instance.position[0],
-    instance.position[1] + 0.2,
+    instance.position[1] + 0.08,
     instance.position[2],
   ]
 
@@ -146,7 +146,7 @@ export function ActionMenu() {
 
   // 使用<Html>组件将2D UI包裹起来，安全地在3D场景中渲染
   return (
-    <Html position={menuPosition} center>
+    <Html position={menuPosition} center zIndexRange={[100, 0]} style={{ pointerEvents: 'auto' }}>
       <div
         className="flex items-center gap-1 p-1.5 bg-white/95 rounded-full shadow-lg border border-amber-100"
         onPointerDown={(e) => e.stopPropagation()}

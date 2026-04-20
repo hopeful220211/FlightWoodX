@@ -144,70 +144,63 @@ function SocketIndicator({ position, isHighlighted }: SocketIndicatorProps) {
   const materialRef = useRef<THREE.MeshStandardMaterial>(null)
   const ringMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  // 闪烁动画
+  // wood-400 ≈ #a08060, wood-500 ≈ #8b6b50
   useFrame((state) => {
     if (!materialRef.current) return
-
     const time = state.clock.getElapsedTime()
 
     if (isHighlighted) {
-      // 高亮状态：稳定发光，不闪烁
-      materialRef.current.emissive.setHex(0x00ff88)
-      materialRef.current.emissiveIntensity = 2
+      materialRef.current.emissive.setHex(0x8b6b50)
+      materialRef.current.emissiveIntensity = 1.5
       materialRef.current.opacity = 1
 
-      // 外圈旋转动画
       if (ringRef.current) {
         ringRef.current.rotation.z = time * 2
         ringRef.current.visible = true
       }
       if (ringMaterialRef.current) {
-        ringMaterialRef.current.opacity = 0.8
+        ringMaterialRef.current.opacity = 0.6
       }
     } else {
-      // 普通状态：闪烁动画
-      const pulse = (Math.sin(time * 4) + 1) / 2 // 0 to 1
-      materialRef.current.emissive.setHex(0xffaa00)
-      materialRef.current.emissiveIntensity = 0.5 + pulse * 1.5
-      materialRef.current.opacity = 0.4 + pulse * 0.4
+      // Gentle pulse
+      const pulse = (Math.sin(time * 3) + 1) / 2
+      materialRef.current.emissive.setHex(0xa08060)
+      materialRef.current.emissiveIntensity = 0.3 + pulse * 0.6
+      materialRef.current.opacity = 0.4 + pulse * 0.2
 
-      // 隐藏外圈
       if (ringRef.current) {
         ringRef.current.visible = false
       }
     }
 
-    // 高亮时放大
     if (meshRef.current) {
-      const targetScale = isHighlighted ? 1.5 : 1
-      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.2)
+      const targetScale = isHighlighted ? 1.3 : 1
+      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15)
     }
   })
 
   return (
     <group position={position}>
-      {/* 核心球体 */}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.015, 16, 16]} />
+        <sphereGeometry args={[0.005, 12, 12]} />
         <meshStandardMaterial
           ref={materialRef}
-          color={isHighlighted ? '#00ff88' : '#ffaa00'}
-          emissive={isHighlighted ? '#00ff88' : '#ffaa00'}
-          emissiveIntensity={1}
+          color={isHighlighted ? '#8b6b50' : '#a08060'}
+          emissive={isHighlighted ? '#8b6b50' : '#a08060'}
+          emissiveIntensity={0.5}
           transparent
-          opacity={0.8}
+          opacity={0.5}
           depthWrite={false}
         />
       </mesh>
 
-      {/* 高亮时的外圈 */}
       <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]} visible={false}>
-        <ringGeometry args={[0.025, 0.035, 32]} />
+        <ringGeometry args={[0.008, 0.012, 24]} />
         <meshBasicMaterial
           ref={ringMaterialRef}
-          color="#00ff88"
+          color="#8b6b50"
           transparent
-          opacity={0.8}
+          opacity={0.6}
           side={THREE.DoubleSide}
           depthWrite={false}
         />

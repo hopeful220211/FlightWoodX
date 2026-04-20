@@ -124,7 +124,11 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
               <div
                 key={part.id}
                 draggable
-                onDragStart={() => onPartDragStart(part.id)}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', part.id)
+                  e.dataTransfer.effectAllowed = 'move'
+                  onPartDragStart(part.id)
+                }}
                 onClick={() => onPartClick(part)}
                 className="bg-white border border-gray-200 rounded-lg p-2 cursor-pointer hover:border-tech-300 hover:shadow-sm transition-all"
               >
