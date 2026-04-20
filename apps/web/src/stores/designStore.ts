@@ -22,6 +22,7 @@ interface DesignState {
   deleteDesign: (id: string) => void
   setActiveDesignId: (id: string | null) => void
   getActiveDesign: () => Design | undefined
+  clearAll: () => void
   // --- Part CRUD ---
   addPartToActiveDesign: (part: Omit<PartInstance, 'instanceId'>) => void
   removePartFromActiveDesign: (instanceId: string) => void
@@ -72,6 +73,7 @@ export const useDesignStore = create<DesignState>()(
         set((state) => ({ designs: state.designs.filter((d) => d.id !== id) }))
       },
       setActiveDesignId: (id) => set({ activeDesignId: id }),
+      clearAll: () => set({ designs: [], activeDesignId: null, selectedInstanceId: null, ghostPart: null, highlightedSocket: null, draggingPartId: null }),
       getActiveDesign: () => {
         const activeId = get().activeDesignId
         if (!activeId) return undefined
@@ -429,3 +431,8 @@ export const useDesignStore = create<DesignState>()(
     },
   ),
 )
+
+/** Standalone function to clear design store — used by authStore on logout to avoid circular deps */
+export function clearDesignStore() {
+  useDesignStore.getState().clearAll()
+}

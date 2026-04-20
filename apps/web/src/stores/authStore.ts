@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { register as apiRegister, login as apiLogin } from '../utils/api'
+import { clearDesignStore } from './designStore'
 
 export interface User {
   id: string
@@ -84,7 +85,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => {
+        set({ user: null, token: null, isAuthenticated: false })
+        clearDesignStore()
+      },
       setUser: (user) => set((state) => ({ ...state, user })),
     }),
     {
