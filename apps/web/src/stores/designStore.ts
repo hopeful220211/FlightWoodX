@@ -2,21 +2,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Design, PartInstance } from '../types/design'
+import type { BuildStep } from '@fwx/parts-schema'
+import { canAdvanceStep, getNextStep, getPrevStep, STEP_CATEGORIES } from '@fwx/parts-schema'
 import { STORAGE_KEYS } from '../constants/storageKeys'
 import { partsData } from '../data/parts'
 import { getCachedPartConnectors } from '../hooks/usePartConnectors'
 import * as THREE from 'three'
 import { computeSnapTransform, quaternionToEuler } from '../components/design/snap'
 
-/**
- * 检查两个零件类别之间是否允许连接
- * @param childCategory - 要连接的子零件类别（带 plug 的零件）
- * @param parentCategory - 父零件类别（带 socket 的零件）
- * @returns 是否允许连接
- */
-function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
-  // 移除所有连接限制，允许任意零件之间连接
-  // 包括机身和保护板也可以连接到 plug
+function isConnectionAllowed(_childCategory: string, _parentCategory: string): boolean {
   return true
 }
 
@@ -24,24 +18,29 @@ interface DesignState {
   designs: Design[]
   activeDesignId: string | null
   getDesignById: (id: string) => Design | undefined
-  createDesign: (name: string) => string
+  createDesign: (name: string, mode?: 'guided' | 'free') => string
   deleteDesign: (id: string) => void
   setActiveDesignId: (id: string | null) => void
   getActiveDesign: () => Design | undefined
-  // --- 新增方法 ---
+  // --- Part CRUD ---
   addPartToActiveDesign: (part: Omit<PartInstance, 'instanceId'>) => void
   removePartFromActiveDesign: (instanceId: string) => void
   updatePartInActiveDesign: (instanceId: string, updates: Partial<PartInstance>) => void
-  // --- 拖拽和交互状态 ---
+  // --- Guided build flow ---
+  advanceStep: () => boolean
+  goBackStep: () => boolean
+  canAdvance: () => boolean
+  getStepAdvanceReason: () => string | undefined
+  resetCurrentStep: () => void
+  // --- Interaction state ---
   selectedInstanceId: string | null
   ghostPart: { partId: string; position: [number, number, number] } | null
   highlightedSocket: { instanceId: string; socketId: string; plugId: string } | null
-  draggingPartId: string | null  // 当前正在拖拽的零件ID
+  draggingPartId: string | null
   setSelectedInstanceId: (id: string | null) => void
   setGhostPart: (ghost: { partId: string; position: [number, number, number] } | null) => void
   setHighlightedSocket: (socket: { instanceId: string; socketId: string; plugId: string } | null) => void
   setDraggingPartId: (partId: string | null) => void
-  /** 智能添加零件（根据 category 决定初始位置与吸附逻辑） */
   addPartSmart: (partId: string) => void
 }
 
@@ -55,12 +54,15 @@ export const useDesignStore = create<DesignState>()(
       highlightedSocket: null,
       draggingPartId: null,
       getDesignById: (id) => get().designs.find((d) => d.id === id),
-      createDesign: (name) => {
+      createDesign: (name, mode = 'guided') => {
         const newId = `design-${Date.now()}`
         const newDesign: Design = {
           id: newId,
           name,
           updatedAt: new Date().toISOString(),
+          buildMode: mode,
+          currentStep: 'HUB',
+          stepReached: 0,
           parts: [],
         }
         set((state) => ({ designs: [...state.designs, newDesign] }))
@@ -73,7 +75,13 @@ export const useDesignStore = create<DesignState>()(
       getActiveDesign: () => {
         const activeId = get().activeDesignId
         if (!activeId) return undefined
-        return get().designs.find((d) => d.id === activeId)
+        const design = get().designs.find((d) => d.id === activeId)
+        if (!design) return undefined
+        // Backwards compat: old designs without buildMode default to free
+        if (!design.buildMode) {
+          return { ...design, buildMode: 'free' as const, currentStep: 'HUB' as const, stepReached: 6 }
+        }
+        return design
       },
       // --- 新增方法实现 ---
       addPartToActiveDesign: (part) => {
@@ -127,6 +135,105 @@ export const useDesignStore = create<DesignState>()(
           }
         })
       },
+      // --- Guided build flow ---
+      advanceStep: () => {
+        const design = get().getActiveDesign()
+        if (!design || design.buildMode !== 'guided') return false
+
+        const hubPart = design.parts.find(p => p.category === 'HUB')
+        const hubEntry = hubPart ? partsData.find(pd => pd.id === hubPart.partId) : undefined
+        const hubLayer = hubEntry?.layer ?? 'single'
+
+        const next = getNextStep(design.currentStep, hubLayer)
+        if (!next) return false
+
+        const buildState = {
+          currentStep: design.currentStep,
+          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category })),
+          hubLayer,
+        }
+        const { canAdvance } = canAdvanceStep(buildState)
+        if (!canAdvance) return false
+
+        set(state => ({
+          designs: state.designs.map(d =>
+            d.id === design.id
+              ? { ...d, currentStep: next, stepReached: Math.max(d.stepReached, design.stepReached + 1), updatedAt: new Date().toISOString() }
+              : d
+          ),
+        }))
+        return true
+      },
+
+      goBackStep: () => {
+        const design = get().getActiveDesign()
+        if (!design || design.buildMode !== 'guided') return false
+
+        const prev = getPrevStep(design.currentStep)
+        if (!prev) return false
+
+        set(state => ({
+          designs: state.designs.map(d =>
+            d.id === design.id
+              ? { ...d, currentStep: prev, updatedAt: new Date().toISOString() }
+              : d
+          ),
+        }))
+        return true
+      },
+
+      canAdvance: () => {
+        const design = get().getActiveDesign()
+        if (!design) return false
+        if (design.buildMode === 'free') return true
+
+        const hubPart = design.parts.find(p => p.category === 'HUB')
+        const hubEntry = hubPart ? partsData.find(pd => pd.id === hubPart.partId) : undefined
+        const hubLayer = hubEntry?.layer ?? 'single'
+
+        const buildState = {
+          currentStep: design.currentStep,
+          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category })),
+          hubLayer,
+        }
+        return canAdvanceStep(buildState).canAdvance
+      },
+
+      getStepAdvanceReason: () => {
+        const design = get().getActiveDesign()
+        if (!design) return undefined
+
+        const hubPart = design.parts.find(p => p.category === 'HUB')
+        const hubEntry = hubPart ? partsData.find(pd => pd.id === hubPart.partId) : undefined
+        const hubLayer = hubEntry?.layer ?? 'single'
+
+        const buildState = {
+          currentStep: design.currentStep,
+          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category })),
+          hubLayer,
+        }
+        return canAdvanceStep(buildState).reason
+      },
+
+      resetCurrentStep: () => {
+        const design = get().getActiveDesign()
+        if (!design || design.buildMode !== 'guided') return
+
+        const allowedCategories = STEP_CATEGORIES[design.currentStep] || []
+
+        set(state => ({
+          designs: state.designs.map(d =>
+            d.id === design.id
+              ? {
+                  ...d,
+                  parts: d.parts.filter(p => !allowedCategories.includes(p.category)),
+                  updatedAt: new Date().toISOString(),
+                }
+              : d
+          ),
+        }))
+      },
+
       setSelectedInstanceId: (id) => set({ selectedInstanceId: id }),
       setGhostPart: (ghost) => set({ ghostPart: ghost }),
       setHighlightedSocket: (socket) => set({ highlightedSocket: socket }),
@@ -143,11 +250,11 @@ export const useDesignStore = create<DesignState>()(
         }
 
         // 规则 1：第一个机身可以独立放置，第二个机身必须连接到现有零件
-        if (partData.category === 'hub') {
+        if (partData.category === 'HUB') {
           // 检查是否已存在机身
           const existingHub = activeDesign.parts.find((inst) => {
             const p = partsData.find((pd) => pd.id === inst.partId)
-            return p?.category === 'hub'
+            return p?.category === 'HUB'
           })
 
           if (existingHub) {
@@ -160,6 +267,7 @@ export const useDesignStore = create<DesignState>()(
           // 第一个机身：独立放置在场景中心
           state.addPartToActiveDesign({
             partId,
+            category: partData.category,
             position: [0, 0, 0],
             rotation: [0, 0, 0],
           })
@@ -169,7 +277,7 @@ export const useDesignStore = create<DesignState>()(
         // 规则 2：非 hub 必须先有机身
         const hasHub = activeDesign.parts.some((inst) => {
           const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'hub'
+          return p?.category === 'HUB'
         })
         if (!hasHub) {
           // eslint-disable-next-line no-alert
@@ -303,6 +411,7 @@ export const useDesignStore = create<DesignState>()(
 
         state.addPartToActiveDesign({
           partId,
+          category: partData.category,
           position: [newPosition.x, newPosition.y, newPosition.z],
           rotation: quaternionToEuler(newQuaternion),
           activeConnectorId: childConnector.id,

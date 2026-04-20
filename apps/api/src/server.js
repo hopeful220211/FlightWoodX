@@ -1,13 +1,36 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
+const helmet = require('helmet')
+const rateLimit = require('express-rate-limit')
 require('dotenv').config()
 
 const app = express()
 
 // ===== 中间件配置 =====
-app.use(cors())                    // 允许前端跨域访问
-app.use(express.json())            // 解析 JSON 请求体
+app.use(helmet())
+
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',')
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}))
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+app.use(limiter)
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: '请求过于频繁，请稍后再试' },
+})
+
+app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // ===== 路由 =====
@@ -22,6 +45,8 @@ app.get('/api/health', (req, res) => {
 
 // 认证路由
 const authRoutes = require('./routes/auth')
+app.use('/api/auth/login', authLimiter)
+app.use('/api/auth/register', authLimiter)
 app.use('/api/auth', authRoutes)
 
 // ===== 连接数据库 =====
@@ -49,6 +74,6 @@ app.use((err, req, res, next) => {
   console.error('Error:', err)
   res.status(500).json({
     error: 'Internal Server Error',
-    message: err.message
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
   })
 })

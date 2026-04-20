@@ -7,6 +7,7 @@ export interface User {
   username: string
   nickname: string
   avatarUrl?: string
+  role: 'student' | 'teacher' | 'admin'
 }
 
 export interface AuthState {

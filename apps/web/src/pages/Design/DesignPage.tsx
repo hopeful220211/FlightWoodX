@@ -47,7 +47,7 @@ export function DesignPage() {
   const removePartFromActiveDesign = useDesignStore((s) => s.removePartFromActiveDesign)
   const setDraggingPartId = useDesignStore((s) => s.setDraggingPartId)
 
-  const [category, setCategory] = useState<string>('hub')
+  const [category, setCategory] = useState<string>('HUB')
   const [query, setQuery] = useState('')
   const [partDetail, setPartDetail] = useState<Part | null>(null)
   const [previewHintOpen, setPreviewHintOpen] = useState(false)
@@ -201,22 +201,20 @@ export function DesignPage() {
   const checks = useMemo(() => {
     if (usedCount === 0) return [{ level: 'warning', text: '还没有添加零件：从左侧零件库开始吧！' }]
     const issues: Array<{ level: 'warning' | 'error' | 'info'; text: string }> = []
-    if (!usedParts.some((p) => (partById.get(p.partId)?.category ?? 'other') === 'body'))
-      issues.push({ level: 'error', text: '缺少机身：建议至少选择一个机身零件。' })
-    if (!usedParts.some((p) => (partById.get(p.partId)?.category ?? 'other') === 'wing'))
-      issues.push({ level: 'warning', text: '还没有机翼：升力可能不足（概念提示）。' })
+    if (!usedParts.some((p) => (partById.get(p.partId)?.category ?? 'other') === 'HUB'))
+      issues.push({ level: 'error', text: '缺少主板：建议至少选择一个主板零件。' })
     if (totalWeight > 120) issues.push({ level: 'warning', text: '总重量偏大：尝试使用更轻量的零件。' })
-    if (issues.length === 0) issues.push({ level: 'info', text: '基础检查通过（模拟）：可以继续优化重心与推重比。' })
+    if (issues.length === 0) issues.push({ level: 'info', text: '基础检查通过：可以继续优化重心与推重比。' })
     return issues
   }, [partById, totalWeight, usedCount, usedParts])
 
   const categoryItems = [
-    { value: 'hub', label: '机身' },
-    { value: 'body', label: '保护板' },
-    { value: 'arm', label: '机臂' },
-    { value: 'joint', label: '连接件' },
-    { value: 'decoration', label: '装饰件' },
-    { value: 'landing', label: '起落架' },
+    { value: 'HUB', label: '主板' },
+    { value: 'ARM', label: '机臂' },
+    { value: 'PLATE', label: '保护罩·一体' },
+    { value: 'JOINT', label: '保护罩·分体' },
+    { value: 'LAND', label: '保护罩·半体' },
+    { value: 'DECO', label: '衔接件' },
   ] as const
 
   const onExport = () => {

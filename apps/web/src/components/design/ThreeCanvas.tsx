@@ -167,10 +167,10 @@ function DragHandler() {
       }
 
       // 检查是否是第一个机身（第一个机身不需要连接点）
-      if (draggingPart.category === 'hub') {
+      if (draggingPart.category === 'HUB') {
         const existingHub = currentActiveDesign.parts.find((inst) => {
           const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'hub'
+          return p?.category === 'HUB'
         })
 
         if (!existingHub) {
@@ -347,6 +347,7 @@ function DragHandler() {
 
               addPartToActiveDesign({
                 partId,
+                category: childPart.category,
                 position: [newPosition.x, newPosition.y, newPosition.z],
                 rotation: quaternionToEuler(newQuaternion),
                 activeConnectorId: currentHighlightedSocket.plugId,
@@ -417,10 +418,10 @@ function DragHandler() {
       }
 
       // 检查是否是第一个机身（第一个机身不需要连接点）
-      if (draggingPart.category === 'hub') {
+      if (draggingPart.category === 'HUB') {
         const existingHub = currentActiveDesign.parts.find((inst) => {
           const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'hub'
+          return p?.category === 'HUB'
         })
 
         if (!existingHub) {
@@ -590,6 +591,7 @@ function DragHandler() {
 
             addPartToActiveDesign({
               partId,
+              category: childPart.category,
               position: [newPosition.x, newPosition.y, newPosition.z],
               rotation: quaternionToEuler(newQuaternion),
               activeConnectorId: currentHighlightedSocket.plugId,

@@ -34,8 +34,7 @@ exports.authenticate = (req, res, next) => {
     }
 
     res.status(401).json({
-      error: '认证失败',
-      details: error.message
+      error: '认证失败'
     })
   }
 }

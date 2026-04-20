@@ -66,7 +66,7 @@ exports.register = async (req, res) => {
     console.error('Register error:', error)
     res.status(500).json({
       error: '注册失败，请稍后再试',
-      details: error.message
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 }
@@ -117,7 +117,7 @@ exports.login = async (req, res) => {
     console.error('Login error:', error)
     res.status(500).json({
       error: '登录失败，请稍后再试',
-      details: error.message
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 }
@@ -137,7 +137,7 @@ exports.getMe = async (req, res) => {
     console.error('GetMe error:', error)
     res.status(500).json({
       error: '获取用户信息失败',
-      details: error.message
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 }
@@ -158,7 +158,7 @@ exports.getAllUsers = async (req, res) => {
     console.error('GetAllUsers error:', error)
     res.status(500).json({
       error: '获取用户列表失败',
-      details: error.message
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 }

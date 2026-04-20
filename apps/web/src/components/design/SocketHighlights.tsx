@@ -33,10 +33,10 @@ export function SocketHighlights() {
     if (!draggingPart) return []
 
     // 检查是否是第一个机身（第一个机身不需要连接点）
-    if (draggingPart.category === 'hub') {
+    if (draggingPart.category === 'HUB') {
       const existingHub = activeDesign.parts.find((inst) => {
         const p = partsData.find((pd) => pd.id === inst.partId)
-        return p?.category === 'hub'
+        return p?.category === 'HUB'
       })
 
       if (!existingHub) {

@@ -2,9 +2,10 @@ import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import RoleRoute from './components/layout/RoleRoute'
 import { HomePage } from './pages/Home/HomePage'
 import { LearnPage } from './pages/Learn/LearnPage'
-import { DesignPage } from './pages/Design/DesignPage'
+import { DesignPageRouter } from './pages/Design/DesignPageRouter'
 import { GalleryPage } from './pages/Gallery/GalleryPage'
 import { ProfilePage } from './pages/Profile/ProfilePage'
 import { AuthPage } from './pages/Auth/AuthPage'
@@ -30,8 +31,8 @@ export default function App() {
       {/* Auth Route - 独立布局 */}
       <Route path="/auth" element={<AuthPage />} />
 
-      {/* Admin Route - 独立布局 */}
-      <Route element={<ProtectedRoute />}>
+      {/* Admin Route - 需要 admin 角色 */}
+      <Route element={<RoleRoute roles={['admin']} />}>
         <Route path="/admin" element={<AdminPage />} />
       </Route>
 
@@ -42,7 +43,7 @@ export default function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/learn" element={<LearnPage />} />
-          <Route path="/design" element={<DesignPage />} />
+          <Route path="/design" element={<DesignPageRouter />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
