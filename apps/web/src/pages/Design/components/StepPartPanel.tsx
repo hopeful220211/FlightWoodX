@@ -44,33 +44,31 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
 
   if (currentStep === 'MOTOR') {
     return (
-      <div className="p-4">
-        <h3 className="text-sm font-bold text-gray-700 mb-2">第 {info.number} 步 · {info.label}</h3>
-        <p className="text-xs text-gray-500 mb-3">电机会自动安装在每条机臂末端。</p>
-        <div className="space-y-2">
-          <label className="block text-xs text-gray-600">电机型号</label>
-          <div className="space-y-1">
-            {['小型 (7mm)', '中型 (8.5mm)', '大型 (10mm)'].map(spec => (
-              <button
-                key={spec}
-                className="w-full text-left px-3 py-2 text-sm rounded-md border border-gray-200 hover:border-tech-300 hover:bg-tech-50"
-              >
-                {spec}
-              </button>
-            ))}
-          </div>
-          <label className="block text-xs text-gray-600 mt-3">螺旋桨颜色</label>
-          <div className="flex gap-2">
-            {['黑', '白', '红'].map(color => (
-              <button
-                key={color}
-                className="px-3 py-1.5 text-sm rounded-md border border-gray-200 hover:border-tech-300"
-              >
-                {color}
-              </button>
-            ))}
-          </div>
+      <div className="p-4 space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-gray-700">第 {info.number} 步 · {info.label}</h3>
+          <p className="text-xs text-gray-500 mt-1">{info.description}</p>
         </div>
+
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p className="text-sm font-medium text-green-800">电机已自动安装</p>
+          <p className="text-xs text-green-600 mt-1">
+            每条机臂末端会自动安装一个电机和螺旋桨。你可以直接点"下一步"继续。
+          </p>
+        </div>
+
+        <p className="text-xs text-gray-400">
+          如果想调整机臂数量，请回到上一步。
+        </p>
+
+        {/* Future: advanced options (disabled) */}
+        <details className="text-xs text-gray-400">
+          <summary className="cursor-pointer hover:text-gray-500">高级选项（即将开放）</summary>
+          <div className="mt-2 space-y-1 opacity-50 pointer-events-none">
+            <p>电机型号：小型 / 中型 / 大型</p>
+            <p>螺旋桨颜色：黑 / 白 / 红</p>
+          </div>
+        </details>
       </div>
     )
   }
@@ -127,6 +125,14 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/plain', part.id)
                   e.dataTransfer.effectAllowed = 'move'
+                  // Use thumbnail as drag image
+                  if (part.thumbnailUrl) {
+                    const img = new Image()
+                    img.src = part.thumbnailUrl
+                    img.width = 64
+                    img.height = 64
+                    e.dataTransfer.setDragImage(img, 32, 32)
+                  }
                   onPartDragStart(part.id)
                 }}
                 onClick={() => onPartClick(part)}

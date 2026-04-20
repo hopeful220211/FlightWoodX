@@ -93,11 +93,8 @@ export function canAdvanceStep(state: BuildState): { canAdvance: boolean; reason
     }
 
     case 'MOTOR': {
-      const armCount = state.parts.filter(p => p.category === 'ARM').length
-      const motorCount = state.parts.filter(p => p.category === 'MOTOR').length
-      return motorCount >= armCount
-        ? { canAdvance: true }
-        : { canAdvance: false, reason: `每条机臂都需要电机（还差 ${armCount - motorCount} 个）` }
+      // Auto-install step: always advanceable
+      return { canAdvance: true }
     }
 
     case 'GUARD': {
