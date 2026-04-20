@@ -11,7 +11,7 @@ interface DesignListModalProps {
 export function DesignListModal({ designs, onSelect, onClose }: DesignListModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[70vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[70vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-800">我的设计</h2>
@@ -40,7 +40,7 @@ export function DesignListModal({ designs, onSelect, onClose }: DesignListModalP
               <button
                 key={design.id}
                 onClick={() => onSelect(design.id)}
-                className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-tech-300 hover:bg-tech-50/50 transition-colors"
+                className="w-full text-left p-4 rounded-lg border border-gray-200 hover:border-tech-300 hover:bg-tech-50/50 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-gray-800 truncate">{design.name}</span>

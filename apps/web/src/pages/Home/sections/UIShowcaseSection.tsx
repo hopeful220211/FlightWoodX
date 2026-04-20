@@ -39,8 +39,8 @@ export function UIShowcaseSection() {
 
         {/* 设备模型 + 轮播 */}
         <div className="relative mx-auto max-w-4xl">
-          <div className="relative rounded-2xl bg-slate-800/50 p-8 backdrop-blur-sm">
-            <div className="relative overflow-hidden rounded-xl shadow-2xl aspect-video">
+          <div className="relative rounded-lg bg-slate-800/50 p-8 backdrop-blur-sm">
+            <div className="relative overflow-hidden rounded-lg shadow-2xl aspect-video">
               {uiScreenshots.map((screenshot, idx) => (
                 <motion.div
                   key={idx}

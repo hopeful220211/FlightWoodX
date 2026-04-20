@@ -50,7 +50,7 @@ export function Button({
     <button
       type="button"
       className={cn(
-        'touch-target inline-flex items-center justify-center gap-2 rounded-xl font-semibold shadow-sm transition active:translate-y-[1px] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60',
+        'touch-target inline-flex items-center justify-center gap-2 rounded-md font-semibold shadow-sm transition active:translate-y-[1px] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60',
         sizeCls,
         variantCls,
         className,

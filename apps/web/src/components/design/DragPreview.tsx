@@ -144,7 +144,7 @@ export function DragPreview({ modelUrl, position, size = 140 }: DragPreviewProps
           </Suspense>
         </Canvas>
       ) : (
-        <div className="w-full h-full bg-wood-200/80 dark:bg-slate-700/80 rounded-xl flex items-center justify-center">
+        <div className="w-full h-full bg-wood-200/80 dark:bg-slate-700/80 rounded-lg flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-wood-400 rounded" />
         </div>
       )}

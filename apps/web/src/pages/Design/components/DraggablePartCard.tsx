@@ -97,7 +97,7 @@ export function DraggablePartCard({ part, onClick, onDragStart, onTouchDragStart
       style={{ touchAction: 'none' }}
       className="flex flex-col items-center gap-1.5 cursor-grab active:cursor-grabbing"
     >
-      <div className="w-[100px] h-[100px] overflow-hidden rounded-2xl ring-1 ring-black/5 transition-transform hover:scale-[1.03] hover:shadow-md dark:ring-white/10">
+      <div className="w-[100px] h-[100px] overflow-hidden rounded-lg ring-1 ring-black/5 transition-transform hover:scale-[1.03] hover:shadow-md dark:ring-white/10">
         <PartThumb id={part.id} name={part.name} category={part.category} thumbnailUrl={part.thumbnailUrl} />
       </div>
       <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate max-w-[100px] text-center">

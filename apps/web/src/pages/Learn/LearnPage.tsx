@@ -81,7 +81,7 @@ export function LearnPage() {
         {/* 左侧：章节目录 */}
         <aside
           className={cn(
-            'rounded-2xl border border-black/5 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900',
+            'rounded-lg border border-black/5 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900',
             sidebarOpen ? 'block' : 'hidden md:block',
           )}
         >
@@ -90,7 +90,7 @@ export function LearnPage() {
             {courses.map((ch) => {
               const open = openChapters[ch.id] ?? false
               return (
-                <div key={ch.id} className="mb-2 rounded-2xl border border-black/5 dark:border-white/10">
+                <div key={ch.id} className="mb-2 rounded-lg border border-black/5 dark:border-white/10">
                   <button
                     type="button"
                     className="touch-target flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
@@ -118,7 +118,7 @@ export function LearnPage() {
                               key={l.id}
                               type="button"
                               className={cn(
-                                'flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition',
+                                'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition',
                                 active
                                   ? 'bg-wood-200 text-wood-900 dark:bg-slate-800 dark:text-white'
                                   : 'hover:bg-wood-50 dark:hover:bg-slate-950',
@@ -188,7 +188,7 @@ export function LearnPage() {
           </Card>
 
           <Card hoverable={false} header={<div className="text-sm font-extrabold">视频区域（占位）</div>}>
-            <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-black/15 bg-slate-50 dark:border-white/15 dark:bg-slate-950">
+            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-black/15 bg-slate-50 dark:border-white/15 dark:bg-slate-950">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 <Play size={18} /> 视频加载中…
               </div>
@@ -207,7 +207,7 @@ export function LearnPage() {
                         <img
                           {...props}
                           alt={typeof props.alt === 'string' && props.alt.trim() ? props.alt : '课程图片'}
-                          className={cn('cursor-zoom-in rounded-xl ring-1 ring-black/5 dark:ring-white/10', props.className)}
+                          className={cn('cursor-zoom-in rounded-lg ring-1 ring-black/5 dark:ring-white/10', props.className)}
                           onClick={() => src && setImagePreview(src)}
                         />
                       )
@@ -258,9 +258,9 @@ export function LearnPage() {
               </div>
             ) : (
               <div className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
-                <div className="rounded-xl bg-wood-50 px-3 py-2 dark:bg-slate-950">榫头/卯眼：连接点概念</div>
-                <div className="rounded-xl bg-wood-50 px-3 py-2 dark:bg-slate-950">推重比：起飞能力</div>
-                <div className="rounded-xl bg-wood-50 px-3 py-2 dark:bg-slate-950">重心：稳定性</div>
+                <div className="rounded-lg bg-wood-50 px-3 py-2 dark:bg-slate-950">榫头/卯眼：连接点概念</div>
+                <div className="rounded-lg bg-wood-50 px-3 py-2 dark:bg-slate-950">推重比：起飞能力</div>
+                <div className="rounded-lg bg-wood-50 px-3 py-2 dark:bg-slate-950">重心：稳定性</div>
               </div>
             )}
           </Card>
@@ -279,7 +279,7 @@ export function LearnPage() {
 
       <Modal open={imagePreview !== null} onClose={() => setImagePreview(null)} title="图片预览">
         {imagePreview ? (
-          <img src={imagePreview} alt="预览" className="max-h-[70vh] w-full rounded-2xl object-contain" />
+          <img src={imagePreview} alt="预览" className="max-h-[70vh] w-full rounded-lg object-contain" />
         ) : null}
       </Modal>
     </PageContainer>

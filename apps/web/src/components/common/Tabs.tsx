@@ -25,7 +25,7 @@ export function Tabs<TValue extends string>({ items, value, onChange, className 
             role="tab"
             aria-selected={active}
             className={cn(
-              'touch-target relative inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition',
+              'touch-target relative inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition',
               active
                 ? 'bg-wood-200 text-wood-900 dark:bg-slate-800 dark:text-white'
                 : 'text-slate-700 hover:bg-wood-100 dark:text-slate-200 dark:hover:bg-slate-900',

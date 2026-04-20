@@ -147,7 +147,7 @@ export function AdminPage() {
           <Card hoverable>
             <div className="p-6">
               <div className="flex items-center gap-4">
-                <div className="rounded-xl bg-wood-100 p-3 dark:bg-slate-800">
+                <div className="rounded-lg bg-wood-100 p-3 dark:bg-slate-800">
                   <Users className="text-wood-600 dark:text-wood-400" size={24} />
                 </div>
                 <div>
@@ -165,7 +165,7 @@ export function AdminPage() {
           <Card hoverable>
             <div className="p-6">
               <div className="flex items-center gap-4">
-                <div className="rounded-xl bg-green-100 p-3 dark:bg-green-900">
+                <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900">
                   <Users className="text-green-600 dark:text-green-400" size={24} />
                 </div>
                 <div>
@@ -183,7 +183,7 @@ export function AdminPage() {
           <Card hoverable>
             <div className="p-6">
               <div className="flex items-center gap-4">
-                <div className="rounded-xl bg-blue-100 p-3 dark:bg-blue-900">
+                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900">
                   <Users className="text-blue-600 dark:text-blue-400" size={24} />
                 </div>
                 <div>
@@ -201,7 +201,7 @@ export function AdminPage() {
           <Card hoverable>
             <div className="p-6">
               <div className="flex items-center gap-4">
-                <div className="rounded-xl bg-red-100 p-3 dark:bg-red-900">
+                <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900">
                   <Shield className="text-red-600 dark:text-red-400" size={24} />
                 </div>
                 <div>

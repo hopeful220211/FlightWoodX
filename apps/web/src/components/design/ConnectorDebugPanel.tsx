@@ -75,7 +75,7 @@ export function ConnectorDebugPanel() {
           <h3 className="text-sm font-extrabold">连接点调试面板</h3>
           <button
             onClick={() => setIsOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-wood-50 dark:hover:bg-slate-900"
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-wood-50 dark:hover:bg-slate-900"
           >
             <X size={18} />
           </button>
@@ -120,7 +120,7 @@ export function ConnectorDebugPanel() {
           </Button>
         </div>
 
-        <div className="rounded-xl bg-slate-950 p-3 overflow-auto max-h-[500px]">
+        <div className="rounded-lg bg-slate-950 p-3 overflow-auto max-h-[500px]">
           <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">
             {results || '点击上方按钮测试模型连接点...'}
           </pre>

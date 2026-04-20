@@ -43,7 +43,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              'rounded-2xl border p-3 text-sm font-semibold shadow-lift backdrop-blur',
+              'rounded-lg border p-3 text-sm font-semibold shadow-lift backdrop-blur',
               'bg-white/90 text-slate-900 dark:bg-slate-950/80 dark:text-slate-50',
               t.type === 'success'
                 ? 'border-success/30'

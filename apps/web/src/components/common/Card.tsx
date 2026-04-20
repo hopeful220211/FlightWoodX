@@ -15,7 +15,7 @@ export function Card({ header, footer, hoverable = true, className, children, ..
     <div
       className={cn(
         // UI/UX 优化：更柔和的阴影与毛玻璃效果（文档要求）
-        'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-wood-100/50 transition-all duration-300',
+        'bg-white/80 backdrop-blur-sm rounded-lg shadow-lg shadow-wood-100/50 transition-all duration-300',
         'dark:bg-slate-900/70 dark:shadow-slate-950/40',
         hoverable ? 'hover:shadow-xl hover:shadow-wood-200/60 hover:-translate-y-1' : undefined,
         className,

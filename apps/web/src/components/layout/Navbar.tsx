@@ -19,7 +19,7 @@ export function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore()
 
   const linkBase =
-    'touch-target inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition'
+    'touch-target inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold transition'
 
   const getLinkClass = useMemo(
     () =>
@@ -58,10 +58,10 @@ export function Navbar() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <NavLink
             to="/"
-            className="touch-target inline-flex items-center gap-2 rounded-xl px-2 text-base font-extrabold tracking-tight text-wood-800 dark:text-wood-200"
+            className="touch-target inline-flex items-center gap-2 rounded-lg px-2 text-base font-extrabold tracking-tight text-wood-800 dark:text-wood-200"
             onClick={() => setOpen(false)}
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-wood-200 shadow-sm dark:bg-slate-800 overflow-hidden">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-wood-200 shadow-sm dark:bg-slate-800 overflow-hidden">
               <img src="/web_logo.png" alt="FlightWoodX Logo" className="h-full w-full object-contain" />
             </span>
             FlightWoodX
@@ -94,7 +94,7 @@ export function Navbar() {
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-black/10 bg-white shadow-lift dark:border-white/10 dark:bg-slate-900">
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-black/10 bg-white shadow-lift dark:border-white/10 dark:bg-slate-900">
                     <NavLink
                       to="/profile"
                       className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -128,7 +128,7 @@ export function Navbar() {
               </Button>
               <button
                 type="button"
-                className="touch-target inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-3 text-slate-800 shadow-sm transition hover:bg-wood-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-50 md:hidden"
+                className="touch-target inline-flex items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-slate-800 shadow-sm transition hover:bg-wood-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-50 md:hidden"
                 aria-label={open ? '关闭菜单' : '打开菜单'}
                 onClick={() => setOpen((v) => !v)}
               >

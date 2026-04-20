@@ -141,7 +141,7 @@ export function ProfilePage() {
         <Card>
           <h3 className="mb-4 text-lg font-extrabold text-wood-900 dark:text-white">学习统计</h3>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-wood-50 p-4 dark:bg-slate-800">
+            <div className="rounded-lg bg-wood-50 p-4 dark:bg-slate-800">
               <div className="mb-2 flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-tech-600" />
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">已完成课程</span>
@@ -150,7 +150,7 @@ export function ProfilePage() {
                 {progress.completedLessons.length}
               </div>
             </div>
-            <div className="rounded-xl bg-wood-50 p-4 dark:bg-slate-800">
+            <div className="rounded-lg bg-wood-50 p-4 dark:bg-slate-800">
               <div className="mb-2 flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-tech-600" />
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">总学习时长</span>
@@ -159,7 +159,7 @@ export function ProfilePage() {
                 {Math.round(progress.totalStudyTime)} 分钟
               </div>
             </div>
-            <div className="rounded-xl bg-wood-50 p-4 dark:bg-slate-800">
+            <div className="rounded-lg bg-wood-50 p-4 dark:bg-slate-800">
               <div className="mb-2 flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-tech-600" />
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">学习天数</span>
@@ -193,7 +193,7 @@ export function ProfilePage() {
             <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible lg:grid-cols-3">
               {myProjects.map((project) => (
                 <Card key={project.id} hoverable className="min-w-[260px] md:min-w-0">
-                  <div className="aspect-video overflow-hidden rounded-xl bg-gradient-to-br from-tech-100 to-tech-200 dark:from-tech-900/30 dark:to-tech-800/30">
+                  <div className="aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-tech-100 to-tech-200 dark:from-tech-900/30 dark:to-tech-800/30">
                     <div className="flex h-full items-center justify-center text-sm font-extrabold text-tech-600 dark:text-tech-400">
                       {project.parts.length} 个零件
                     </div>

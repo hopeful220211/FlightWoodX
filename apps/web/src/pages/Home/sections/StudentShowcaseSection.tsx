@@ -18,7 +18,7 @@ export function StudentShowcaseSection() {
                 className="w-[240px] flex-shrink-0"
               >
                 <Card hoverable>
-                  <div className="h-[135px] overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                  <div className="h-[135px] overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
                     <img
                       src={work.thumbnailUrl}
                       alt={work.name}

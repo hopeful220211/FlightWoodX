@@ -32,7 +32,7 @@ export function CurriculumSection() {
 
               {/* 内容卡片 */}
               <div
-                className={`flex-1 rounded-2xl border border-black/5 bg-wood-50 p-6 shadow-soft dark:border-white/10 dark:bg-slate-800 ${
+                className={`flex-1 rounded-lg border border-black/5 bg-wood-50 p-6 shadow-soft dark:border-white/10 dark:bg-slate-800 ${
                   idx % 2 === 0 ? 'md:mr-auto md:w-[45%] md:text-right' : 'md:ml-auto md:w-[45%]'
                 }`}
               >

@@ -15,7 +15,7 @@ export function STEAMSection() {
             <img
               src="/resource/picture/learning_kids/EX4A6148.png"
               alt="孩子们在研究"
-              className="rounded-2xl shadow-lift"
+              className="rounded-lg shadow-lift"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 target.style.display = 'none'
@@ -65,7 +65,7 @@ export function STEAMSection() {
             <img
               src="/resource/picture/flight_png/untitled.160.png"
               alt="无人机榫卯结构细节"
-              className="rounded-2xl shadow-lift"
+              className="rounded-lg shadow-lift"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 target.style.display = 'none'
@@ -85,7 +85,7 @@ export function STEAMSection() {
           <img
             src="/resource/picture/flight_png/untitled.303.png"
             alt="从设计到成品"
-            className="mx-auto mb-6 max-w-2xl rounded-2xl shadow-lift"
+            className="mx-auto mb-6 max-w-2xl rounded-lg shadow-lift"
             onError={(e) => {
               const target = e.target as HTMLImageElement
               target.style.display = 'none'

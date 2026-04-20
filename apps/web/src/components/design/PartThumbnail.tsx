@@ -100,7 +100,7 @@ export function PartThumbnail({ modelUrl, size = 100 }: PartThumbnailProps) {
     return (
       <div
         style={{ width: size, height: size }}
-        className="rounded-xl bg-gradient-to-br from-wood-100 to-wood-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center"
+        className="rounded-lg bg-gradient-to-br from-wood-100 to-wood-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center"
       >
         <span className="text-xs text-wood-600 dark:text-slate-400">加载失败</span>
       </div>
@@ -110,7 +110,7 @@ export function PartThumbnail({ modelUrl, size = 100 }: PartThumbnailProps) {
   return (
     <div style={{ width: size, height: size }} className="relative">
       {isLoading && (
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-wood-300 border-dashed rounded animate-spin" />
         </div>
       )}
@@ -118,7 +118,7 @@ export function PartThumbnail({ modelUrl, size = 100 }: PartThumbnailProps) {
         ref={canvasRef}
         width={size}
         height={size}
-        className="rounded-xl"
+        className="rounded-lg"
         style={{ width: size, height: size }}
       />
     </div>

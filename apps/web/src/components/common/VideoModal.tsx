@@ -39,7 +39,7 @@ export function VideoModal({ open, onClose, videoUrl, title }: VideoModalProps) 
     >
       <div
         className={cn(
-          'relative w-full max-w-5xl rounded-2xl bg-slate-950 shadow-2xl',
+          'relative w-full max-w-5xl rounded-lg bg-slate-950 shadow-2xl',
           'animate-in fade-in zoom-in-95 duration-200'
         )}
         onClick={(e) => e.stopPropagation()}
@@ -49,7 +49,7 @@ export function VideoModal({ open, onClose, videoUrl, title }: VideoModalProps) 
           <h2 className="text-lg font-extrabold text-white">{title || '演示视频'}</h2>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
             aria-label="关闭"
           >
             <X size={20} />

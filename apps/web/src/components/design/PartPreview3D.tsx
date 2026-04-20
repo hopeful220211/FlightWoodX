@@ -80,7 +80,7 @@ function FallbackPreview({ size }: { size?: number }) {
   return (
     <div
       style={containerStyle}
-      className="rounded-xl overflow-hidden bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center"
+      className="rounded-lg overflow-hidden bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center"
     >
       <div className="w-8 h-8 border-2 border-wood-300 border-dashed rounded animate-pulse" />
     </div>
@@ -109,7 +109,7 @@ export function PartPreview3D({ modelUrl, autoRotate = true, size }: PartPreview
 
   return (
     <ErrorBoundary fallback={<FallbackPreview size={size} />}>
-      <div style={containerStyle} className="rounded-xl overflow-hidden bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900">
+      <div style={containerStyle} className="rounded-lg overflow-hidden bg-gradient-to-br from-wood-50 to-wood-100 dark:from-slate-800 dark:to-slate-900">
         <Canvas
           camera={{
             position: [0.4, 0.3, 0.4],

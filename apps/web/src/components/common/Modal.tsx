@@ -32,12 +32,12 @@ export function Modal({ open, title, children, footer, onClose }: ModalProps) {
         onClick={onClose}
       />
       <div className="relative mx-auto flex h-full max-w-2xl items-center justify-center px-4">
-        <div className="w-full rounded-2xl border border-black/10 bg-white shadow-lift dark:border-white/10 dark:bg-slate-950">
+        <div className="w-full rounded-lg border border-black/10 bg-white shadow-lift dark:border-white/10 dark:bg-slate-950">
           <div className={cn('flex items-center justify-between gap-3 p-4', title ? 'border-b border-black/5 dark:border-white/10' : '')}>
             {title ? <div className="text-base font-extrabold">{title}</div> : <div />}
             <button
               type="button"
-              className="touch-target inline-flex items-center justify-center rounded-xl hover:bg-wood-50 dark:hover:bg-slate-900"
+              className="touch-target inline-flex items-center justify-center rounded-md hover:bg-wood-50 dark:hover:bg-slate-900"
               aria-label="关闭模态框"
               onClick={onClose}
             >

@@ -131,7 +131,7 @@ export function GalleryPage() {
                   className="group relative cursor-pointer overflow-hidden"
                   onClick={() => handleOpenDesign(work)}
                 >
-                <div className="aspect-video overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900">
+                <div className="aspect-video overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900">
                   {isFeatured ? (
                     <img
                       src={work.thumbnailUrl || '/placeholder.svg'}
@@ -227,7 +227,7 @@ export function GalleryPage() {
       >
         {selectedWork && (
           <div className="space-y-4">
-            <div className="aspect-video overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-900">
+            <div className="aspect-video overflow-hidden rounded-lg bg-slate-50 dark:bg-slate-900">
               {'likes' in selectedWork ? (
                 <img
                   src={selectedWork.thumbnailUrl || '/placeholder.svg'}

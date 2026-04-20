@@ -11,7 +11,7 @@ export function WelcomeEmptyState({ onStartNew, onViewHistory, historyCount }: W
     <div className="flex items-center justify-center h-[calc(100vh-64px)] bg-gradient-to-br from-wood-50 to-tech-50">
       <div className="text-center max-w-md px-6">
         {/* Icon */}
-        <div className="mx-auto w-20 h-20 rounded-2xl bg-wood-100 flex items-center justify-center mb-6">
+        <div className="mx-auto w-20 h-20 rounded-lg bg-wood-100 flex items-center justify-center mb-6">
           <Box className="w-10 h-10 text-wood-600" />
         </div>
 
@@ -26,7 +26,7 @@ export function WelcomeEmptyState({ onStartNew, onViewHistory, historyCount }: W
         {/* Primary CTA */}
         <button
           onClick={onStartNew}
-          className="w-full max-w-xs mx-auto block px-8 py-4 text-lg font-semibold text-white bg-wood-600 rounded-xl hover:bg-wood-700 shadow-lg hover:shadow-xl transition-all"
+          className="w-full max-w-xs mx-auto block px-8 py-4 text-lg font-semibold text-white bg-wood-600 rounded-lg hover:bg-wood-700 shadow-lg hover:shadow-xl transition-all"
         >
           开始新设计
         </button>

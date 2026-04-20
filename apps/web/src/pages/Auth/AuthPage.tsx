@@ -86,7 +86,7 @@ export function AuthPage() {
         <div className="p-8">
           {/* Logo 和标题 */}
           <div className="text-center mb-8">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-wood-200 mb-4 shadow-md dark:bg-slate-800">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-lg bg-wood-200 mb-4 shadow-md dark:bg-slate-800">
               <img
                 src="/web_logo.png"
                 alt="FlightWoodX Logo"
