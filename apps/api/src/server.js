@@ -25,14 +25,17 @@ const authRoutes = require('./routes/auth')
 app.use('/api/auth', authRoutes)
 
 // ===== 连接数据库 =====
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB')
-  })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error)
-    process.exit(1)
-  })
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log('Connected to MongoDB')
+    })
+    .catch((error) => {
+      console.error('MongoDB connection error:', error)
+    })
+} else {
+  console.warn('MONGODB_URI not set — skipping database connection')
+}
 
 // ===== 启动服务器 =====
 const PORT = process.env.PORT || 3000
