@@ -55,28 +55,32 @@ export function GuidedDesignPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Top: Step Progress */}
-      <StepProgressBar currentStep={currentStep} stepReached={stepReached} />
+    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
+      {/* Top: Step Progress — fixed height */}
+      <div className="shrink-0">
+        <StepProgressBar currentStep={currentStep} stepReached={stepReached} />
+      </div>
 
-      {/* Middle: Three columns */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Part selection */}
-        <aside className="w-64 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
-          <StepPartPanel
-            currentStep={currentStep}
-            onPartClick={handlePartClick}
-            onPartDragStart={handlePartDragStart}
-          />
+      {/* Middle: Three columns — fills remaining space */}
+      <div className="flex-1 flex min-h-0">
+        {/* Left: Part selection — only this scrolls */}
+        <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto">
+            <StepPartPanel
+              currentStep={currentStep}
+              onPartClick={handlePartClick}
+              onPartDragStart={handlePartDragStart}
+            />
+          </div>
         </aside>
 
-        {/* Center: 3D Canvas */}
-        <main className="flex-1 relative">
+        {/* Center: 3D Canvas — fills remaining width, no scroll */}
+        <main className="flex-1 relative min-h-0 min-w-0">
           <ThreeCanvas />
         </main>
 
-        {/* Right: Guide */}
-        <aside className="w-56 bg-white border-l border-gray-100 overflow-y-auto">
+        {/* Right: Guide — scrolls independently */}
+        <aside className="w-56 shrink-0 bg-white border-l border-gray-100 overflow-y-auto">
           <StepGuide
             currentStep={currentStep}
             canAdvance={canAdvance}
@@ -85,14 +89,16 @@ export function GuidedDesignPage() {
         </aside>
       </div>
 
-      {/* Bottom: Actions */}
-      <StepActions
-        currentStep={currentStep}
-        canAdvance={canAdvance}
-        onAdvance={handleAdvance}
-        onGoBack={handleGoBack}
-        onReset={handleReset}
-      />
+      {/* Bottom: Actions — fixed height, always visible */}
+      <div className="shrink-0">
+        <StepActions
+          currentStep={currentStep}
+          canAdvance={canAdvance}
+          onAdvance={handleAdvance}
+          onGoBack={handleGoBack}
+          onReset={handleReset}
+        />
+      </div>
     </div>
   )
 }

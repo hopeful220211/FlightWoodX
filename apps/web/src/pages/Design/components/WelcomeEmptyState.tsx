@@ -8,7 +8,7 @@ interface WelcomeEmptyStateProps {
 
 export function WelcomeEmptyState({ onStartNew, onViewHistory, historyCount }: WelcomeEmptyStateProps) {
   return (
-    <div className="flex items-center justify-center h-full bg-gradient-to-br from-wood-50 to-tech-50">
+    <div className="flex items-center justify-center h-[calc(100vh-64px)] bg-gradient-to-br from-wood-50 to-tech-50">
       <div className="text-center max-w-md px-6">
         {/* Icon */}
         <div className="mx-auto w-20 h-20 rounded-2xl bg-wood-100 flex items-center justify-center mb-6">
