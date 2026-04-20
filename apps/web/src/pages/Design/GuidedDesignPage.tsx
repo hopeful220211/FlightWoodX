@@ -50,11 +50,8 @@ export function GuidedDesignPage() {
   }, [resetCurrentStep, toast])
 
   if (!activeDesign) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-500">
-        请先创建或选择一个设计
-      </div>
-    )
+    // Should not reach here — DesignPageRouter handles empty state
+    return null
   }
 
   return (
