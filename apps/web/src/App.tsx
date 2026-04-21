@@ -9,7 +9,7 @@ import { DesignPageRouter } from './pages/Design/DesignPageRouter'
 import { GalleryPage } from './pages/Gallery/GalleryPage'
 import { ProfilePage } from './pages/Profile/ProfilePage'
 import { AuthPage } from './pages/Auth/AuthPage'
-import { AdminPage } from './pages/Admin/AdminPage'
+import { AdminLayout } from './pages/Admin/AdminLayout'
 import { partsData } from './data/parts'
 import { prefetchAndExtractConnectors } from './hooks/usePartConnectors'
 
@@ -33,7 +33,7 @@ export default function App() {
 
       {/* Admin Route - 需要 admin 角色 */}
       <Route element={<RoleRoute roles={['admin']} />}>
-        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin" element={<AdminLayout />} />
       </Route>
 
       {/* Main App Routes */}

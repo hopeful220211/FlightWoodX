@@ -4,6 +4,39 @@ Known issues tracked but not yet resolved.
 
 ---
 
+## 2026-04-22: Admin panel temporary password protection
+
+**Status**: Active — temporary measure
+
+/admin path is protected by ADMIN_ACCESS_KEY environment variable +
+backend requireRole('admin') forming a dual layer:
+1. X-Admin-Access-Key header checked by adminAccessKey.js middleware
+2. JWT authenticate + requireRole('admin') checks user has admin role
+
+Frontend has AdminGate component that prompts for password before
+rendering admin panel. Key stored in sessionStorage (cleared on
+browser close).
+
+**Temporary because**: No full RBAC UI exists yet. This is a quick
+"only founders can access admin" mechanism during product iteration.
+
+**Known risks**:
+- Single shared password, strength depends on user's choice
+- If .env or password leaks, protection is void
+- Does not defend against abuse by someone who knows the password
+
+**Mitigation**: Tiny user base (internal testing), narrow attack surface.
+
+**Exit conditions** (remove when ALL met):
+- [ ] Admin UI supports creating and authorizing other admins
+- [ ] Frontend RoleRoute fully based on JWT role
+- [ ] requireAdminAccessKey middleware + AdminGate component removed
+- [ ] Code search for `ADMIN_ACCESS_KEY` returns zero results
+
+**Planned exit**: 2026-Q3 (aligned with RBAC RFC timeline)
+
+---
+
 ## 2026-04-21: Step 3 motor selection deferred
 
 **Status**: Deferred to Phase 6 (flight simulation)

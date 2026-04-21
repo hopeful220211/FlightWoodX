@@ -49,6 +49,10 @@ app.use('/api/auth/login', authLimiter)
 app.use('/api/auth/register', authLimiter)
 app.use('/api/auth', authRoutes)
 
+// 管理员路由
+const adminRoutes = require('./routes/admin')
+app.use('/api/admin', adminRoutes)
+
 // ===== 连接数据库 =====
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)

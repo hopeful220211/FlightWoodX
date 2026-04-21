@@ -64,9 +64,16 @@ async function apiFetch<T = any>(
     ...(options.headers as Record<string, string>),
   }
 
-  // 如果有 token，添加到请求头
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
+  }
+
+  // Attach admin access key for /admin/* endpoints
+  if (endpoint.startsWith('/admin')) {
+    const adminKey = sessionStorage.getItem('adminAccessKey')
+    if (adminKey) {
+      headers['X-Admin-Access-Key'] = adminKey
+    }
   }
 
   try {
@@ -78,6 +85,10 @@ async function apiFetch<T = any>(
     const result = await response.json()
 
     if (!response.ok) {
+      // Clear admin key on 401 for admin endpoints
+      if (response.status === 401 && endpoint.startsWith('/admin')) {
+        sessionStorage.removeItem('adminAccessKey')
+      }
       return {
         success: false,
         error: result.error || result.message || '请求失败',
@@ -148,7 +159,19 @@ export async function logoutApi(): Promise<ApiResponse> {
  * 获取所有用户（管理员）
  */
 export async function getAllUsers(): Promise<ApiResponse<UserResponse[]>> {
-  return apiFetch<UserResponse[]>('/auth/users')
+  return apiFetch<UserResponse[]>('/admin/users')
+}
+
+// ============= 管理后台 API =============
+
+/**
+ * Verify admin access key (pre-check for admin gate)
+ */
+export async function verifyAdminAccessKey(key: string): Promise<ApiResponse> {
+  return apiFetch('/admin/verify-access-key', {
+    method: 'POST',
+    headers: { 'X-Admin-Access-Key': key },
+  })
 }
 
 /**
