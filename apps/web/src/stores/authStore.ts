@@ -6,9 +6,11 @@ import { clearDesignStore } from './designStore'
 export interface User {
   id: string
   username: string
-  nickname: string
-  avatarUrl?: string
+  email: string
   role: 'student' | 'teacher' | 'admin'
+  nickname?: string
+  avatarUrl?: string
+  lastLogin?: string
 }
 
 export interface AuthState {
@@ -47,12 +49,15 @@ export const useAuthStore = create<AuthState>()(
         const result = await apiRegister({ username, email, password })
 
         if (result.success && result.data) {
-          // 保存用户信息和 token
+          const u = result.data.user
           const user: User = {
-            id: result.data.user.id,
-            username: result.data.user.username,
-            nickname: result.data.user.nickname,
-            avatarUrl: result.data.user.avatarUrl,
+            id: u.id,
+            username: u.username,
+            email: u.email,
+            role: u.role ?? 'student',
+            nickname: u.nickname,
+            avatarUrl: u.avatarUrl,
+            lastLogin: u.lastLogin,
           }
           set({ user, token: result.data.token, isAuthenticated: true })
           return { success: true, message: '注册成功' }
@@ -71,12 +76,15 @@ export const useAuthStore = create<AuthState>()(
         const result = await apiLogin({ email, password })
 
         if (result.success && result.data) {
-          // 保存用户信息和 token
+          const u = result.data.user
           const user: User = {
-            id: result.data.user.id,
-            username: result.data.user.username,
-            nickname: result.data.user.nickname,
-            avatarUrl: result.data.user.avatarUrl,
+            id: u.id,
+            username: u.username,
+            email: u.email,
+            role: u.role ?? 'student',
+            nickname: u.nickname,
+            avatarUrl: u.avatarUrl,
+            lastLogin: u.lastLogin,
           }
           set({ user, token: result.data.token, isAuthenticated: true })
           return { success: true, message: '登录成功' }
