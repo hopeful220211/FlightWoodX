@@ -5,7 +5,9 @@ import { ProductDemoSection } from './sections/ProductDemoSection'
 import { StudentGallerySection } from './sections/StudentGallerySection'
 import { CurriculumSection } from './sections/CurriculumSection'
 import { ForWhoSection } from './sections/ForWhoSection'
+import { LovedBySection } from './sections/LovedBySection'
 import { FinalCTASection } from './sections/FinalCTASection'
+import { Footer } from '../../components/layout/Footer'
 
 export function HomePage() {
   return (
@@ -17,7 +19,9 @@ export function HomePage() {
       <StudentGallerySection />
       <CurriculumSection />
       <ForWhoSection />
+      <LovedBySection />
       <FinalCTASection />
+      <Footer />
     </div>
   )
 }
