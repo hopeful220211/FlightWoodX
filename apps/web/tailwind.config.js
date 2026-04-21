@@ -29,6 +29,23 @@ export default {
           800: '#1e40af',
           900: '#1e3a8a',
         },
+        ink: {
+          900: '#1A1A1A',
+          700: '#3D3D3D',
+          600: '#5C5C5C',
+          400: '#8A8A8A',
+          200: '#D4D4D4',
+        },
+        paper: {
+          50: '#FAF8F4',
+          100: '#F3EFE8',
+          200: '#E8E2D8',
+        },
+        accent: {
+          sky: '#7DB8D9',
+          leaf: '#8FB88F',
+          gold: '#D4A74A',
+        },
         success: '#22c55e',
         warning: '#f59e0b',
         error: '#ef4444',
