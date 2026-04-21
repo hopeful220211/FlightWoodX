@@ -52,7 +52,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'MiSans', 'system-ui', 'sans-serif'],
-        display: ['DingTalk JinBuTi', 'MiSans', 'system-ui', 'sans-serif'],
+        display: ['"DingTalk JinBuTi"', 'MiSans', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 10px 30px rgba(0,0,0,.08)',
