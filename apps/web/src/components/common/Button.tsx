@@ -58,9 +58,9 @@ export function Button({
       disabled={isDisabled}
       {...rest}
     >
-      {leftIcon ? <span className="inline-flex">{leftIcon}</span> : null}
-      <span>{loading ? '加载中…' : children}</span>
-      {rightIcon ? <span className="inline-flex">{rightIcon}</span> : null}
+      {leftIcon ? <span className="inline-flex shrink-0">{leftIcon}</span> : null}
+      {loading ? '加载中…' : children}
+      {rightIcon ? <span className="inline-flex shrink-0">{rightIcon}</span> : null}
     </button>
   )
 }

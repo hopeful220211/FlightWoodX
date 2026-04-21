@@ -64,10 +64,10 @@ export function ProductDemoSection() {
 
               <Button
                 onClick={() => navigate(isAuthenticated ? '/design' : '/auth')}
+                rightIcon={<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />}
                 className="group bg-wood-500 hover:brightness-[0.92] text-white mt-2"
               >
-                <span>立即体验</span>
-                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                立即体验
               </Button>
             </div>
           </ScrollReveal>
