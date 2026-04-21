@@ -84,23 +84,20 @@ export function HeroSection() {
 
               {/* CTA buttons */}
               <AnimatedEntry delay={640} className="flex flex-col gap-3 sm:flex-row">
-                <Button
-                  size="lg"
+                <button
                   onClick={() => navigate('/design')}
-                  className="group bg-wood-500 hover:brightness-[0.92] text-white"
+                  className="group inline-flex w-auto items-center gap-2 whitespace-nowrap rounded-md bg-wood-500 px-8 py-3.5 text-base font-medium text-white transition-all hover:brightness-[0.92]"
                 >
-                  <span>开始设计</span>
+                  开始设计
                   <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
+                </button>
+                <button
                   onClick={() => setShowVideoModal(true)}
-                  className="border-ink-200 text-ink-900 hover:bg-paper-100"
+                  className="inline-flex w-auto items-center gap-2 whitespace-nowrap rounded-md border border-ink-200 bg-white px-8 py-3.5 text-base font-medium text-ink-900 transition-colors hover:bg-paper-100"
                 >
                   <Play size={18} />
-                  <span>观看视频</span>
-                </Button>
+                  观看视频
+                </button>
               </AnimatedEntry>
 
               {/* Real achievement metrics */}
