@@ -30,14 +30,14 @@ export function FinalCTASection() {
         <ScrollReveal delay={200} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={() => navigate(isAuthenticated ? '/design' : '/auth')}
-            className="group inline-flex items-center gap-2 rounded-md bg-wood-500 px-8 py-4 text-base font-medium text-white transition-all hover:brightness-[0.92]"
+            className="group inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-md bg-wood-500 px-8 py-4 text-base font-medium text-white transition-all hover:brightness-[0.92]"
           >
             免费开始设计
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
           </button>
           <button
             onClick={() => navigate('/auth?type=school')}
-            className="inline-flex items-center gap-2 rounded-md border border-paper-50/30 px-8 py-4 text-base font-medium text-paper-50 transition-colors hover:bg-white/10"
+            className="inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-md border border-paper-50/30 px-8 py-4 text-base font-medium text-paper-50 transition-colors hover:bg-white/10"
           >
             联系我们
           </button>

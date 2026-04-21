@@ -184,7 +184,7 @@ export function LovedBySection() {
             {/* CTA link */}
             <button
               onClick={scrollToCurriculum}
-              className="group inline-flex items-center gap-1 text-sm font-medium text-wood-500 hover:text-wood-600 transition-colors underline underline-offset-2 hover:decoration-2"
+              className="group inline-flex w-fit items-center gap-1 whitespace-nowrap text-sm font-medium text-wood-500 hover:text-wood-600 transition-colors underline underline-offset-2 hover:decoration-2"
             >
               了解更多课程
               <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />

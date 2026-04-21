@@ -89,7 +89,7 @@ export function StudentGallerySection() {
         <ScrollReveal delay={200} className="mt-8 text-center">
           <button
             onClick={() => navigate('/gallery')}
-            className="inline-flex items-center gap-2 text-sm font-medium text-wood-500 hover:text-wood-600 transition-colors"
+            className="inline-flex w-fit items-center gap-2 whitespace-nowrap text-sm font-medium text-wood-500 hover:text-wood-600 transition-colors"
           >
             查看全部作品
             <ArrowRight size={16} />

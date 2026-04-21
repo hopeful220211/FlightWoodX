@@ -62,7 +62,7 @@ export function ForWhoSection() {
                 <div className="absolute inset-0 flex flex-col justify-end p-6">
                   <h3 className="font-display text-2xl font-semibold text-white">{p.title}</h3>
                   <p className="mt-1 text-sm text-white/70">{p.subtitle}</p>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-medium text-white/80 transition-transform duration-300 group-hover:translate-x-1">
+                  <div className="mt-4 flex w-fit items-center gap-1 whitespace-nowrap text-sm font-medium text-white/80 transition-transform duration-300 group-hover:translate-x-1">
                     进入
                     <ArrowRight size={14} />
                   </div>
