@@ -1,129 +1,153 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Sparkles, Play } from 'lucide-react'
+import { ArrowRight, Play, Trophy, Users, Puzzle, ChevronDown } from 'lucide-react'
 import { Button } from '../../../components/common/Button'
 import { VideoModal } from '../../../components/common/VideoModal'
+import { AwardCapsule } from './hero/AwardCapsule'
+import { HeroDrone3D } from './hero/HeroDrone3D'
 
-// 使用项目中实际存在的图片路径
-const heroImage = '/resource/picture/flight_png/untitled.297.png'
-// 演示视频路径
 const demoVideoUrl = '/resource/videos/example.mp4'
+
+function AnimatedEntry({ children, delay = 0, className = '' }: {
+  children: React.ReactNode
+  delay?: number
+  className?: string
+}) {
+  return (
+    <div
+      className={className}
+      style={{
+        opacity: 0,
+        animation: `fadeInUp 600ms cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}ms forwards`,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
 
 export function HeroSection() {
   const navigate = useNavigate()
   const [showVideoModal, setShowVideoModal] = useState(false)
 
+  const scrollToAwards = () => {
+    document.getElementById('awards')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <>
-      <section
-        id="home"
-        className="relative bg-gradient-to-br from-gray-50 via-wood-50/20 to-gray-50 overflow-hidden pt-4 md:pt-8"
-      >
-        {/* 装饰性的模糊光晕效果 */}
-        <div className="absolute left-10 top-40 h-20 w-20 rounded-full bg-tech-200/50 opacity-60 blur-3xl" />
-        <div className="absolute bottom-40 right-10 h-32 w-32 rounded-full bg-wood-300/40 opacity-50 blur-3xl" />
+      <section className="relative min-h-screen bg-paper-50 overflow-hidden">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="grid min-h-[calc(100vh-72px)] items-center gap-12 pt-[72px] pb-16 lg:grid-cols-[55%_45%] lg:gap-8">
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid min-h-[calc(100vh-5rem)] items-center gap-12 py-8 lg:grid-cols-2 lg:gap-16 lg:py-12">
-            {/* 左侧内容区域 */}
-            <div className="z-10 space-y-8">
-              <div className="inline-flex items-center gap-2 rounded-full bg-wood-100 px-4 py-2 text-wood-600">
-                <Sparkles size={16} />
-                <span className="text-sm font-semibold">开启创意飞行之旅</span>
-              </div>
+            {/* Left column */}
+            <div className="z-10 space-y-6">
 
-              <div className="space-y-6">
-                <h1 className="text-6xl font-black leading-tight text-gray-900 sm:text-7xl lg:text-8xl">
-                  FLIGHT
-                  <span className="block bg-gradient-to-r from-wood-500 to-wood-600 bg-clip-text text-transparent">
+              {/* Award capsule */}
+              <AwardCapsule onClick={scrollToAwards} delay={0} />
+
+              {/* Main title */}
+              <div className="space-y-1">
+                <AnimatedEntry delay={120}>
+                  <h1
+                    className="font-bold leading-[0.95] text-ink-900"
+                    style={{ fontSize: 'clamp(72px, 10vw, 140px)' }}
+                  >
+                    FLIGHT
+                  </h1>
+                </AnimatedEntry>
+                <AnimatedEntry delay={220}>
+                  <h1
+                    className="font-bold leading-[0.95] text-wood-500"
+                    style={{ fontSize: 'clamp(72px, 10vw, 140px)' }}
+                  >
                     WOOD X
-                  </span>
-                </h1>
-
-                <p className="max-w-xl text-xl leading-relaxed text-gray-600 sm:text-2xl">
-                  让孩子们亲手设计和制作
-                  <span className="font-semibold text-wood-500"> 属于自己的木质无人机</span>
-                </p>
-
-                <p className="max-w-lg text-lg text-gray-500">
-                  通过寓教于乐的方式，培养创造力、动手能力和科技思维，开启精彩的STEAM学习之旅
-                </p>
+                  </h1>
+                </AnimatedEntry>
               </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row">
+              {/* Chinese subtitle */}
+              <AnimatedEntry delay={400}>
+                <p className="text-[clamp(28px,4vw,40px)] font-medium text-ink-900">
+                  动手造，会飞的。
+                </p>
+              </AnimatedEntry>
+
+              {/* Description */}
+              <AnimatedEntry delay={520}>
+                <p className="max-w-lg text-[17px] leading-relaxed text-ink-600">
+                  从传统榫卯工艺出发，抵达现代飞行器。
+                  <br />
+                  全球首个面向青少年的木质无人机 STEAM 教育系统。
+                </p>
+              </AnimatedEntry>
+
+              {/* CTA buttons */}
+              <AnimatedEntry delay={640} className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   size="lg"
-                  variant="primary"
-                  rightIcon={
-                    <ArrowRight
-                      size={20}
-                      className="transition-transform group-hover:translate-x-1"
-                    />
-                  }
-                  onClick={() => navigate('/auth')}
-                  className="group bg-wood-500 hover:bg-wood-600 hover:shadow-lg hover:shadow-wood-500/30"
+                  onClick={() => navigate('/design')}
+                  className="group bg-wood-500 hover:brightness-[0.92] text-white"
                 >
-                  <span className="text-lg">开始探索</span>
+                  <span>开始设计</span>
+                  <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
-                  leftIcon={<Play size={20} />}
                   onClick={() => setShowVideoModal(true)}
-                  className="border-2 border-gray-200 bg-white text-gray-700 hover:border-wood-500 hover:text-wood-500"
+                  className="border-ink-200 text-ink-900 hover:bg-paper-100"
                 >
-                  <span className="text-lg">观看视频</span>
+                  <Play size={18} />
+                  <span>观看视频</span>
                 </Button>
-              </div>
+              </AnimatedEntry>
 
-              {/* 数据统计 */}
-              <div className="grid grid-cols-3 gap-6 pt-8">
-                <div>
-                  <div className="text-3xl font-bold text-gray-900">500+</div>
-                  <div className="text-sm text-gray-500">学员</div>
+              {/* Real achievement metrics */}
+              <AnimatedEntry delay={800}>
+                <div className="grid grid-cols-3 gap-6 pt-4">
+                  <div className="flex items-start gap-3">
+                    <Trophy size={20} className="mt-0.5 text-accent-gold shrink-0" />
+                    <div>
+                      <div className="text-2xl font-semibold text-ink-900">4 项</div>
+                      <div className="text-sm text-ink-400">国际设计奖</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Users size={20} className="mt-0.5 text-ink-400 shrink-0" />
+                    <div>
+                      <div className="text-2xl font-semibold text-ink-900">6 人</div>
+                      <div className="text-sm text-ink-400">跨学科团队</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Puzzle size={20} className="mt-0.5 text-ink-400 shrink-0" />
+                    <div>
+                      <div className="text-2xl font-semibold text-ink-900">77 个</div>
+                      <div className="text-sm text-ink-400">标准化零件</div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-gray-900">50+</div>
-                  <div className="text-sm text-gray-500">课程</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-gray-900">98%</div>
-                  <div className="text-sm text-gray-500">满意度</div>
-                </div>
-              </div>
+              </AnimatedEntry>
             </div>
 
-            {/* 右侧图片区域 */}
-            <div className="relative flex items-center justify-center lg:h-[600px]">
-              <div className="relative w-full max-w-xl">
-                {/* 图片底部的发光效果 */}
-                <div className="absolute inset-0 scale-110 rounded-full bg-gradient-to-br from-wood-400 to-wood-600 opacity-20 blur-3xl" />
-
-                {/* 主图片 */}
-                <div className="relative">
-                  <img
-                    src={heroImage}
-                    alt="木质无人机"
-                    className="h-auto w-full animate-float drop-shadow-2xl"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+            {/* Right column: 3D drone */}
+            <AnimatedEntry delay={300} className="relative flex items-center justify-center lg:h-[500px]">
+              <HeroDrone3D />
+            </AnimatedEntry>
           </div>
         </div>
 
-        {/* 波浪形底部边缘 */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path
-              d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
-              fill="white"
-            />
-          </svg>
+        {/* Scroll hint */}
+        <div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-ink-400"
+          style={{
+            opacity: 0,
+            animation: 'fadeInUp 500ms cubic-bezier(0.2, 0.8, 0.2, 1) 900ms forwards',
+          }}
+        >
+          <span className="text-xs">向下滚动</span>
+          <ChevronDown size={16} className="animate-bounce" />
         </div>
       </section>
 

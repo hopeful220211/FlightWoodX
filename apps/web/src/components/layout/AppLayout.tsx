@@ -7,12 +7,12 @@ import { Tooltip } from '../common/Tooltip'
 export function AppLayout() {
   useHydrate()
   const { pathname } = useLocation()
-  const hideHelpBubble = pathname.startsWith('/design')
+  const hideHelpBubble = pathname === '/' || pathname.startsWith('/design')
 
   return (
     <div className="min-h-screen">
       <Navbar />
-      <main className="pt-16">
+      <main className={pathname === '/' ? '' : 'pt-[72px]'}>
         <Outlet />
       </main>
       {!hideHelpBubble && (
