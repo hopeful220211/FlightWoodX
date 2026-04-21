@@ -61,10 +61,10 @@ export function AwardsSection() {
     <section id="awards" className="bg-paper-100 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
-          <h2 className="text-4xl lg:text-[56px] font-semibold text-ink-900 leading-tight">
+          <h2 className="font-display text-4xl lg:text-[56px] font-semibold text-ink-900 leading-tight">
             国际设计奖项 · 全球顶级认可
           </h2>
-          <p className="mt-4 text-xl text-ink-600 max-w-2xl mx-auto">
+          <p className="font-display mt-4 text-xl text-ink-600 max-w-2xl mx-auto">
             在设计界的殿堂中，我们与世界一流品牌同台获奖
           </p>
         </ScrollReveal>

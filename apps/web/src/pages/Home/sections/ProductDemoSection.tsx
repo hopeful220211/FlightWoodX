@@ -44,7 +44,7 @@ export function ProductDemoSection() {
           {/* Right: text */}
           <ScrollReveal direction="right" distance={20} delay={100}>
             <div className="space-y-6">
-              <h2 className="text-3xl lg:text-[44px] font-semibold text-ink-900 leading-tight">
+              <h2 className="font-display text-3xl lg:text-[44px] font-semibold text-ink-900 leading-tight">
                 你看到的，
                 <br />
                 是孩子看到的

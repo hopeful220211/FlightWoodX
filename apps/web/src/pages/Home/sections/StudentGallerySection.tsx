@@ -30,10 +30,10 @@ export function StudentGallerySection() {
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
+            <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
               学生设计的无人机
             </h2>
-            <p className="mt-3 text-xl text-ink-600">每架都是独一无二的作品</p>
+            <p className="font-display mt-3 text-xl text-ink-600">每架都是独一无二的作品</p>
           </div>
           <div className="hidden md:flex items-center gap-2">
             <button

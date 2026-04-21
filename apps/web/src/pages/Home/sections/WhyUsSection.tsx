@@ -26,10 +26,10 @@ export function WhyUsSection() {
     <section className="bg-paper-50 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
-          <h2 className="text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
+          <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
             不只是另一个 STEAM 玩具
           </h2>
-          <p className="mt-4 text-xl text-ink-600 max-w-2xl mx-auto">
+          <p className="font-display mt-4 text-xl text-ink-600 max-w-2xl mx-auto">
             我们重新定义了中国青少年 STEAM 教育的三件事
           </p>
         </ScrollReveal>
@@ -50,7 +50,7 @@ export function WhyUsSection() {
                     }}
                   />
                 </div>
-                <h3 className="text-2xl font-semibold text-ink-900">{card.title}</h3>
+                <h3 className="font-display text-2xl font-semibold text-ink-900">{card.title}</h3>
                 <p className="mt-1 text-sm font-medium text-wood-500">{card.subtitle}</p>
                 <p className="mt-3 text-base leading-relaxed text-ink-600">{card.desc}</p>
               </div>

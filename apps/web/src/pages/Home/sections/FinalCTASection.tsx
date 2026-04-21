@@ -14,7 +14,7 @@ export function FinalCTASection() {
 
       <div className="relative mx-auto max-w-4xl px-4 text-center">
         <ScrollReveal>
-          <h2 className="text-4xl lg:text-[60px] font-semibold text-paper-50 leading-tight">
+          <h2 className="font-display text-4xl lg:text-[60px] font-semibold text-paper-50 leading-tight">
             准备好开启你的
             <br />
             创造之旅了吗？

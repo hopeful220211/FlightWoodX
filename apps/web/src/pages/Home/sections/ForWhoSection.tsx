@@ -30,7 +30,7 @@ export function ForWhoSection() {
     <section className="bg-paper-50 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
-          <h2 className="text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
+          <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
             适合不同的你
           </h2>
         </ScrollReveal>
@@ -60,7 +60,7 @@ export function ForWhoSection() {
 
                 {/* Content */}
                 <div className="absolute inset-0 flex flex-col justify-end p-6">
-                  <h3 className="text-2xl font-semibold text-white">{p.title}</h3>
+                  <h3 className="font-display text-2xl font-semibold text-white">{p.title}</h3>
                   <p className="mt-1 text-sm text-white/70">{p.subtitle}</p>
                   <div className="mt-4 flex items-center gap-1 text-sm font-medium text-white/80 transition-transform duration-300 group-hover:translate-x-1">
                     进入

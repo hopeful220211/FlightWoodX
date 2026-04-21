@@ -68,7 +68,7 @@ export function HeroSection() {
 
               {/* Chinese subtitle */}
               <AnimatedEntry delay={400}>
-                <p className="text-[clamp(28px,4vw,40px)] font-medium text-ink-900">
+                <p className="font-display text-[clamp(28px,4vw,40px)] font-medium text-ink-900">
                   动手造，会飞的。
                 </p>
               </AnimatedEntry>
@@ -106,21 +106,21 @@ export function HeroSection() {
                   <div className="flex items-start gap-3">
                     <Trophy size={20} className="mt-0.5 text-accent-gold shrink-0" />
                     <div>
-                      <div className="text-2xl font-semibold text-ink-900">4 项</div>
+                      <div className="font-display text-2xl font-semibold text-ink-900">4 项</div>
                       <div className="text-sm text-ink-400">国际设计奖</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Users size={20} className="mt-0.5 text-ink-400 shrink-0" />
                     <div>
-                      <div className="text-2xl font-semibold text-ink-900">6 人</div>
+                      <div className="font-display text-2xl font-semibold text-ink-900">6 人</div>
                       <div className="text-sm text-ink-400">跨学科团队</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Puzzle size={20} className="mt-0.5 text-ink-400 shrink-0" />
                     <div>
-                      <div className="text-2xl font-semibold text-ink-900">77 个</div>
+                      <div className="font-display text-2xl font-semibold text-ink-900">77 个</div>
                       <div className="text-sm text-ink-400">标准化零件</div>
                     </div>
                   </div>

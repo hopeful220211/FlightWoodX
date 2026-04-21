@@ -12,10 +12,10 @@ export function CurriculumSection() {
     <section className="bg-paper-100 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
-          <h2 className="text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
+          <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
             12 课时 · 从想到做到飞
           </h2>
-          <p className="mt-4 text-xl text-ink-600">
+          <p className="font-display mt-4 text-xl text-ink-600">
             系统设计的完整学习路径
           </p>
         </ScrollReveal>
@@ -49,7 +49,7 @@ export function CurriculumSection() {
                     >
                       {stage.num}
                     </div>
-                    <h3 className="text-[22px] font-semibold text-ink-900 mt-1">
+                    <h3 className="font-display text-[22px] font-semibold text-ink-900 mt-1">
                       {stage.title}
                     </h3>
                     <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-wood-100 text-wood-600">
