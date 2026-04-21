@@ -1,18 +1,18 @@
 import { HeroSection } from './sections/HeroSection'
 import { AwardsSection } from './sections/AwardsSection'
-import { STEAMSection } from './sections/STEAMSection'
-import { UIShowcaseSection } from './sections/UIShowcaseSection'
+import { WhyUsSection } from './sections/WhyUsSection'
+import { ProductDemoSection } from './sections/ProductDemoSection'
 import { StudentShowcaseSection } from './sections/StudentShowcaseSection'
 import { CurriculumSection } from './sections/CurriculumSection'
 import { FinalCTASection } from './sections/FinalCTASection'
 
 export function HomePage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen">
       <HeroSection />
       <AwardsSection />
-      <STEAMSection />
-      <UIShowcaseSection />
+      <WhyUsSection />
+      <ProductDemoSection />
       <StudentShowcaseSection />
       <CurriculumSection />
       <FinalCTASection />
