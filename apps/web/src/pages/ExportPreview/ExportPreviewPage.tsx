@@ -1,11 +1,25 @@
+import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useDesignStore } from '../../stores/designStore'
+import { ExportHeroSection } from './HeroSection'
+import { FlightCheckReport } from './FlightCheckReport'
+import { FlightStats } from './FlightStats'
+import { PartsList } from './PartsList'
+import { MaterialPreparation } from './MaterialPreparation'
+import { ExportActions } from './ExportActions'
+import { runAllChecks } from '../../utils/exportChecks'
+import { calculateStats } from '../../utils/designStats'
+import { estimateMaterial } from '../../utils/materialEstimate'
 
 export function ExportPreviewPage() {
   const { designId } = useParams<{ designId: string }>()
   const navigate = useNavigate()
   const design = useDesignStore(s => s.designs.find(d => d.id === designId))
+
+  const checks = useMemo(() => design ? runAllChecks(design.parts) : [], [design])
+  const stats = useMemo(() => design ? calculateStats(design.parts) : null, [design])
+  const materialEst = useMemo(() => design ? estimateMaterial(design.parts) : null, [design])
 
   if (!design) {
     return (
@@ -37,35 +51,23 @@ export function ExportPreviewPage() {
         </div>
       </div>
 
-      {/* Placeholder content — will be replaced in PR 2 */}
-      <div className="mx-auto max-w-5xl px-4 py-16">
-        <div className="text-center space-y-4">
-          <h1 className="font-display text-4xl font-semibold text-ink-900">
-            {design.name ? `「${design.name}」导出预览` : '导出预览'}
-          </h1>
-          <p className="text-ink-600">
-            共 {design.parts.length} 个零件 · 创建于 {new Date(design.updatedAt).toLocaleDateString('zh-CN')}
-          </p>
-          <div className="mt-12 bg-paper-100 rounded-lg p-12 text-ink-400">
-            <p className="text-lg">飞行检查报告、飞机参数、零件清单、制作准备</p>
-            <p className="text-sm mt-2">即将在 PR 2 实现</p>
-          </div>
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <button
-              onClick={() => navigate('/design')}
-              className="inline-flex w-fit items-center whitespace-nowrap px-6 py-3 text-sm font-medium text-ink-900 border border-ink-200 rounded-md hover:bg-paper-100 transition-colors"
-            >
-              返回继续修改
-            </button>
-            <button
-              disabled
-              className="inline-flex w-fit items-center gap-2 whitespace-nowrap px-6 py-3 text-sm font-medium text-white bg-wood-500 rounded-md opacity-50 cursor-not-allowed"
-            >
-              确认导出（PR 2）
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Section 1: Hero with 3D preview */}
+      <ExportHeroSection design={design} />
+
+      {/* Section 2: Flight check report */}
+      <FlightCheckReport checks={checks} />
+
+      {/* Section 3: Flight stats */}
+      {stats && <FlightStats stats={stats} />}
+
+      {/* Section 4: Parts list */}
+      <PartsList parts={design.parts} />
+
+      {/* Section 5: Material preparation */}
+      {materialEst && <MaterialPreparation estimate={materialEst} />}
+
+      {/* Section 6: Bottom CTA */}
+      <ExportActions checks={checks} designId={design.id} />
     </div>
   )
 }
