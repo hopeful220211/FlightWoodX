@@ -1,13 +1,24 @@
+import { useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useDesignStore } from '../../stores/designStore'
 import { ARBackground } from './ARBackground'
 import { DroneScene } from './DroneScene'
+import { JoystickOverlay } from './JoystickOverlay'
+import type { ControlInput } from './JoystickOverlay'
 
 export function ARFlightPage() {
   const { designId } = useParams<{ designId: string }>()
   const navigate = useNavigate()
   const design = useDesignStore(s => s.designs.find(d => d.id === designId))
+  const inputRef = useRef<ControlInput>({
+    leftJoystick: { x: 0, y: 0 },
+    rightJoystick: { x: 0, y: 0 },
+  })
+
+  const handleInput = useCallback((input: ControlInput) => {
+    inputRef.current = input
+  }, [])
 
   if (!design) {
     return (
@@ -42,13 +53,8 @@ export function ARFlightPage() {
           <X size={20} />
         </button>
 
-        {/* Joystick placeholders — will be implemented in PR 3 */}
-        <div className="pointer-events-auto absolute bottom-8 left-8 w-[120px] h-[120px] rounded-full border border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-12 h-12 rounded-full bg-wood-500/60" />
-        </div>
-        <div className="pointer-events-auto absolute bottom-8 right-8 w-[120px] h-[120px] rounded-full border border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-12 h-12 rounded-full bg-wood-500/60" />
-        </div>
+        {/* Dual joysticks */}
+        <JoystickOverlay onInput={handleInput} />
       </div>
     </div>
   )
