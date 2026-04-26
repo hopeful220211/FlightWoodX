@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Camera } from 'lucide-react'
 import type { BuildStep } from '@fwx/parts-schema'
 
 interface StepActionsProps {
@@ -10,6 +10,7 @@ interface StepActionsProps {
   onReset: () => void
   onSave?: () => void
   onSaveAndExport?: () => Promise<void>
+  onArFlight?: () => void
 }
 
 export function StepActions({
@@ -20,6 +21,7 @@ export function StepActions({
   onReset,
   onSave,
   onSaveAndExport,
+  onArFlight,
 }: StepActionsProps) {
   const isFirstStep = currentStep === 'HUB'
   const isLastStep = currentStep === 'REVIEW'
@@ -61,7 +63,14 @@ export function StepActions({
           下一步 →
         </button>
       ) : (
-        <div className="flex items-center gap-2 flex-col sm:flex-row">
+        <div className="flex items-center gap-2 flex-col-reverse sm:flex-row">
+          <button
+            onClick={onArFlight}
+            className="inline-flex w-fit items-center gap-2 whitespace-nowrap px-5 py-2 text-sm font-medium text-wood-500 border border-wood-500/30 bg-paper-100 rounded-md hover:bg-paper-200 transition-colors"
+          >
+            <Camera size={16} />
+            AR 试飞
+          </button>
           <button
             onClick={onSave}
             className="inline-flex w-fit items-center whitespace-nowrap px-5 py-2 text-sm font-medium text-ink-900 border border-ink-200 rounded-md hover:bg-paper-100 transition-colors"

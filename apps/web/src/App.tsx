@@ -7,6 +7,7 @@ import { HomePage } from './pages/Home/HomePage'
 import { LearnPage } from './pages/Learn/LearnPage'
 import { DesignPageRouter } from './pages/Design/DesignPageRouter'
 import { ExportPreviewPage } from './pages/ExportPreview/ExportPreviewPage'
+import { ARFlightPage } from './pages/ARFlight/ARFlightPage'
 import { GalleryPage } from './pages/Gallery/GalleryPage'
 import { ProfilePage } from './pages/Profile/ProfilePage'
 import { AuthPage } from './pages/Auth/AuthPage'
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/design" element={<DesignPageRouter />} />
           <Route path="/design/export-preview/:designId" element={<ExportPreviewPage />} />
+          <Route path="/design/ar-flight/:designId" element={<ARFlightPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

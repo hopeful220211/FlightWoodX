@@ -58,10 +58,22 @@ export function GuidedDesignPage() {
 
   const handleSaveAndExport = useCallback(async () => {
     if (!activeDesign) return
-    // Save is automatic via Zustand persist
-    // Navigate to export preview
     navigate(`/design/export-preview/${activeDesign.id}`)
   }, [activeDesign, navigate])
+
+  const handleArFlight = useCallback(() => {
+    if (!activeDesign) return
+
+    const hasHub = activeDesign.parts.some(p => p.category === 'HUB')
+    const hasArm = activeDesign.parts.some(p => p.category === 'ARM')
+
+    if (!hasHub || !hasArm) {
+      toast.push('error', '先装好你的飞机吧！至少需要 1 个主板和 1 个机臂')
+      return
+    }
+
+    navigate(`/design/ar-flight/${activeDesign.id}`)
+  }, [activeDesign, navigate, toast])
 
   if (!activeDesign) {
     return null
@@ -106,6 +118,7 @@ export function GuidedDesignPage() {
           onReset={handleReset}
           onSave={handleSave}
           onSaveAndExport={handleSaveAndExport}
+          onArFlight={handleArFlight}
         />
       </div>
     </div>
