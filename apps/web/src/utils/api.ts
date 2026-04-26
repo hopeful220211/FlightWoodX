@@ -174,6 +174,44 @@ export async function verifyAdminAccessKey(key: string): Promise<ApiResponse> {
   })
 }
 
+// ============= 设计导出 API =============
+
+/**
+ * Export design as CAD ZIP.
+ * Returns a Blob for browser download.
+ */
+export async function exportDesignCad(
+  designId: string,
+  design: { name: string; parts: unknown[]; updatedAt: string; stats?: unknown; checkResults?: unknown },
+  username: string,
+): Promise<{ success: true; blob: Blob; fileName: string } | { success: false; error: string }> {
+  const token = getToken()
+  try {
+    const response = await fetch(`${API_URL}/designs/${designId}/export-cad`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ design, username }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      return { success: false, error: (err as { error?: string }).error || '导出失败' }
+    }
+
+    const blob = await response.blob()
+    const disposition = response.headers.get('Content-Disposition') || ''
+    const fileNameMatch = disposition.match(/filename="?([^"]+)"?/)
+    const fileName = fileNameMatch ? decodeURIComponent(fileNameMatch[1]) : `flightwoodx-export-${designId}.zip`
+
+    return { success: true, blob, fileName }
+  } catch (error) {
+    return { success: false, error: '网络请求失败' }
+  }
+}
+
 /**
  * 更新用户信息
  */

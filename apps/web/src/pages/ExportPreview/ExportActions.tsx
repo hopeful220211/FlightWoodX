@@ -2,15 +2,21 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, XCircle } from 'lucide-react'
 import { ScrollReveal } from '../../components/common/ScrollReveal'
+import { useToast } from '../../components/common/Toast'
+import { useAuthStore } from '../../stores/authStore'
+import { exportDesignCad } from '../../utils/api'
 import type { CheckResult } from '../../utils/exportChecks'
+import type { Design } from '../../types/design'
 
 interface ExportActionsProps {
   checks: CheckResult[]
-  designId: string
+  design: Design
 }
 
-export function ExportActions({ checks, designId }: ExportActionsProps) {
+export function ExportActions({ checks, design }: ExportActionsProps) {
   const navigate = useNavigate()
+  const toast = useToast()
+  const user = useAuthStore(s => s.user)
   const hasBlockingErrors = checks.some(c => c.level === 'error')
   const errorCount = checks.filter(c => c.level === 'error').length
   const [exporting, setExporting] = useState(false)
@@ -19,12 +25,37 @@ export function ExportActions({ checks, designId }: ExportActionsProps) {
   const handleExport = async () => {
     if (hasBlockingErrors || exporting) return
     setExporting(true)
-    // PR 3 will wire this to the real backend API
-    await new Promise(r => setTimeout(r, 1000))
-    alert('ZIP 生成功能将在 PR 3 实现')
+
+    const result = await exportDesignCad(
+      design.id,
+      {
+        name: design.name,
+        parts: design.parts,
+        updatedAt: design.updatedAt,
+        checkResults: checks.map(c => ({ id: c.id, level: c.level })),
+      },
+      user?.username ?? '设计师',
+    )
+
+    if (result.success) {
+      // Trigger browser download
+      const url = URL.createObjectURL(result.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = result.fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast.push('success', 'ZIP 已下载')
+      setExported(true)
+      setTimeout(() => setExported(false), 3000)
+    } else {
+      toast.push('error', result.error)
+    }
+
     setExporting(false)
-    setExported(true)
-    setTimeout(() => setExported(false), 3000)
   }
 
   return (

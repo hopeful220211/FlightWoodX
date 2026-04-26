@@ -67,7 +67,7 @@ export function ExportPreviewPage() {
       {materialEst && <MaterialPreparation estimate={materialEst} />}
 
       {/* Section 6: Bottom CTA */}
-      <ExportActions checks={checks} designId={design.id} />
+      <ExportActions checks={checks} design={design} />
     </div>
   )
 }

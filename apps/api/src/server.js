@@ -53,6 +53,10 @@ app.use('/api/auth', authRoutes)
 const adminRoutes = require('./routes/admin')
 app.use('/api/admin', adminRoutes)
 
+// 设计导出路由
+const designRoutes = require('./routes/designs')
+app.use('/api/designs', designRoutes)
+
 // ===== 连接数据库 =====
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)
