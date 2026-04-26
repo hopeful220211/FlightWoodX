@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import type { BuildStep } from '@fwx/parts-schema'
 
 interface StepActionsProps {
@@ -6,11 +8,32 @@ interface StepActionsProps {
   onAdvance: () => void
   onGoBack: () => void
   onReset: () => void
+  onSave?: () => void
+  onSaveAndExport?: () => Promise<void>
 }
 
-export function StepActions({ currentStep, canAdvance, onAdvance, onGoBack, onReset }: StepActionsProps) {
+export function StepActions({
+  currentStep,
+  canAdvance,
+  onAdvance,
+  onGoBack,
+  onReset,
+  onSave,
+  onSaveAndExport,
+}: StepActionsProps) {
   const isFirstStep = currentStep === 'HUB'
   const isLastStep = currentStep === 'REVIEW'
+  const [exporting, setExporting] = useState(false)
+
+  const handleSaveAndExport = async () => {
+    if (!onSaveAndExport || exporting) return
+    setExporting(true)
+    try {
+      await onSaveAndExport()
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-100">
@@ -33,18 +56,27 @@ export function StepActions({ currentStep, canAdvance, onAdvance, onGoBack, onRe
         <button
           onClick={onAdvance}
           disabled={!canAdvance}
-          className="px-5 py-2 text-sm font-medium text-white bg-tech-500 rounded-lg hover:bg-tech-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-5 py-2 text-sm font-medium text-white bg-tech-500 rounded-md hover:bg-tech-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           下一步 →
         </button>
       ) : (
-        <button
-          onClick={onAdvance}
-          disabled={!canAdvance}
-          className="px-5 py-2 text-sm font-medium text-white bg-green-500 rounded-lg hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          完成并保存
-        </button>
+        <div className="flex items-center gap-2 flex-col sm:flex-row">
+          <button
+            onClick={onSave}
+            className="inline-flex w-fit items-center whitespace-nowrap px-5 py-2 text-sm font-medium text-ink-900 border border-ink-200 rounded-md hover:bg-paper-100 transition-colors"
+          >
+            保存
+          </button>
+          <button
+            onClick={handleSaveAndExport}
+            disabled={exporting}
+            className="group inline-flex w-fit items-center gap-2 whitespace-nowrap px-5 py-2 text-sm font-medium text-white bg-wood-500 rounded-md hover:brightness-[0.92] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {exporting ? '保存中...' : '保存并导出'}
+            {!exporting && <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />}
+          </button>
+        </div>
       )}
     </div>
   )

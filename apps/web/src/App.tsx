@@ -6,6 +6,7 @@ import RoleRoute from './components/layout/RoleRoute'
 import { HomePage } from './pages/Home/HomePage'
 import { LearnPage } from './pages/Learn/LearnPage'
 import { DesignPageRouter } from './pages/Design/DesignPageRouter'
+import { ExportPreviewPage } from './pages/ExportPreview/ExportPreviewPage'
 import { GalleryPage } from './pages/Gallery/GalleryPage'
 import { ProfilePage } from './pages/Profile/ProfilePage'
 import { AuthPage } from './pages/Auth/AuthPage'
@@ -44,6 +45,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/design" element={<DesignPageRouter />} />
+          <Route path="/design/export-preview/:designId" element={<ExportPreviewPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

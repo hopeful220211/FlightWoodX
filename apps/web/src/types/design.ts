@@ -57,6 +57,7 @@ export interface Design {
   stepReached: number
   parts: PartInstance[]
   safetyCheck?: SafetyCheck
+  exportedAt?: string
 }
 
 export interface Connector {

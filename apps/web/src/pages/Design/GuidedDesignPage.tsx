@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDesignStore } from '../../stores/designStore'
 import { useToast } from '../../components/common/Toast'
 import { ThreeCanvas } from '../../components/design/ThreeCanvas'
@@ -9,6 +10,7 @@ import { StepActions } from './components/StepActions'
 import type { Part } from '../../types/design'
 
 export function GuidedDesignPage() {
+  const navigate = useNavigate()
   const activeDesign = useDesignStore(s => s.getActiveDesign())
   const advanceStep = useDesignStore(s => s.advanceStep)
   const goBackStep = useDesignStore(s => s.goBackStep)
@@ -49,21 +51,29 @@ export function GuidedDesignPage() {
     toast.push('info', '已重置当前步骤')
   }, [resetCurrentStep, toast])
 
+  const handleSave = useCallback(() => {
+    // Currently localStorage only (Zustand persist handles it)
+    toast.push('success', '已保存')
+  }, [toast])
+
+  const handleSaveAndExport = useCallback(async () => {
+    if (!activeDesign) return
+    // Save is automatic via Zustand persist
+    // Navigate to export preview
+    navigate(`/design/export-preview/${activeDesign.id}`)
+  }, [activeDesign, navigate])
+
   if (!activeDesign) {
-    // Should not reach here — DesignPageRouter handles empty state
     return null
   }
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
-      {/* Top: Step Progress — fixed height */}
       <div className="shrink-0">
         <StepProgressBar currentStep={currentStep} stepReached={stepReached} />
       </div>
 
-      {/* Middle: Three columns — fills remaining space */}
       <div className="flex-1 flex min-h-0">
-        {/* Left: Part selection — only this scrolls */}
         <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto">
             <StepPartPanel
@@ -74,12 +84,10 @@ export function GuidedDesignPage() {
           </div>
         </aside>
 
-        {/* Center: 3D Canvas — fills remaining width, no scroll */}
         <main className="flex-1 relative min-h-0 min-w-0">
           <ThreeCanvas />
         </main>
 
-        {/* Right: Guide — scrolls independently */}
         <aside className="w-56 shrink-0 bg-white border-l border-gray-100 overflow-y-auto">
           <StepGuide
             currentStep={currentStep}
@@ -89,7 +97,6 @@ export function GuidedDesignPage() {
         </aside>
       </div>
 
-      {/* Bottom: Actions — fixed height, always visible */}
       <div className="shrink-0">
         <StepActions
           currentStep={currentStep}
@@ -97,6 +104,8 @@ export function GuidedDesignPage() {
           onAdvance={handleAdvance}
           onGoBack={handleGoBack}
           onReset={handleReset}
+          onSave={handleSave}
+          onSaveAndExport={handleSaveAndExport}
         />
       </div>
     </div>
