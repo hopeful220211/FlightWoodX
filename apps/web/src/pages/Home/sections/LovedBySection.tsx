@@ -90,24 +90,46 @@ function AvatarPlaceholder({ testimonial }: { testimonial: Testimonial }) {
 export function LovedBySection() {
   const [current, setCurrent] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pausedAfterClick = useRef(false)
+
+  const clearTimer = () => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+  }
 
   const goTo = useCallback((idx: number) => {
     setCurrent(((idx % TESTIMONIALS.length) + TESTIMONIALS.length) % TESTIMONIALS.length)
   }, [])
 
-  const next = useCallback(() => goTo(current + 1), [current, goTo])
-  const prev = useCallback(() => goTo(current - 1), [current, goTo])
+  // Schedule next auto-advance
+  const scheduleNext = useCallback((delay: number) => {
+    clearTimer()
+    timerRef.current = setTimeout(() => {
+      setCurrent(c => (c + 1) % TESTIMONIALS.length)
+      pausedAfterClick.current = false
+      scheduleNext(3000)
+    }, delay)
+  }, [])
 
-  // Auto-rotate every 8s, pause on hover
+  const next = useCallback(() => { goTo(current + 1) }, [current, goTo])
+  const prev = useCallback(() => { goTo(current - 1) }, [current, goTo])
+
+  // Manual click handler: switch + pause 6s before resuming 3s rhythm
+  const manualGoTo = useCallback((idx: number) => {
+    goTo(idx)
+    pausedAfterClick.current = true
+    scheduleNext(6000)
+  }, [goTo, scheduleNext])
+
+  const manualNext = useCallback(() => manualGoTo(current + 1), [current, manualGoTo])
+  const manualPrev = useCallback(() => manualGoTo(current - 1), [current, manualGoTo])
+
+  // Auto-rotate: 3s default, pause on hover
   useEffect(() => {
-    if (isHovered) {
-      if (timerRef.current) clearInterval(timerRef.current)
-      return
-    }
-    timerRef.current = setInterval(next, 8000)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [next, isHovered])
+    if (isHovered) { clearTimer(); return }
+    if (!pausedAfterClick.current) { scheduleNext(3000) }
+    return clearTimer
+  }, [isHovered, scheduleNext])
 
   const t = TESTIMONIALS[current]
   const bgColor = ROLE_BG[t.role]
@@ -197,7 +219,7 @@ export function LovedBySection() {
                 {TESTIMONIALS.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => goTo(i)}
+                    onClick={() => manualGoTo(i)}
                     className={`rounded-full transition-colors ${
                       i === current ? 'w-2 h-2 bg-wood-500' : 'w-2 h-2 bg-ink-200 hover:bg-ink-400'
                     }`}
@@ -209,14 +231,14 @@ export function LovedBySection() {
               {/* Arrows */}
               <div className="flex gap-2">
                 <button
-                  onClick={prev}
+                  onClick={manualPrev}
                   className="flex h-12 w-12 items-center justify-center rounded-md bg-paper-100 text-ink-600 transition-colors hover:bg-paper-200"
                   aria-label="上一条"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
-                  onClick={next}
+                  onClick={manualNext}
                   className="flex h-12 w-12 items-center justify-center rounded-md bg-ink-900 text-white transition-colors hover:bg-ink-700"
                   aria-label="下一条"
                 >
