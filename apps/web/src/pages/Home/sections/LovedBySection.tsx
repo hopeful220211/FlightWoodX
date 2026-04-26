@@ -93,48 +93,52 @@ const MANUAL_DELAY = 6000
 
 export function LovedBySection() {
   const [current, setCurrent] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isPausedRef = useRef(false)
-  const nextDelayRef = useRef(NORMAL_DELAY)
+  const timerRef = useRef<number | null>(null)
+  const delayRef = useRef(NORMAL_DELAY)
 
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+  const stop = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
   }, [])
 
-  const scheduleNext = useCallback(() => {
-    clearTimer()
-    timerRef.current = window.setTimeout(() => {
-      if (!isPausedRef.current) {
-        console.log(`[testimonial] auto-tick after ${nextDelayRef.current}ms`)
+  const start = useCallback(() => {
+    stop()
+    const tick = () => {
+      timerRef.current = window.setTimeout(() => {
+        console.log(`[testimonial] auto-tick after ${delayRef.current}ms`)
         setCurrent(i => (i + 1) % TOTAL)
-      }
-      nextDelayRef.current = NORMAL_DELAY
-      scheduleNext()
-    }, nextDelayRef.current)
-  }, [clearTimer])
+        delayRef.current = NORMAL_DELAY
+        timerRef.current = window.setTimeout(tick, NORMAL_DELAY)
+      }, delayRef.current)
+    }
+    tick()
+  }, [stop])
 
-  // Start on mount, cleanup on unmount
+  // Mount: start the chain. Unmount: stop.
   useEffect(() => {
-    scheduleNext()
-    return clearTimer
-  }, [scheduleNext, clearTimer])
+    start()
+    return stop
+  }, [start, stop])
 
   const handleManualChange = useCallback((idx: number) => {
     const normalized = ((idx % TOTAL) + TOTAL) % TOTAL
     console.log('[testimonial] manual click, next will wait 6000ms')
     setCurrent(normalized)
-    nextDelayRef.current = MANUAL_DELAY
-    scheduleNext()
-  }, [scheduleNext])
+    delayRef.current = MANUAL_DELAY
+    start()
+  }, [start])
 
   const handleMouseEnter = useCallback(() => {
     console.log('[testimonial] hover paused')
-    isPausedRef.current = true
-  }, [])
+    stop()
+  }, [stop])
 
   const handleMouseLeave = useCallback(() => {
-    isPausedRef.current = false
-  }, [])
+    console.log('[testimonial] hover resumed')
+    start()
+  }, [start])
 
   const t = TESTIMONIALS[current]
   const bgColor = ROLE_BG[t.role]
