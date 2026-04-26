@@ -6,18 +6,21 @@ import { ARBackground } from './ARBackground'
 import { DroneScene } from './DroneScene'
 import { JoystickOverlay } from './JoystickOverlay'
 import type { ControlInput } from './JoystickOverlay'
+import type { FlightInput } from './flightPhysics'
 
 export function ARFlightPage() {
   const { designId } = useParams<{ designId: string }>()
   const navigate = useNavigate()
   const design = useDesignStore(s => s.designs.find(d => d.id === designId))
-  const inputRef = useRef<ControlInput>({
-    leftJoystick: { x: 0, y: 0 },
-    rightJoystick: { x: 0, y: 0 },
-  })
+  const flightInputRef = useRef<FlightInput>({ leftX: 0, leftY: 0, rightX: 0, rightY: 0 })
 
   const handleInput = useCallback((input: ControlInput) => {
-    inputRef.current = input
+    flightInputRef.current = {
+      leftX: input.leftJoystick.x,
+      leftY: input.leftJoystick.y,
+      rightX: input.rightJoystick.x,
+      rightY: input.rightJoystick.y,
+    }
   }, [])
 
   if (!design) {
@@ -40,7 +43,7 @@ export function ARFlightPage() {
       <ARBackground />
 
       {/* Layer 2: 3D drone scene (transparent canvas) */}
-      <DroneScene parts={design.parts} />
+      <DroneScene parts={design.parts} inputRef={flightInputRef} />
 
       {/* Layer 3: HUD overlay */}
       <div className="fixed inset-0 z-20 pointer-events-none">
