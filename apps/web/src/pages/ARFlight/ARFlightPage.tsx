@@ -1,10 +1,10 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { X } from 'lucide-react'
 import { useDesignStore } from '../../stores/designStore'
 import { ARBackground } from './ARBackground'
 import { DroneScene } from './DroneScene'
 import { JoystickOverlay } from './JoystickOverlay'
+import { HUD } from './HUD'
 import type { ControlInput } from './JoystickOverlay'
 import type { FlightInput } from './flightPhysics'
 
@@ -13,6 +13,16 @@ export function ARFlightPage() {
   const navigate = useNavigate()
   const design = useDesignStore(s => s.designs.find(d => d.id === designId))
   const flightInputRef = useRef<FlightInput>({ leftX: 0, leftY: 0, rightX: 0, rightY: 0 })
+  const [altitude, setAltitude] = useState(0.5)
+  const altitudeRef = useRef(0.5)
+
+  // Poll altitude from physics state (updated by FlightController via ref)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAltitude(altitudeRef.current)
+    }, 200)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleInput = useCallback((input: ControlInput) => {
     flightInputRef.current = {
@@ -20,6 +30,23 @@ export function ARFlightPage() {
       leftY: input.leftJoystick.y,
       rightX: input.rightJoystick.x,
       rightY: input.rightJoystick.y,
+    }
+  }, [])
+
+  const handleFirstTouch = useCallback(() => {
+    // Hint dismissed by HUD internally
+  }, [])
+
+  // Request fullscreen on mount (best-effort)
+  useEffect(() => {
+    const elem = document.documentElement
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {})
+    } else if ((elem as unknown as { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen) {
+      (elem as unknown as { webkitRequestFullscreen: () => Promise<void> }).webkitRequestFullscreen().catch(() => {})
+    }
+    return () => {
+      document.exitFullscreen?.().catch(() => {})
     }
   }, [])
 
@@ -39,25 +66,16 @@ export function ARFlightPage() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-ink-900" style={{ touchAction: 'none' }}>
-      {/* Layer 1: Camera video or sky fallback */}
       <ARBackground />
+      <DroneScene parts={design.parts} inputRef={flightInputRef} altitudeRef={altitudeRef} />
 
-      {/* Layer 2: 3D drone scene (transparent canvas) */}
-      <DroneScene parts={design.parts} inputRef={flightInputRef} />
-
-      {/* Layer 3: HUD overlay */}
       <div className="fixed inset-0 z-20 pointer-events-none">
-        {/* Exit button — top right */}
-        <button
-          onClick={() => navigate('/design')}
-          className="pointer-events-auto absolute top-6 right-6 flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
-          aria-label="退出 AR 试飞"
-        >
-          <X size={20} />
-        </button>
-
-        {/* Dual joysticks */}
-        <JoystickOverlay onInput={handleInput} />
+        <HUD
+          altitude={altitude}
+          onExit={() => navigate('/design')}
+          onFirstTouch={handleFirstTouch}
+        />
+        <JoystickOverlay onInput={handleInput} onFirstTouch={handleFirstTouch} />
       </div>
     </div>
   )

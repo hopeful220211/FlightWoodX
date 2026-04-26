@@ -6,13 +6,14 @@ import type { FlightInput } from './flightPhysics'
 interface DroneSceneProps {
   parts: Design['parts']
   inputRef: React.RefObject<FlightInput | null>
+  altitudeRef?: React.RefObject<number | null>
 }
 
 /**
  * Full-screen transparent R3F Canvas with flight-controlled drone.
  * Camera is fixed — drone position controlled by FlightController + physics.
  */
-export function DroneScene({ parts, inputRef }: DroneSceneProps) {
+export function DroneScene({ parts, inputRef, altitudeRef }: DroneSceneProps) {
   return (
     <div className="fixed inset-0 z-10 pointer-events-none">
       <Canvas
@@ -24,7 +25,7 @@ export function DroneScene({ parts, inputRef }: DroneSceneProps) {
         <ambientLight intensity={1.2} />
         <directionalLight position={[3, 3, 2]} intensity={1.8} color="#F5E6D3" />
         <directionalLight position={[-2, 1, -1]} intensity={0.5} />
-        <FlightController parts={parts} inputRef={inputRef} />
+        <FlightController parts={parts} inputRef={inputRef} altitudeRef={altitudeRef} />
       </Canvas>
     </div>
   )

@@ -10,11 +10,12 @@ import type { FlightInput } from './flightPhysics'
 interface FlightControllerProps {
   parts: Design['parts']
   inputRef: React.RefObject<FlightInput | null>
+  altitudeRef?: React.RefObject<number | null>
 }
 
 const TILT_LERP = 0.08 // smoothing for visual tilt
 
-export function FlightController({ parts, inputRef }: FlightControllerProps) {
+export function FlightController({ parts, inputRef, altitudeRef }: FlightControllerProps) {
   const droneRef = useRef<AssembledDroneRef>(null)
   const stateRef = useRef(createInitialState())
   const currentPitch = useRef(0)
@@ -33,6 +34,11 @@ export function FlightController({ parts, inputRef }: FlightControllerProps) {
     // Smooth tilt
     currentPitch.current = THREE.MathUtils.lerp(currentPitch.current, pitch, TILT_LERP)
     currentRoll.current = THREE.MathUtils.lerp(currentRoll.current, roll, TILT_LERP)
+
+    // Write altitude for HUD
+    if (altitudeRef && 'current' in altitudeRef) {
+      (altitudeRef as React.MutableRefObject<number>).current = state.position.y
+    }
 
     // Apply to 3D group
     const group = droneRef.current?.group
