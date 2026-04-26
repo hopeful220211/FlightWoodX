@@ -87,49 +87,54 @@ function AvatarPlaceholder({ testimonial }: { testimonial: Testimonial }) {
   )
 }
 
+const TOTAL = TESTIMONIALS.length
+const NORMAL_DELAY = 3000
+const MANUAL_DELAY = 6000
+
 export function LovedBySection() {
   const [current, setCurrent] = useState(0)
-  const [isHovered, setIsHovered] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pausedAfterClick = useRef(false)
+  const isPausedRef = useRef(false)
+  const nextDelayRef = useRef(NORMAL_DELAY)
 
-  const clearTimer = () => {
+  const clearTimer = useCallback(() => {
     if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
-  }
-
-  const goTo = useCallback((idx: number) => {
-    setCurrent(((idx % TESTIMONIALS.length) + TESTIMONIALS.length) % TESTIMONIALS.length)
   }, [])
 
-  // Schedule next auto-advance
-  const scheduleNext = useCallback((delay: number) => {
+  const scheduleNext = useCallback(() => {
     clearTimer()
-    timerRef.current = setTimeout(() => {
-      setCurrent(c => (c + 1) % TESTIMONIALS.length)
-      pausedAfterClick.current = false
-      scheduleNext(3000)
-    }, delay)
+    timerRef.current = window.setTimeout(() => {
+      if (!isPausedRef.current) {
+        console.log(`[testimonial] auto-tick after ${nextDelayRef.current}ms`)
+        setCurrent(i => (i + 1) % TOTAL)
+      }
+      nextDelayRef.current = NORMAL_DELAY
+      scheduleNext()
+    }, nextDelayRef.current)
+  }, [clearTimer])
+
+  // Start on mount, cleanup on unmount
+  useEffect(() => {
+    scheduleNext()
+    return clearTimer
+  }, [scheduleNext, clearTimer])
+
+  const handleManualChange = useCallback((idx: number) => {
+    const normalized = ((idx % TOTAL) + TOTAL) % TOTAL
+    console.log('[testimonial] manual click, next will wait 6000ms')
+    setCurrent(normalized)
+    nextDelayRef.current = MANUAL_DELAY
+    scheduleNext()
+  }, [scheduleNext])
+
+  const handleMouseEnter = useCallback(() => {
+    console.log('[testimonial] hover paused')
+    isPausedRef.current = true
   }, [])
 
-  const next = useCallback(() => { goTo(current + 1) }, [current, goTo])
-  const prev = useCallback(() => { goTo(current - 1) }, [current, goTo])
-
-  // Manual click handler: switch + pause 6s before resuming 3s rhythm
-  const manualGoTo = useCallback((idx: number) => {
-    goTo(idx)
-    pausedAfterClick.current = true
-    scheduleNext(6000)
-  }, [goTo, scheduleNext])
-
-  const manualNext = useCallback(() => manualGoTo(current + 1), [current, manualGoTo])
-  const manualPrev = useCallback(() => manualGoTo(current - 1), [current, manualGoTo])
-
-  // Auto-rotate: 3s default, pause on hover
-  useEffect(() => {
-    if (isHovered) { clearTimer(); return }
-    if (!pausedAfterClick.current) { scheduleNext(3000) }
-    return clearTimer
-  }, [isHovered, scheduleNext])
+  const handleMouseLeave = useCallback(() => {
+    isPausedRef.current = false
+  }, [])
 
   const t = TESTIMONIALS[current]
   const bgColor = ROLE_BG[t.role]
@@ -142,8 +147,8 @@ export function LovedBySection() {
   return (
     <section
       className="bg-paper-100 py-24 lg:py-32"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="mx-auto max-w-4xl px-4">
         <ScrollReveal className="text-center mb-4">
@@ -219,7 +224,7 @@ export function LovedBySection() {
                 {TESTIMONIALS.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => manualGoTo(i)}
+                    onClick={() => handleManualChange(i)}
                     className={`rounded-full transition-colors ${
                       i === current ? 'w-2 h-2 bg-wood-500' : 'w-2 h-2 bg-ink-200 hover:bg-ink-400'
                     }`}
@@ -231,14 +236,14 @@ export function LovedBySection() {
               {/* Arrows */}
               <div className="flex gap-2">
                 <button
-                  onClick={manualPrev}
+                  onClick={() => handleManualChange(current - 1)}
                   className="flex h-12 w-12 items-center justify-center rounded-md bg-paper-100 text-ink-600 transition-colors hover:bg-paper-200"
                   aria-label="上一条"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
-                  onClick={manualNext}
+                  onClick={() => handleManualChange(current + 1)}
                   className="flex h-12 w-12 items-center justify-center rounded-md bg-ink-900 text-white transition-colors hover:bg-ink-700"
                   aria-label="下一条"
                 >
