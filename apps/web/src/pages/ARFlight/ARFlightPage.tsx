@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useDesignStore } from '../../stores/designStore'
+import { ARBackground } from './ARBackground'
+import { DroneScene } from './DroneScene'
 
 export function ARFlightPage() {
   const { designId } = useParams<{ designId: string }>()
@@ -9,33 +11,45 @@ export function ARFlightPage() {
 
   if (!design) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-paper-50">
-        <p className="text-lg text-ink-600 mb-4">未找到该设计</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-ink-900 text-white">
+        <p className="text-lg mb-4">未找到该设计</p>
         <button
           onClick={() => navigate('/design')}
-          className="inline-flex items-center gap-2 text-sm font-medium text-wood-500 hover:text-wood-600"
+          className="text-sm text-wood-400 hover:text-wood-300"
         >
-          <ArrowLeft size={16} />
-          返回设计工作台
+          返回工作台
         </button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-ink-900 text-white">
-      <h1 className="font-display text-3xl font-semibold mb-4">AR 试飞</h1>
-      <p className="text-ink-400 mb-2">
-        {design.name ? `「${design.name}」` : '你的飞机'} · {design.parts.length} 个零件
-      </p>
-      <p className="text-ink-400 text-sm mb-8">摄像头 + 3D 飞机 + 双摇杆操控即将实现</p>
-      <button
-        onClick={() => navigate('/design')}
-        className="inline-flex items-center gap-2 whitespace-nowrap px-6 py-3 text-sm font-medium text-ink-900 bg-paper-50 rounded-md hover:bg-paper-100 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        返回工作台
-      </button>
+    <div className="fixed inset-0 overflow-hidden bg-ink-900" style={{ touchAction: 'none' }}>
+      {/* Layer 1: Camera video or sky fallback */}
+      <ARBackground />
+
+      {/* Layer 2: 3D drone scene (transparent canvas) */}
+      <DroneScene parts={design.parts} />
+
+      {/* Layer 3: HUD overlay */}
+      <div className="fixed inset-0 z-20 pointer-events-none">
+        {/* Exit button — top right */}
+        <button
+          onClick={() => navigate('/design')}
+          className="pointer-events-auto absolute top-6 right-6 flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 transition-colors"
+          aria-label="退出 AR 试飞"
+        >
+          <X size={20} />
+        </button>
+
+        {/* Joystick placeholders — will be implemented in PR 3 */}
+        <div className="pointer-events-auto absolute bottom-8 left-8 w-[120px] h-[120px] rounded-full border border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-wood-500/60" />
+        </div>
+        <div className="pointer-events-auto absolute bottom-8 right-8 w-[120px] h-[120px] rounded-full border border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-wood-500/60" />
+        </div>
+      </div>
     </div>
   )
 }
