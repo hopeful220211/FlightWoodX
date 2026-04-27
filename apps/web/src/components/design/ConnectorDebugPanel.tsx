@@ -51,9 +51,9 @@ export function ConnectorDebugPanel() {
   }
 
   const testAllNewModels = async () => {
-    await testModel('/models/core_plate_02.glb', '机身02')
+    await testModel('/models/guards/joint_03.glb', '机身02')
     await new Promise(resolve => setTimeout(resolve, 500))
-    await testModel('/models/arm_02.glb', '机臂02')
+    await testModel('/models/landings/arm_02.glb', '机臂02')
   }
 
   if (!isOpen) {
@@ -84,28 +84,28 @@ export function ConnectorDebugPanel() {
         <div className="space-y-2 mb-3">
           <Button
             size="sm"
-            onClick={() => testModel('/models/core_plate_01.glb', '机身01')}
+            onClick={() => testModel('/models/guards/joint_01.glb', '机身01')}
             disabled={testing}
           >
             测试机身01
           </Button>
           <Button
             size="sm"
-            onClick={() => testModel('/models/core_plate_02.glb', '机身02')}
+            onClick={() => testModel('/models/guards/joint_03.glb', '机身02')}
             disabled={testing}
           >
             测试机身02
           </Button>
           <Button
             size="sm"
-            onClick={() => testModel('/models/arm_01.glb', '机臂01')}
+            onClick={() => testModel('/models/landings/arm_01.glb', '机臂01')}
             disabled={testing}
           >
             测试机臂01
           </Button>
           <Button
             size="sm"
-            onClick={() => testModel('/models/arm_02.glb', '机臂02')}
+            onClick={() => testModel('/models/landings/arm_02.glb', '机臂02')}
             disabled={testing}
           >
             测试机臂02

@@ -3,7 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
-const MODEL_PATH = '/models/core_hub_01.glb'
+const MODEL_PATH = '/models/mainboards/core_hub_01.glb'
 const STATIC_FALLBACK = '/resource/picture/flight_png/untitled.297.png'
 
 function DroneModel() {
