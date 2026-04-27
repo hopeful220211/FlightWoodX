@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { STEP_CATEGORIES, STEP_INFO } from '@fwx/parts-schema'
+import { useState, useMemo } from 'react'
+import { STEP_CATEGORIES, STEP_INFO, getPartsForStep } from '@fwx/parts-schema'
 import type { BuildStep, PartCategory } from '@fwx/parts-schema'
 import { partsData } from '../../../data/parts'
 import type { Part } from '../../../types/design'
@@ -14,10 +14,24 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
   const info = STEP_INFO[currentStep]
   const categories = STEP_CATEGORIES[currentStep]
 
+  // For GUARD step, allow sub-type selection
+  const [guardSubType, setGuardSubType] = useState<PartCategory | null>(null)
+
+  const isGuardStep = currentStep === 'GUARD'
+
   const filteredParts = useMemo(() => {
     if (currentStep === 'MOTOR' || currentStep === 'REVIEW') return []
+
+    if (isGuardStep && guardSubType) {
+      return partsData.filter(p => p.category === guardSubType)
+    }
+
+    if (isGuardStep && !guardSubType) {
+      return [] // Show type selector first
+    }
+
     return partsData.filter(p => categories.includes(p.category as PartCategory))
-  }, [currentStep, categories])
+  }, [currentStep, categories, isGuardStep, guardSubType])
 
   if (currentStep === 'REVIEW') {
     return (
@@ -35,12 +49,26 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
           <h3 className="text-sm font-bold text-gray-700">第 {info.number} 步 · {info.label}</h3>
           <p className="text-xs text-gray-500 mt-1">{info.description}</p>
         </div>
+
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <p className="text-sm font-medium text-green-800">电机已自动安装</p>
           <p className="text-xs text-green-600 mt-1">
-            每条起落架末端会自动安装一个电机和螺旋桨。
+            每条机臂末端会自动安装一个电机和螺旋桨。你可以直接点"下一步"继续。
           </p>
         </div>
+
+        <p className="text-xs text-gray-400">
+          如果想调整机臂数量，请回到上一步。
+        </p>
+
+        {/* Future: advanced options (disabled) */}
+        <details className="text-xs text-gray-400">
+          <summary className="cursor-pointer hover:text-gray-500">高级选项（即将开放）</summary>
+          <div className="mt-2 space-y-1 opacity-50 pointer-events-none">
+            <p>电机型号：小型 / 中型 / 大型</p>
+            <p>螺旋桨颜色：黑 / 白 / 红</p>
+          </div>
+        </details>
       </div>
     )
   }
@@ -50,13 +78,43 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
       <div className="p-3 border-b border-gray-100">
         <h3 className="text-sm font-bold text-gray-700">
           第 {info.number} 步 · {info.label}
-          {(info as { optional?: boolean }).optional && (
-            <span className="ml-1 text-xs font-normal text-ink-400">（可跳过）</span>
-          )}
         </h3>
         <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
       </div>
 
+      {/* Guard step: sub-type selector */}
+      {isGuardStep && !guardSubType && (
+        <div className="p-3 space-y-2">
+          <p className="text-xs text-gray-600 mb-2">选择保护罩类型：</p>
+          {[
+            { cat: 'PLATE' as PartCategory, label: '一体版', desc: '保护最强、最稳，适合初学者' },
+            { cat: 'JOINT' as PartCategory, label: '分体版', desc: '更轻更灵活，适合中级' },
+            { cat: 'LAND' as PartCategory, label: '半体版', desc: '折中方案，兼顾保护与重量' },
+          ].map(({ cat, label, desc }) => (
+            <button
+              key={cat}
+              onClick={() => setGuardSubType(cat)}
+              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-tech-300 hover:bg-tech-50 transition-colors"
+            >
+              <div className="text-sm font-medium text-gray-800">{label}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{desc}</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isGuardStep && guardSubType && (
+        <div className="px-3 pt-2">
+          <button
+            onClick={() => setGuardSubType(null)}
+            className="text-xs text-tech-600 hover:text-tech-700"
+          >
+            ← 返回选类型
+          </button>
+        </div>
+      )}
+
+      {/* Part grid */}
       {filteredParts.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3">
           <div className="grid grid-cols-2 gap-2">
@@ -67,18 +125,10 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/plain', part.id)
                   e.dataTransfer.effectAllowed = 'move'
-                  // Create offscreen drag image (just the thumbnail, no card chrome)
-                  if (part.thumbnailUrl) {
-                    const ghost = document.createElement('img')
-                    ghost.src = part.thumbnailUrl
-                    ghost.style.width = '64px'
-                    ghost.style.height = '64px'
-                    ghost.style.position = 'fixed'
-                    ghost.style.top = '-200px'
-                    ghost.style.left = '-200px'
-                    document.body.appendChild(ghost)
-                    e.dataTransfer.setDragImage(ghost, 32, 32)
-                    requestAnimationFrame(() => document.body.removeChild(ghost))
+                  // Use the rendered <img> element as drag image (no card background)
+                  const imgEl = e.currentTarget.querySelector('img')
+                  if (imgEl) {
+                    e.dataTransfer.setDragImage(imgEl, 32, 32)
                   }
                   onPartDragStart(part.id)
                 }}
@@ -101,12 +151,6 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {filteredParts.length === 0 && currentStep !== 'MOTOR' && currentStep !== 'REVIEW' && (
-        <div className="p-4 text-center text-xs text-gray-400">
-          此步骤暂无可选零件
         </div>
       )}
     </div>

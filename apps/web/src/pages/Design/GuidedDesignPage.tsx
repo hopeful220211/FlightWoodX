@@ -12,6 +12,7 @@ import { ViolationBubble } from './components/ViolationBubble'
 import { checkBeforeAdd, checkDualMainboard } from '../../utils/realtimeChecks'
 import type { Violation } from '../../utils/realtimeChecks'
 import { MotorInstallStep } from './components/steps/MotorInstallStep'
+import { MirrorSuggestion } from './components/MirrorSuggestion'
 import type { Part } from '../../types/design'
 
 export function GuidedDesignPage() {
@@ -50,6 +51,20 @@ export function GuidedDesignPage() {
       const dualCheck = checkDualMainboard(updatedDesign.parts)
       if (dualCheck) {
         setViolation({ ...dualCheck })
+      }
+
+      // Dispatch event for mirror suggestion
+      const lastPart = updatedDesign.parts[updatedDesign.parts.length - 1]
+      if (lastPart) {
+        window.dispatchEvent(new CustomEvent('fwx-part-placed', {
+          detail: {
+            partId: lastPart.partId,
+            position: lastPart.position,
+            rotation: lastPart.rotation,
+            instanceId: lastPart.instanceId,
+            category: lastPart.category,
+          }
+        }))
       }
     }
 
@@ -108,6 +123,7 @@ export function GuidedDesignPage() {
       </div>
 
       <ViolationBubble violation={violation} />
+      <MirrorSuggestion />
 
       {isMotorStep ? (
         <div className="flex-1 min-h-0 bg-paper-50">
