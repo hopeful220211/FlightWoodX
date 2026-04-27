@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDesignStore } from '../../stores/designStore'
 import { useToast } from '../../components/common/Toast'
@@ -7,6 +7,10 @@ import { StepProgressBar } from './components/StepProgressBar'
 import { StepPartPanel } from './components/StepPartPanel'
 import { StepGuide } from './components/StepGuide'
 import { StepActions } from './components/StepActions'
+import { WeightBar } from './components/WeightBar'
+import { ViolationBubble } from './components/ViolationBubble'
+import { checkBeforeAdd, checkDualMainboard } from '../../utils/realtimeChecks'
+import type { Violation } from '../../utils/realtimeChecks'
 import type { Part } from '../../types/design'
 
 export function GuidedDesignPage() {
@@ -20,6 +24,7 @@ export function GuidedDesignPage() {
   const addPartSmart = useDesignStore(s => s.addPartSmart)
   const setDraggingPartId = useDesignStore(s => s.setDraggingPartId)
   const toast = useToast()
+  const [violation, setViolation] = useState<Violation | null>(null)
 
   const currentStep = activeDesign?.currentStep ?? 'HUB'
   const stepReached = activeDesign?.stepReached ?? 0
@@ -27,9 +32,28 @@ export function GuidedDesignPage() {
   const advanceReason = getStepAdvanceReason()
 
   const handlePartClick = useCallback((part: Part) => {
+    if (!activeDesign) return
+
+    // Real-time validation before adding
+    const v = checkBeforeAdd(part.category, part.id, activeDesign.parts)
+    if (v) {
+      setViolation({ ...v }) // new ref to re-trigger bubble
+      return
+    }
+
     addPartSmart(part.id)
+
+    // Post-add check: dual mainboard geometry
+    const updatedDesign = useDesignStore.getState().getActiveDesign()
+    if (updatedDesign) {
+      const dualCheck = checkDualMainboard(updatedDesign.parts)
+      if (dualCheck) {
+        setViolation({ ...dualCheck })
+      }
+    }
+
     toast.push('success', `已添加 ${part.name}`)
-  }, [addPartSmart, toast])
+  }, [addPartSmart, toast, activeDesign])
 
   const handlePartDragStart = useCallback((partId: string) => {
     setDraggingPartId(partId)
@@ -52,7 +76,6 @@ export function GuidedDesignPage() {
   }, [resetCurrentStep, toast])
 
   const handleSave = useCallback(() => {
-    // Currently localStorage only (Zustand persist handles it)
     toast.push('success', '已保存')
   }, [toast])
 
@@ -63,28 +86,29 @@ export function GuidedDesignPage() {
 
   const handleArFlight = useCallback(() => {
     if (!activeDesign) return
-
     const hasHub = activeDesign.parts.some(p => p.category === 'mainboard')
     const hasArm = activeDesign.parts.some(p => p.category === 'landing')
-
     if (!hasHub || !hasArm) {
-      toast.push('error', '先装好你的飞机吧！至少需要 1 个主板和 1 个机臂')
+      toast.push('error', '先装好你的飞机吧！至少需要 1 个主板和 1 个起落架')
       return
     }
-
     navigate(`/design/ar-flight/${activeDesign.id}`)
   }, [activeDesign, navigate, toast])
 
-  if (!activeDesign) {
-    return null
-  }
+  if (!activeDesign) return null
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
+      {/* Top: Step progress + Weight bar */}
       <div className="shrink-0">
         <StepProgressBar currentStep={currentStep} stepReached={stepReached} />
+        <WeightBar />
       </div>
 
+      {/* Violation bubble (floating, auto-dismiss) */}
+      <ViolationBubble violation={violation} />
+
+      {/* Middle: Three columns */}
       <div className="flex-1 flex min-h-0">
         <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto">
@@ -109,6 +133,7 @@ export function GuidedDesignPage() {
         </aside>
       </div>
 
+      {/* Bottom: Actions */}
       <div className="shrink-0">
         <StepActions
           currentStep={currentStep}

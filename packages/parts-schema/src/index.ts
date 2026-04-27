@@ -66,7 +66,7 @@ export const BuildStepEnum = z.enum([
 export type BuildStep = z.infer<typeof BuildStepEnum>;
 
 // Re-export registry and compatibility
-export { PART_REGISTRY, STEP_CATEGORIES, BUILD_STEPS, STEP_INFO, getPartByNumber, getPartsByCategory, getPartsForStep } from './registry';
+export { PART_REGISTRY, STEP_CATEGORIES, BUILD_STEPS, STEP_INFO, CATEGORY_FOLDERS, getPartByNumber, getPartById, getPartsByCategory, getPartsForStep } from './registry';
 export type { PartEntry } from './registry';
 export { canAddPart, canAdvanceStep, getNextStep, getPrevStep, isCategoryAllowedInStep } from './compatibility';
 export type { BuildState, CompatibilityResult, CompatibilityReason } from './compatibility';
