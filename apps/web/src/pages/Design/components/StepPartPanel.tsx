@@ -62,7 +62,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
               <div
                 key={part.id}
                 onClick={() => onPartClick(part)}
-                className="bg-white border border-gray-200 rounded-lg p-2 cursor-pointer hover:border-tech-300 hover:shadow-sm transition-all"
+                className="rounded-lg p-2 cursor-pointer hover:bg-white hover:border hover:border-gray-200 hover:shadow-sm transition-all"
               >
                 {part.thumbnailUrl ? (
                   <img
