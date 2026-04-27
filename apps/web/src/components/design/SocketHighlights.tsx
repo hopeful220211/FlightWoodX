@@ -1,26 +1,12 @@
-/**
- * SocketHighlights — 4-state snap point visualization system.
- *
- * States:
- *   hidden    — incompatible with dragged part (not rendered)
- *   available — compatible, accent-sky pulse
- *   nearby    — cursor within 0.3 units, accent-gold glow
- *   snapped   — cursor within 0.1 units, accent-leaf solid + lock
- */
+// src/components/design/SocketHighlights.tsx
 import { useRef, useMemo } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useDesignStore } from '../../stores/designStore'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
+
 import { isConnectionAllowed } from '../../utils/connectionRules'
-
-// Magnetic snap thresholds (world units)
-const NEARBY_THRESHOLD = 0.3   // start attraction
-const SNAP_THRESHOLD = 0.1     // lock on
-const BREAK_THRESHOLD = 0.4    // break lock
-
-type SnapState = 'available' | 'nearby' | 'snapped'
 
 interface SocketInfo {
   instanceId: string
@@ -32,28 +18,37 @@ export function SocketHighlights() {
   const draggingPartId = useDesignStore((state) => state.draggingPartId)
   const activeDesign = useDesignStore((state) => state.getActiveDesign())
   const highlightedSocket = useDesignStore((state) => state.highlightedSocket)
-  const { raycaster, camera, pointer } = useThree()
 
-  // Compute available sockets (category-filtered, unoccupied)
+  // 计算所有可用的插座位置
   const availableSockets = useMemo<SocketInfo[]>(() => {
     if (!draggingPartId || !activeDesign) return []
 
     const draggingPart = partsData.find((p) => p.id === draggingPartId)
     if (!draggingPart) return []
 
-    // First mainboard doesn't need snap points
+    // 检查是否是第一个机身（第一个机身不需要连接点）
     if (draggingPart.category === 'mainboard') {
-      const hasMainboard = activeDesign.parts.some((inst) => {
+      const existingHub = activeDesign.parts.find((inst) => {
         const p = partsData.find((pd) => pd.id === inst.partId)
         return p?.category === 'mainboard'
       })
-      if (!hasMainboard) return []
+
+      if (!existingHub) {
+        // 第一个机身不需要连接点
+        return []
+      }
+      // 第二个机身需要显示连接点，继续执行
     }
 
+    // 查找拖拽零件的连接器（优先 plug，如果没有则用 socket）
     const draggingConnectors = getCachedPartConnectors(draggingPart.modelUrl)
-    const draggingConnector = draggingConnectors.find((c) => c.type === 'plug') || draggingConnectors.find((c) => c.type === 'socket')
+    const draggingPlugConnector = draggingConnectors.find((c) => c.type === 'plug')
+    const draggingSocketConnector = draggingConnectors.find((c) => c.type === 'socket')
+    const draggingConnector = draggingPlugConnector || draggingSocketConnector
+
     if (!draggingConnector) return []
 
+    // 计算已占用的插座
     const occupiedSockets = new Set<string>()
     for (const inst of activeDesign.parts) {
       const at = inst.attachedTo
@@ -64,50 +59,67 @@ export function SocketHighlights() {
 
     const sockets: SocketInfo[] = []
 
+    // 遍历场景中的所有零件，找出可用的连接点（socket 和 plug）
     for (const inst of activeDesign.parts) {
       const partData = partsData.find((p) => p.id === inst.partId)
       if (!partData) continue
 
-      if (!isConnectionAllowed(draggingPart.category, partData.category)) continue
+      // 检查连接规则
+      if (!isConnectionAllowed(draggingPart.category, partData.category)) {
+        continue
+      }
 
       const connectors = getCachedPartConnectors(partData.modelUrl)
-      const filtered = connectors.filter((c) => {
-        if (draggingConnector.type === 'plug') return c.type === 'socket' || c.type === 'plug'
-        return c.type === 'plug'
+
+      // 根据拖拽连接器类型过滤目标连接点
+      // - 如果拖拽的是 plug：可以连接到 socket 或 plug
+      // - 如果拖拽的是 socket：只能连接到 plug（禁止 socket-to-socket）
+      const partConnectors = connectors.filter((c) => {
+        if (draggingConnector.type === 'plug') {
+          // plug 可以连接到 socket 或 plug
+          return c.type === 'socket' || c.type === 'plug'
+        } else {
+          // socket 只能连接到 plug
+          return c.type === 'plug'
+        }
       })
 
       const instPos = new THREE.Vector3(...inst.position)
       const instQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...inst.rotation))
 
-      for (const conn of filtered) {
-        const key = `${inst.instanceId}::${conn.id}`
+      for (const connector of partConnectors) {
+        const key = `${inst.instanceId}::${connector.id}`
         if (occupiedSockets.has(key)) continue
-        const worldPos = conn.position.clone().applyQuaternion(instQuat).add(instPos)
-        sockets.push({ instanceId: inst.instanceId, socketId: conn.id, worldPosition: worldPos })
+
+        // 计算连接点的世界坐标
+        const worldPos = connector.position.clone().applyQuaternion(instQuat).add(instPos)
+        sockets.push({
+          instanceId: inst.instanceId,
+          socketId: connector.id,
+          worldPosition: worldPos,
+        })
       }
     }
 
     return sockets
   }, [draggingPartId, activeDesign])
 
-  if (!draggingPartId || availableSockets.length === 0) return null
+  if (!draggingPartId || availableSockets.length === 0) {
+    return null
+  }
 
   return (
     <group>
       {availableSockets.map((socket) => {
-        const isThis =
+        const isHighlighted =
           highlightedSocket?.instanceId === socket.instanceId &&
           highlightedSocket?.socketId === socket.socketId
 
-        const snapState: SnapState = isThis
-          ? (highlightedSocket?.proximity ?? 'snapped')
-          : 'available'
-
         return (
-          <SocketIndicator4State
+          <SocketIndicator
             key={`${socket.instanceId}-${socket.socketId}`}
             position={socket.worldPosition}
-            state={snapState}
+            isHighlighted={isHighlighted}
           />
         )
       })}
@@ -115,81 +127,72 @@ export function SocketHighlights() {
   )
 }
 
-// ============= 4-State Visual Indicator =============
-
-const COLORS = {
-  available: { main: 0x7DB8D9, emissive: 0x7DB8D9 },  // accent-sky
-  nearby: { main: 0xD4A74A, emissive: 0xD4A74A },       // accent-gold
-  snapped: { main: 0x8FB88F, emissive: 0x8FB88F },      // accent-leaf
-}
-
-interface SocketIndicator4StateProps {
+interface SocketIndicatorProps {
   position: THREE.Vector3
-  state: SnapState
+  isHighlighted: boolean
 }
 
-function SocketIndicator4State({ position, state }: SocketIndicator4StateProps) {
+function SocketIndicator({ position, isHighlighted }: SocketIndicatorProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const ringRef = useRef<THREE.Mesh>(null)
-  const matRef = useRef<THREE.MeshStandardMaterial>(null)
-  const ringMatRef = useRef<THREE.MeshBasicMaterial>(null)
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null)
+  const ringMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  useFrame(({ clock }) => {
-    if (!matRef.current || !meshRef.current) return
-    const t = clock.getElapsedTime()
-    const colors = COLORS[state]
+  // wood-400 ≈ #a08060, wood-500 ≈ #8b6b50
+  useFrame((state) => {
+    if (!materialRef.current) return
+    const time = state.clock.getElapsedTime()
 
-    matRef.current.emissive.setHex(colors.emissive)
+    if (isHighlighted) {
+      materialRef.current.emissive.setHex(0x8b6b50)
+      materialRef.current.emissiveIntensity = 1.5
+      materialRef.current.opacity = 1
 
-    if (state === 'snapped') {
-      // Solid green, full opacity, slight scale
-      matRef.current.emissiveIntensity = 1.8
-      matRef.current.opacity = 1
-      meshRef.current.scale.lerp(new THREE.Vector3(1.4, 1.4, 1.4), 0.2)
       if (ringRef.current) {
+        ringRef.current.rotation.z = time * 2
         ringRef.current.visible = true
-        ringRef.current.rotation.z = t * 2
       }
-      if (ringMatRef.current) ringMatRef.current.opacity = 0.7
-    } else if (state === 'nearby') {
-      // Gold glow, brighter
-      const pulse = (Math.sin(t * 5) + 1) / 2
-      matRef.current.emissiveIntensity = 1.0 + pulse * 0.8
-      matRef.current.opacity = 0.8 + pulse * 0.2
-      meshRef.current.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.15)
-      if (ringRef.current) ringRef.current.visible = false
+      if (ringMaterialRef.current) {
+        ringMaterialRef.current.opacity = 0.6
+      }
     } else {
-      // Available: gentle sky-blue pulse
-      const pulse = (Math.sin(t * 3) + 1) / 2
-      matRef.current.emissiveIntensity = 0.3 + pulse * 0.5
-      matRef.current.opacity = 0.35 + pulse * 0.2
-      meshRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1)
-      if (ringRef.current) ringRef.current.visible = false
+      // Gentle pulse
+      const pulse = (Math.sin(time * 3) + 1) / 2
+      materialRef.current.emissive.setHex(0xa08060)
+      materialRef.current.emissiveIntensity = 0.3 + pulse * 0.6
+      materialRef.current.opacity = 0.4 + pulse * 0.2
+
+      if (ringRef.current) {
+        ringRef.current.visible = false
+      }
+    }
+
+    if (meshRef.current) {
+      const targetScale = isHighlighted ? 1.3 : 1
+      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15)
     }
   })
-
-  const colors = COLORS[state]
-  const colorHex = `#${colors.main.toString(16).padStart(6, '0')}`
 
   return (
     <group position={position}>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.006, 14, 14]} />
+        <sphereGeometry args={[0.005, 12, 12]} />
         <meshStandardMaterial
-          ref={matRef}
-          color={colorHex}
-          emissive={colorHex}
+          ref={materialRef}
+          color={isHighlighted ? '#8b6b50' : '#a08060'}
+          emissive={isHighlighted ? '#8b6b50' : '#a08060'}
           emissiveIntensity={0.5}
           transparent
           opacity={0.5}
           depthWrite={false}
         />
       </mesh>
+
       <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]} visible={false}>
-        <ringGeometry args={[0.009, 0.013, 24]} />
+        <ringGeometry args={[0.008, 0.012, 24]} />
         <meshBasicMaterial
-          ref={ringMatRef}
-          color={colorHex}
+          ref={ringMaterialRef}
+          color="#8b6b50"
           transparent
           opacity={0.6}
           side={THREE.DoubleSide}

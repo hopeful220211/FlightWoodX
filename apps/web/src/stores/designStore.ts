@@ -34,7 +34,7 @@ interface DesignState {
   // --- Interaction state ---
   selectedInstanceId: string | null
   ghostPart: { partId: string; position: [number, number, number] } | null
-  highlightedSocket: { instanceId: string; socketId: string; plugId: string; proximity?: 'nearby' | 'snapped' } | null
+  highlightedSocket: { instanceId: string; socketId: string; plugId: string } | null
   draggingPartId: string | null
   setSelectedInstanceId: (id: string | null) => void
   setGhostPart: (ghost: { partId: string; position: [number, number, number] } | null) => void
