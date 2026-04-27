@@ -1,9 +1,18 @@
-import { useRef, useState, forwardRef, useImperativeHandle } from 'react'
+import { useRef, useState, forwardRef, useImperativeHandle, Component } from 'react'
+import type { ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Design } from '../../types/design'
 import { partsData } from '../../data/parts'
+
+/** Error boundary for individual part meshes — swallows GLB load failures */
+class PartMeshBoundary extends Component<{ children: ReactNode; partId: string }, { hasError: boolean }> {
+  state = { hasError: false }
+  static getDerivedStateFromError() { return { hasError: true } }
+  componentDidCatch(err: Error) { console.warn(`[AssembledDrone] Failed to load ${this.props.partId}:`, err.message) }
+  render() { return this.state.hasError ? null : this.props.children }
+}
 
 function PartMesh({ modelUrl, position, rotation }: {
   modelUrl: string
@@ -73,12 +82,13 @@ export const AssembledDrone = forwardRef<AssembledDroneRef, AssembledDroneProps>
           const partData = partsData.find(p => p.id === inst.partId)
           if (!partData) return null
           return (
-            <PartMesh
-              key={inst.instanceId}
-              modelUrl={partData.modelUrl}
-              position={inst.position}
-              rotation={inst.rotation}
-            />
+            <PartMeshBoundary key={inst.instanceId} partId={inst.partId}>
+              <PartMesh
+                modelUrl={partData.modelUrl}
+                position={inst.position}
+                rotation={inst.rotation}
+              />
+            </PartMeshBoundary>
           )
         })}
       </group>

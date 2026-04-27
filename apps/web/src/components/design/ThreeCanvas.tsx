@@ -10,6 +10,7 @@ import { CameraController, type CameraView } from './CameraController'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
 import { computeSnapTransform, quaternionToEuler } from './snap'
+import { checkBeforeAdd } from '../../utils/realtimeChecks'
 
 // 点击检测阈值（像素）
 const CLICK_THRESHOLD = 5
@@ -291,7 +292,6 @@ function DragHandler() {
         if (currentActiveDesign) {
           const childPart = partsData.find((p) => p.id === partId)
           if (childPart) {
-            const { checkBeforeAdd } = require('../../utils/realtimeChecks')
             const violation = checkBeforeAdd(childPart.category, childPart.id, currentActiveDesign.parts)
             if (violation) {
               console.warn(`[Drop] Blocked: ${violation.message}`)
@@ -558,8 +558,7 @@ function DragHandler() {
       if (currentActiveDesign) {
         const touchChildPart = partsData.find((p) => p.id === partId)
         if (touchChildPart) {
-          const { checkBeforeAdd: checkTouch } = require('../../utils/realtimeChecks')
-          const v = checkTouch(touchChildPart.category, touchChildPart.id, currentActiveDesign.parts)
+          const v = checkBeforeAdd(touchChildPart.category, touchChildPart.id, currentActiveDesign.parts)
           if (v) {
             console.warn(`[TouchDrop] Blocked: ${v.message}`)
             setGhostPart(null)

@@ -17,7 +17,9 @@ interface SocketInfo {
 export function SocketHighlights() {
   const draggingPartId = useDesignStore((state) => state.draggingPartId)
   const activeDesign = useDesignStore((state) => state.getActiveDesign())
-  const highlightedSocket = useDesignStore((state) => state.highlightedSocket)
+  // NOTE: do NOT subscribe to highlightedSocket here — it changes 60x/sec
+  // during drag, which would re-render ALL indicators and restart animations.
+  // Each SocketIndicator subscribes to its own highlight state instead.
 
   // 计算所有可用的插座位置
   const availableSockets = useMemo<SocketInfo[]>(() => {
@@ -110,66 +112,67 @@ export function SocketHighlights() {
 
   return (
     <group>
-      {availableSockets.map((socket) => {
-        const isHighlighted =
-          highlightedSocket?.instanceId === socket.instanceId &&
-          highlightedSocket?.socketId === socket.socketId
-
-        return (
-          <SocketIndicator
-            key={`${socket.instanceId}-${socket.socketId}`}
-            position={socket.worldPosition}
-            isHighlighted={isHighlighted}
-          />
-        )
-      })}
+      {availableSockets.map((socket) => (
+        <SocketIndicator
+          key={`${socket.instanceId}-${socket.socketId}`}
+          position={socket.worldPosition}
+          instanceId={socket.instanceId}
+          socketId={socket.socketId}
+        />
+      ))}
     </group>
   )
 }
 
 interface SocketIndicatorProps {
   position: THREE.Vector3
-  isHighlighted: boolean
+  instanceId: string
+  socketId: string
 }
 
-function SocketIndicator({ position, isHighlighted }: SocketIndicatorProps) {
+function SocketIndicator({ position, instanceId, socketId }: SocketIndicatorProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const ringRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.MeshStandardMaterial>(null)
   const ringMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
+  // Track highlight via ref to avoid React re-renders entirely
+  const currentOpacity = useRef(0.8)
+  const currentEmissive = useRef(0.5)
+  const currentScale = useRef(1)
 
-  // wood-400 ≈ #a08060, wood-500 ≈ #8b6b50
+  // All visual updates happen in useFrame via lerp — no instant jumps
   useFrame((state) => {
-    if (!materialRef.current) return
+    if (!materialRef.current || !meshRef.current) return
+
+    // Read highlight state directly from store (no React re-render)
+    const hl = useDesignStore.getState().highlightedSocket
+    const highlighted = hl?.instanceId === instanceId && hl?.socketId === socketId
+
     const time = state.clock.getElapsedTime()
 
-    if (isHighlighted) {
-      materialRef.current.emissive.setHex(0x8b6b50)
-      materialRef.current.emissiveIntensity = 1.5
-      materialRef.current.opacity = 1
+    // Target values
+    const targetOpacity = highlighted ? 1.0 : 0.8 + (Math.sin(time * 0.8) + 1) / 2 * 0.15
+    const targetEmissive = highlighted ? 1.5 : 0.5 + (Math.sin(time * 0.8) + 1) / 2 * 0.15
+    const targetScale = highlighted ? 1.3 : 1.0
 
-      if (ringRef.current) {
-        ringRef.current.rotation.z = time * 2
-        ringRef.current.visible = true
-      }
-      if (ringMaterialRef.current) {
-        ringMaterialRef.current.opacity = 0.6
-      }
-    } else {
-      // Gentle pulse
-      const pulse = (Math.sin(time * 3) + 1) / 2
-      materialRef.current.emissive.setHex(0xa08060)
-      materialRef.current.emissiveIntensity = 0.3 + pulse * 0.6
-      materialRef.current.opacity = 0.4 + pulse * 0.2
+    // Smooth lerp (never instant)
+    currentOpacity.current += (targetOpacity - currentOpacity.current) * 0.12
+    currentEmissive.current += (targetEmissive - currentEmissive.current) * 0.12
+    currentScale.current += (targetScale - currentScale.current) * 0.12
 
-      if (ringRef.current) {
-        ringRef.current.visible = false
+    materialRef.current.emissiveIntensity = currentEmissive.current
+    materialRef.current.opacity = currentOpacity.current
+    meshRef.current.scale.setScalar(currentScale.current)
+
+    // Ring visible only when close to highlighted
+    if (ringRef.current) {
+      ringRef.current.visible = currentScale.current > 1.15
+      if (ringRef.current.visible) {
+        ringRef.current.rotation.z = time * 1.5
       }
     }
-
-    if (meshRef.current) {
-      const targetScale = isHighlighted ? 1.3 : 1
-      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15)
+    if (ringMaterialRef.current) {
+      ringMaterialRef.current.opacity = Math.max(0, (currentScale.current - 1.15) * 4)
     }
   })
 
@@ -179,11 +182,11 @@ function SocketIndicator({ position, isHighlighted }: SocketIndicatorProps) {
         <sphereGeometry args={[0.005, 12, 12]} />
         <meshStandardMaterial
           ref={materialRef}
-          color={isHighlighted ? '#8b6b50' : '#a08060'}
-          emissive={isHighlighted ? '#8b6b50' : '#a08060'}
+          color="#a08060"
+          emissive="#a08060"
           emissiveIntensity={0.5}
           transparent
-          opacity={0.5}
+          opacity={0.8}
           depthWrite={false}
         />
       </mesh>
@@ -194,7 +197,7 @@ function SocketIndicator({ position, isHighlighted }: SocketIndicatorProps) {
           ref={ringMaterialRef}
           color="#8b6b50"
           transparent
-          opacity={0.6}
+          opacity={0}
           side={THREE.DoubleSide}
           depthWrite={false}
         />

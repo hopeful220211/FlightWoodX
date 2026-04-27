@@ -1,5 +1,6 @@
 import type { PartInstance } from '../types/design'
 import type { PartCategory } from '@fwx/parts-schema'
+import { getPartById } from '@fwx/parts-schema'
 import { checkCategorySymmetry } from './symmetryCheck'
 
 export type CheckLevel = 'pass' | 'warning' | 'error'
@@ -107,7 +108,6 @@ function checkWeightBalance(parts: PartInstance[]): CheckResult {
 
 function checkTotalWeight(parts: PartInstance[]): CheckResult {
   // Use actual part weights from registry (1-5g each, 35g limit)
-  const { getPartById } = require('@fwx/parts-schema')
   const totalWeight = parts.reduce((sum, p) => {
     const entry = getPartById(p.partId)
     return sum + (entry?.weightG ?? 2)

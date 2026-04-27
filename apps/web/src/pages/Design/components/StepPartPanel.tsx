@@ -1,8 +1,23 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { STEP_CATEGORIES, STEP_INFO } from '@fwx/parts-schema'
 import type { BuildStep, PartCategory } from '@fwx/parts-schema'
 import { partsData } from '../../../data/parts'
 import type { Part } from '../../../types/design'
+
+// Pre-load all thumbnails once so setDragImage has loaded images
+const thumbnailCache = new Map<string, HTMLImageElement>()
+function getPreloadedThumbnail(partId: string, url: string): HTMLImageElement | null {
+  if (thumbnailCache.has(partId)) {
+    const img = thumbnailCache.get(partId)!
+    return img.complete ? img : null
+  }
+  const img = new Image()
+  img.src = url
+  img.style.width = '64px'
+  img.style.height = '64px'
+  thumbnailCache.set(partId, img)
+  return null // not loaded yet, will be ready next time
+}
 
 interface StepPartPanelProps {
   currentStep: BuildStep
@@ -13,6 +28,13 @@ interface StepPartPanelProps {
 export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: StepPartPanelProps) {
   const info = STEP_INFO[currentStep]
   const categories = STEP_CATEGORIES[currentStep]
+
+  // Pre-load all thumbnails on mount for instant setDragImage
+  useEffect(() => {
+    partsData.forEach(p => {
+      if (p.thumbnailUrl) getPreloadedThumbnail(p.id, p.thumbnailUrl)
+    })
+  }, [])
 
   const filteredParts = useMemo(() => {
     if (currentStep === 'MOTOR' || currentStep === 'REVIEW') return []
@@ -79,10 +101,26 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/plain', part.id)
                   e.dataTransfer.effectAllowed = 'move'
-                  // Use the rendered <img> element as drag image (no card background)
+                  // Custom drag image: clone the <img> already visible in the card.
+                  // This avoids all setDragImage quirks — the clone IS the rendered pixel data.
                   const imgEl = e.currentTarget.querySelector('img')
                   if (imgEl) {
-                    e.dataTransfer.setDragImage(imgEl, 32, 32)
+                    const clone = imgEl.cloneNode(true) as HTMLImageElement
+                    clone.style.width = '64px'
+                    clone.style.height = '64px'
+                    clone.style.position = 'absolute'
+                    clone.style.top = '0'
+                    clone.style.left = '0'
+                    clone.style.opacity = '0.01'
+                    clone.style.background = 'transparent'
+                    clone.style.border = 'none'
+                    clone.style.padding = '0'
+                    clone.style.margin = '0'
+                    clone.style.borderRadius = '0'
+                    clone.style.boxShadow = 'none'
+                    document.body.appendChild(clone)
+                    e.dataTransfer.setDragImage(clone, 32, 32)
+                    setTimeout(() => clone.remove(), 100)
                   }
                   onPartDragStart(part.id)
                 }}
