@@ -13,6 +13,7 @@ export function ViolationBubble({ violation }: ViolationBubbleProps) {
   const [visible, setVisible] = useState(false)
   const [current, setCurrent] = useState<Violation | null>(null)
 
+  // From props (click path)
   useEffect(() => {
     if (violation) {
       setCurrent(violation)
@@ -21,6 +22,20 @@ export function ViolationBubble({ violation }: ViolationBubbleProps) {
       return () => clearTimeout(timer)
     }
   }, [violation])
+
+  // From custom event (drag path in ThreeCanvas)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const v = (e as CustomEvent).detail as Violation
+      if (v) {
+        setCurrent(v)
+        setVisible(true)
+        setTimeout(() => setVisible(false), 2500)
+      }
+    }
+    window.addEventListener('fwx-violation', handler)
+    return () => window.removeEventListener('fwx-violation', handler)
+  }, [])
 
   if (!visible || !current) return null
 

@@ -287,6 +287,24 @@ function DragHandler() {
         const currentHighlightedSocket = currentState.highlightedSocket
         const currentActiveDesign = currentState.getActiveDesign()
 
+        // Real-time constraint check before any placement
+        if (currentActiveDesign) {
+          const childPart = partsData.find((p) => p.id === partId)
+          if (childPart) {
+            const { checkBeforeAdd } = require('../../utils/realtimeChecks')
+            const violation = checkBeforeAdd(childPart.category, childPart.id, currentActiveDesign.parts)
+            if (violation) {
+              console.warn(`[Drop] Blocked: ${violation.message}`)
+              setGhostPart(null)
+              setHighlightedSocket(null)
+              setDraggingPartId(null)
+              // Dispatch custom event for ViolationBubble
+              window.dispatchEvent(new CustomEvent('fwx-violation', { detail: violation }))
+              return
+            }
+          }
+        }
+
         // 如果有高亮的插座，则精确吸附
         if (currentHighlightedSocket && currentActiveDesign) {
           const childPart = partsData.find((p) => p.id === partId)
@@ -535,6 +553,23 @@ function DragHandler() {
       const currentState = useDesignStore.getState()
       const currentHighlightedSocket = currentState.highlightedSocket
       const currentActiveDesign = currentState.getActiveDesign()
+
+      // Real-time constraint check (touch path)
+      if (currentActiveDesign) {
+        const touchChildPart = partsData.find((p) => p.id === partId)
+        if (touchChildPart) {
+          const { checkBeforeAdd: checkTouch } = require('../../utils/realtimeChecks')
+          const v = checkTouch(touchChildPart.category, touchChildPart.id, currentActiveDesign.parts)
+          if (v) {
+            console.warn(`[TouchDrop] Blocked: ${v.message}`)
+            setGhostPart(null)
+            setHighlightedSocket(null)
+            setDraggingPartId(null)
+            window.dispatchEvent(new CustomEvent('fwx-violation', { detail: v }))
+            return
+          }
+        }
+      }
 
       if (currentHighlightedSocket && currentActiveDesign) {
         const childPart = partsData.find((p) => p.id === partId)

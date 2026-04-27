@@ -149,7 +149,7 @@ export const useDesignStore = create<DesignState>()(
 
         const buildState = {
           currentStep: design.currentStep,
-          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category })),
+          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category, position: p.position, rotation: p.rotation })),
           hubLayer,
         }
         const { canAdvance } = canAdvanceStep(buildState)
@@ -193,7 +193,7 @@ export const useDesignStore = create<DesignState>()(
 
         const buildState = {
           currentStep: design.currentStep,
-          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category })),
+          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category, position: p.position, rotation: p.rotation })),
           hubLayer,
         }
         return canAdvanceStep(buildState).canAdvance
@@ -209,7 +209,7 @@ export const useDesignStore = create<DesignState>()(
 
         const buildState = {
           currentStep: design.currentStep,
-          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category })),
+          parts: design.parts.map(p => ({ partNumber: p.partId, category: p.category, position: p.position, rotation: p.rotation })),
           hubLayer,
         }
         return canAdvanceStep(buildState).reason
