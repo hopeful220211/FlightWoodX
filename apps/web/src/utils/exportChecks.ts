@@ -16,20 +16,20 @@ function countByCategory(parts: PartInstance[], cat: PartCategory): number {
 }
 
 function checkMainboard(parts: PartInstance[]): CheckResult {
-  return countByCategory(parts, 'HUB') >= 1
+  return countByCategory(parts, 'mainboard') >= 1
     ? { id: 'mainboard', level: 'pass', title: '主板已安装' }
     : { id: 'mainboard', level: 'error', title: '缺少主板', detail: '飞机需要一块核心主板才能装其他零件', fixHint: '回到第 1 步选择一个主板' }
 }
 
 function checkArmCount(parts: PartInstance[]): CheckResult {
-  const count = countByCategory(parts, 'ARM')
+  const count = countByCategory(parts, 'landing')
   if (count >= 4) return { id: 'armCount', level: 'pass', title: `${count} 个机臂已安装` }
   if (count === 3) return { id: 'armCount', level: 'warning', title: `只有 ${count} 个机臂`, detail: '3 个机臂可以飞，但不太稳', fixHint: '建议至少 4 个机臂' }
   return { id: 'armCount', level: 'error', title: `机臂太少（${count} 个）`, detail: '至少需要 3 个机臂才能飞', fixHint: '回到第 2 步添加更多机臂' }
 }
 
 function checkArmSymmetry(parts: PartInstance[]): CheckResult {
-  const arms = parts.filter(p => p.category === 'ARM')
+  const arms = parts.filter(p => p.category === 'landing')
   if (arms.length < 2) return { id: 'armSymmetry', level: 'pass', title: '机臂对称性正常' }
 
   const positions = arms.map(a => a.position)
@@ -43,7 +43,7 @@ function checkArmSymmetry(parts: PartInstance[]): CheckResult {
 }
 
 function checkMotorCount(parts: PartInstance[]): CheckResult {
-  const arms = countByCategory(parts, 'ARM')
+  const arms = countByCategory(parts, 'landing')
   // Motors are auto-installed in guided mode (Step 3)
   // Treat motor count as equal to arm count for guided designs
   return { id: 'motorCount', level: 'pass', title: `${arms} 个电机已配齐` }
@@ -51,22 +51,22 @@ function checkMotorCount(parts: PartInstance[]): CheckResult {
 
 function checkConnectorPairs(parts: PartInstance[]): CheckResult {
   const attached = parts.filter(p => p.attachedTo).length
-  const detached = parts.filter(p => !p.attachedTo && p.category !== 'HUB').length
+  const detached = parts.filter(p => !p.attachedTo && p.category !== 'mainboard').length
 
   if (detached === 0) return { id: 'connectorPairs', level: 'pass', title: '所有连接点都已配对' }
   return { id: 'connectorPairs', level: 'error', title: `有 ${detached} 个零件没装好`, detail: '这些零件还没有连接到其他零件上', fixHint: '回到工作台检查未连接的零件' }
 }
 
 function checkLandingGear(parts: PartInstance[]): CheckResult {
-  const count = countByCategory(parts, 'LAND')
+  const count = countByCategory(parts, 'landing')
   if (count >= 4) return { id: 'landingGear', level: 'pass', title: `${count} 个起落架` }
   if (count > 0) return { id: 'landingGear', level: 'warning', title: `起落架数量偏少（${count} 个）`, detail: '建议至少 4 个起落架，着陆更稳', fixHint: '可以在第 4 步添加更多' }
   return { id: 'landingGear', level: 'warning', title: '没有起落架', detail: '没有起落架也能飞，但着陆时不太方便', fixHint: '考虑添加起落架保护飞机' }
 }
 
 function checkGuard(parts: PartInstance[]): CheckResult {
-  const plates = countByCategory(parts, 'PLATE')
-  const joints = countByCategory(parts, 'JOINT')
+  const plates = countByCategory(parts, 'guard')
+  const joints = countByCategory(parts, 'guard')
   const total = plates + joints
   if (total > 0) return { id: 'guard', level: 'pass', title: '保护罩已安装' }
   return { id: 'guard', level: 'warning', title: '没有保护罩', detail: '保护罩可以保护螺旋桨不被碰到', fixHint: '在第 4 步选择一种保护罩' }
@@ -86,7 +86,7 @@ function checkWeightBalance(parts: PartInstance[]): CheckResult {
 
 function checkTotalWeight(parts: PartInstance[]): CheckResult {
   // Rough weight: each part ~5-15g, motor thrust ~20g per motor
-  const armCount = countByCategory(parts, 'ARM')
+  const armCount = countByCategory(parts, 'landing')
   const totalWeight = parts.length * 8 // rough average
   const maxThrust = armCount * 20 // rough per-motor thrust
 

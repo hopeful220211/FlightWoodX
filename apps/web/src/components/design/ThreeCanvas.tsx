@@ -167,10 +167,10 @@ function DragHandler() {
       }
 
       // 检查是否是第一个机身（第一个机身不需要连接点）
-      if (draggingPart.category === 'HUB') {
+      if (draggingPart.category === 'mainboard') {
         const existingHub = currentActiveDesign.parts.find((inst) => {
           const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'HUB'
+          return p?.category === 'mainboard'
         })
 
         if (!existingHub) {
@@ -418,10 +418,10 @@ function DragHandler() {
       }
 
       // 检查是否是第一个机身（第一个机身不需要连接点）
-      if (draggingPart.category === 'HUB') {
+      if (draggingPart.category === 'mainboard') {
         const existingHub = currentActiveDesign.parts.find((inst) => {
           const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'HUB'
+          return p?.category === 'mainboard'
         })
 
         if (!existingHub) {

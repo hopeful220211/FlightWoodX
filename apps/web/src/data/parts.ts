@@ -6,15 +6,14 @@ import type { Part } from '../types/design'
 
 function entryToPart(entry: PartEntry): Part {
   return {
-    id: entry.glbFile.replace('.glb', ''),
+    id: entry.id,
     partNumber: entry.partNumber,
     name: entry.name.zh,
     category: entry.category,
     weight: entry.weightG,
-    modelUrl: `/models/${entry.glbFile}`,
+    modelUrl: entry.modelPath,
     thumbnailUrl: `/thumbnails/${entry.thumbnailFile}`,
-    isEssential: entry.category === 'HUB',
-    layer: entry.layer,
+    isEssential: entry.tags.includes('初学者'),
     tags: entry.tags,
   }
 }

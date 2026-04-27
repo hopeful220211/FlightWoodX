@@ -142,7 +142,7 @@ export const useDesignStore = create<DesignState>()(
         const design = get().getActiveDesign()
         if (!design || design.buildMode !== 'guided') return false
 
-        const hubPart = design.parts.find(p => p.category === 'HUB')
+        const hubPart = design.parts.find(p => p.category === 'mainboard')
         const hubEntry = hubPart ? partsData.find(pd => pd.id === hubPart.partId) : undefined
         const hubLayer = hubEntry?.layer ?? 'single'
 
@@ -189,7 +189,7 @@ export const useDesignStore = create<DesignState>()(
         if (!design) return false
         if (design.buildMode === 'free') return true
 
-        const hubPart = design.parts.find(p => p.category === 'HUB')
+        const hubPart = design.parts.find(p => p.category === 'mainboard')
         const hubEntry = hubPart ? partsData.find(pd => pd.id === hubPart.partId) : undefined
         const hubLayer = hubEntry?.layer ?? 'single'
 
@@ -205,7 +205,7 @@ export const useDesignStore = create<DesignState>()(
         const design = get().getActiveDesign()
         if (!design) return undefined
 
-        const hubPart = design.parts.find(p => p.category === 'HUB')
+        const hubPart = design.parts.find(p => p.category === 'mainboard')
         const hubEntry = hubPart ? partsData.find(pd => pd.id === hubPart.partId) : undefined
         const hubLayer = hubEntry?.layer ?? 'single'
 
@@ -252,11 +252,11 @@ export const useDesignStore = create<DesignState>()(
         }
 
         // 规则 1：第一个机身可以独立放置，第二个机身必须连接到现有零件
-        if (partData.category === 'HUB') {
+        if (partData.category === 'mainboard') {
           // 检查是否已存在机身
           const existingHub = activeDesign.parts.find((inst) => {
             const p = partsData.find((pd) => pd.id === inst.partId)
-            return p?.category === 'HUB'
+            return p?.category === 'mainboard'
           })
 
           if (existingHub) {
@@ -279,7 +279,7 @@ export const useDesignStore = create<DesignState>()(
         // 规则 2：非 hub 必须先有机身
         const hasHub = activeDesign.parts.some((inst) => {
           const p = partsData.find((pd) => pd.id === inst.partId)
-          return p?.category === 'HUB'
+          return p?.category === 'mainboard'
         })
         if (!hasHub) {
           // eslint-disable-next-line no-alert

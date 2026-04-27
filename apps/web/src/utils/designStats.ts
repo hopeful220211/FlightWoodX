@@ -20,7 +20,7 @@ export function calculateStats(parts: PartInstance[]): DesignStats {
   const totalWeightG = parts.reduce((sum, p) => sum + (weights[p.category] ?? 8), 0)
 
   // Thrust: each ARM implies one motor, ~20g thrust per motor
-  const armCount = countByCategory(parts, 'ARM')
+  const armCount = countByCategory(parts, 'landing')
   const totalThrust = armCount * 20
   const thrustWeightRatio = totalThrust > 0 ? Math.round((totalThrust / totalWeightG) * 10) / 10 : null
 

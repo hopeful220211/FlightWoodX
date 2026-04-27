@@ -1,182 +1,164 @@
 /**
- * Part Registry — maps FW-XXX-NNN IDs to GLB files and metadata.
- * Single source of truth for all 77 parts.
+ * Part Registry — 94 parts across 4 categories.
+ * Category is determined by folder, NOT by GLB filename prefix.
  */
 import type { PartCategory, BuildStep } from './index'
 
 export interface PartEntry {
   partNumber: string
+  id: string            // GLB filename without extension (e.g. 'arm_01')
   category: PartCategory
   name: { zh: string; en: string }
-  glbFile: string
+  modelPath: string     // Full path: /models/{folder}/{id}.glb
   thumbnailFile: string
-  weightG: number
-  layer?: 'single' | 'double'
+  weightG: number       // Collaborator weights (1-5g, realistic)
   tags: string[]
 }
 
-/** Step ↔ allowed categories mapping */
+/** Category → model folder mapping */
+export const CATEGORY_FOLDERS: Record<string, string> = {
+  mainboard: 'mainboards',
+  landing: 'landings',
+  guard: 'guards',
+  joint: 'joints',
+}
+
+/** Step ↔ allowed categories mapping (RFC-008 new workflow) */
 export const STEP_CATEGORIES: Record<BuildStep, PartCategory[]> = {
-  HUB: ['HUB'],
-  ARM: ['ARM'],
+  HUB: ['mainboard'],
+  ARM: ['landing'],
   MOTOR: ['MOTOR', 'PROP'],
-  GUARD: ['PLATE', 'JOINT', 'LAND'],
-  DECO: ['DECO'],
+  GUARD: ['guard'],
+  DECO: ['joint'],
   REVIEW: [],
 }
 
-/** Ordered steps for iteration */
 export const BUILD_STEPS: BuildStep[] = ['HUB', 'ARM', 'MOTOR', 'GUARD', 'DECO', 'REVIEW']
 
-/** Step display info */
 export const STEP_INFO: Record<BuildStep, { label: string; number: number; description: string }> = {
   HUB: { label: '主板', number: 1, description: '选一块主板作为无人机的核心' },
-  ARM: { label: '机臂', number: 2, description: '装上机臂，决定几轴飞行器' },
-  MOTOR: { label: '电机', number: 3, description: '给每条机臂装上电机和螺旋桨' },
-  GUARD: { label: '保护罩', number: 4, description: '选一种保护罩保护螺旋桨' },
-  DECO: { label: '衔接件', number: 5, description: '加衔接件固定双层结构' },
-  REVIEW: { label: '检查', number: 6, description: '命名并检查飞行能力' },
+  ARM: { label: '起落架', number: 2, description: '安装起落架，4-8 个' },
+  MOTOR: { label: '电机', number: 3, description: '电机自动安装在每条起落架末端' },
+  GUARD: { label: '保护板', number: 4, description: '选保护板保护螺旋桨' },
+  DECO: { label: '装饰件', number: 5, description: '加装饰衔接件（可选）' },
+  REVIEW: { label: '检查', number: 6, description: '检查飞行能力并导出' },
 }
 
-function hub(num: number, name: string, layer: 'single' | 'double' = 'single'): PartEntry {
+// === Part factory functions ===
+
+function mainboard(num: number, weight: number, essential = false): PartEntry {
   const nn = String(num).padStart(2, '0')
+  const id = `core_hub_${nn}`
   return {
-    partNumber: `FW-HUB-${String(num).padStart(3, '0')}`,
-    category: 'HUB',
-    name: { zh: `主板·${name}`, en: `Hub · ${name}` },
-    glbFile: `core_hub_${nn}.glb`,
-    thumbnailFile: `core_hub_${nn}.png`,
-    weightG: 8 + num * 0.5,
-    layer,
-    tags: num <= 3 ? ['初学者'] : [],
+    partNumber: `FW-MB-${String(num).padStart(3, '0')}`,
+    id,
+    category: 'mainboard',
+    name: { zh: `主板件${nn}`, en: `Mainboard ${nn}` },
+    modelPath: `/models/mainboards/${id}.glb`,
+    thumbnailFile: `${id}.png`,
+    weightG: weight,
+    tags: essential ? ['初学者'] : [],
   }
 }
 
-function arm(num: number): PartEntry {
+function landing(num: number, weight: number, essential = false): PartEntry {
   const nn = String(num).padStart(2, '0')
+  const id = `arm_${nn}`
   return {
-    partNumber: `FW-ARM-${String(num).padStart(3, '0')}`,
-    category: 'ARM',
-    name: { zh: `机臂 ${nn}`, en: `Arm ${nn}` },
-    glbFile: `arm_${nn}.glb`,
-    thumbnailFile: `arm_${nn}.png`,
-    weightG: 3 + (num % 5) * 0.4,
-    tags: num <= 5 ? ['初学者'] : [],
+    partNumber: `FW-LD-${String(num).padStart(3, '0')}`,
+    id,
+    category: 'landing',
+    name: { zh: `起落架${nn}`, en: `Landing ${nn}` },
+    modelPath: `/models/landings/${id}.glb`,
+    thumbnailFile: `${id}.png`,
+    weightG: weight,
+    tags: essential ? ['初学者'] : [],
   }
 }
 
-function plate(num: number, fileNum: number): PartEntry {
+function guard(num: number, fileNum: number, weight: number): PartEntry {
   const fn = String(fileNum).padStart(2, '0')
+  const id = `joint_${fn}`
   return {
-    partNumber: `FW-PLATE-${String(num).padStart(3, '0')}`,
-    category: 'PLATE',
-    name: { zh: `一体保护罩 ${fn}`, en: `Guard Plate ${fn}` },
-    glbFile: `core_plate_${fn}.glb`,
-    thumbnailFile: `core_plate_${fn}.png`,
-    weightG: 12 + num * 0.8,
-    tags: ['初学者'],
-  }
-}
-
-function joint(num: number, fileNum: number): PartEntry {
-  const fn = String(fileNum).padStart(2, '0')
-  return {
-    partNumber: `FW-JOINT-${String(num).padStart(3, '0')}`,
-    category: 'JOINT',
-    name: { zh: `分体保护罩 ${fn}`, en: `Guard Joint ${fn}` },
-    glbFile: `joint_${fn}.glb`,
-    thumbnailFile: `joint_${fn}.png`,
-    weightG: 5 + num * 0.3,
+    partNumber: `FW-GD-${String(num).padStart(3, '0')}`,
+    id,
+    category: 'guard',
+    name: { zh: `保护板${fn}`, en: `Guard ${fn}` },
+    modelPath: `/models/guards/${id}.glb`,
+    thumbnailFile: `${id}.png`,
+    weightG: weight,
     tags: [],
   }
 }
 
-function land(num: number, fileNum: number): PartEntry {
-  const fn = String(fileNum).padStart(2, '0')
+function joint(num: number, weight: number): PartEntry {
+  const nn = String(num).padStart(2, '0')
+  const id = `deco_${nn}`
   return {
-    partNumber: `FW-LAND-${String(num).padStart(3, '0')}`,
-    category: 'LAND',
-    name: { zh: `半体保护罩 ${fn}`, en: `Guard Landing ${fn}` },
-    glbFile: `Landing_${fn}.glb`,
-    thumbnailFile: `Landing_${fn}.png`,
-    weightG: 7 + num * 0.5,
+    partNumber: `FW-JT-${String(num).padStart(3, '0')}`,
+    id,
+    category: 'joint',
+    name: { zh: `连接件${nn}`, en: `Joint ${nn}` },
+    modelPath: `/models/joints/${id}.glb`,
+    thumbnailFile: `${id}.png`,
+    weightG: weight,
     tags: [],
   }
 }
 
-function deco(num: number): PartEntry {
-  const nn = String(num).padStart(2, '0')
-  return {
-    partNumber: `FW-DECO-${String(num).padStart(3, '0')}`,
-    category: 'DECO',
-    name: { zh: `衔接件 ${nn}`, en: `Deco ${nn}` },
-    glbFile: `deco_${nn}.glb`,
-    thumbnailFile: `deco_${nn}.png`,
-    weightG: 2 + num * 0.3,
-    tags: [],
-  }
-}
+// === Registry (94 parts) ===
+// Weights from collaborator data (1-5g, realistic)
 
 export const PART_REGISTRY: PartEntry[] = [
-  // HUB (9)
-  hub(1, '经典圆盘'),
-  hub(2, '十字型'),
-  hub(3, '六边形'),
-  hub(4, '方形', 'double'),
-  hub(5, '星形'),
-  hub(6, '菱形', 'double'),
-  hub(7, '三角形'),
-  hub(8, '八边形', 'double'),
-  hub(9, '异形'),
+  // Mainboards (16) — core_hub_01 to core_hub_16
+  mainboard(1, 3, true), mainboard(2, 4, true), mainboard(3, 4, true),
+  mainboard(4, 5), mainboard(5, 3), mainboard(6, 4),
+  mainboard(7, 3), mainboard(8, 4), mainboard(9, 5),
+  mainboard(10, 4, true), mainboard(11, 3), mainboard(12, 4),
+  mainboard(13, 5), mainboard(14, 3), mainboard(15, 4), mainboard(16, 5),
 
-  // ARM (35)
-  ...Array.from({ length: 35 }, (_, i) => arm(i + 1)),
+  // Landings (39) — arm_01 to arm_39
+  landing(1, 2, true), landing(2, 1), landing(3, 2), landing(4, 1),
+  landing(5, 2), landing(6, 2), landing(7, 1), landing(8, 2),
+  landing(9, 2), landing(10, 1), landing(11, 2), landing(12, 2),
+  landing(13, 1), landing(14, 2), landing(15, 2), landing(16, 1),
+  landing(17, 2), landing(18, 2), landing(19, 1), landing(20, 2),
+  landing(21, 3), landing(22, 2), landing(23, 2), landing(24, 1),
+  landing(25, 2), landing(26, 2), landing(27, 3), landing(28, 2),
+  landing(29, 2), landing(30, 1), landing(31, 2), landing(32, 2),
+  landing(33, 3), landing(34, 2), landing(35, 2), landing(36, 2),
+  landing(37, 3), landing(38, 2), landing(39, 2),
 
-  // PLATE (6) — file numbers: 01, 02, 04, 06, 07, 08
-  plate(1, 1),
-  plate(2, 2),
-  plate(3, 4),
-  plate(4, 6),
-  plate(5, 7),
-  plate(6, 8),
+  // Guards (28) — joint_01, 03, 11-14, 16-20, 25-41
+  guard(1, 1, 3), guard(2, 3, 2), guard(3, 11, 2), guard(4, 12, 3),
+  guard(5, 13, 2), guard(6, 14, 3), guard(7, 16, 2), guard(8, 17, 3),
+  guard(9, 18, 2), guard(10, 19, 3), guard(11, 20, 2),
+  guard(12, 25, 3), guard(13, 26, 2), guard(14, 27, 3), guard(15, 28, 2),
+  guard(16, 29, 3), guard(17, 30, 2), guard(18, 31, 3), guard(19, 32, 2),
+  guard(20, 33, 3), guard(21, 34, 2), guard(22, 35, 3), guard(23, 36, 2),
+  guard(24, 37, 3), guard(25, 38, 2), guard(26, 39, 3), guard(27, 40, 2),
+  guard(28, 41, 3),
 
-  // JOINT (12) — file numbers: 01, 03, 11-14, 16-20, 25
-  joint(1, 1),
-  joint(2, 3),
-  joint(3, 11),
-  joint(4, 12),
-  joint(5, 13),
-  joint(6, 14),
-  joint(7, 16),
-  joint(8, 17),
-  joint(9, 18),
-  joint(10, 19),
-  joint(11, 20),
-  joint(12, 25),
-
-  // LAND (6) — file numbers: 03, 04, 06, 08, 09, 10
-  land(1, 3),
-  land(2, 4),
-  land(3, 6),
-  land(4, 8),
-  land(5, 9),
-  land(6, 10),
-
-  // DECO (9)
-  ...Array.from({ length: 9 }, (_, i) => deco(i + 1)),
+  // Joints (11) — deco_01 to deco_11
+  joint(1, 1), joint(2, 2), joint(3, 1), joint(4, 2), joint(5, 1),
+  joint(6, 2), joint(7, 1), joint(8, 2), joint(9, 1), joint(10, 2),
+  joint(11, 1),
 ]
 
-/** Lookup by part number */
+// === Lookups ===
+
 export function getPartByNumber(partNumber: string): PartEntry | undefined {
   return PART_REGISTRY.find(p => p.partNumber === partNumber)
 }
 
-/** Filter parts by category */
+export function getPartById(id: string): PartEntry | undefined {
+  return PART_REGISTRY.find(p => p.id === id)
+}
+
 export function getPartsByCategory(category: PartCategory): PartEntry[] {
   return PART_REGISTRY.filter(p => p.category === category)
 }
 
-/** Get parts allowed in a given build step */
 export function getPartsForStep(step: BuildStep): PartEntry[] {
   const categories = STEP_CATEGORIES[step]
   return PART_REGISTRY.filter(p => categories.includes(p.category))

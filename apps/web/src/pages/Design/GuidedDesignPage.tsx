@@ -64,8 +64,8 @@ export function GuidedDesignPage() {
   const handleArFlight = useCallback(() => {
     if (!activeDesign) return
 
-    const hasHub = activeDesign.parts.some(p => p.category === 'HUB')
-    const hasArm = activeDesign.parts.some(p => p.category === 'ARM')
+    const hasHub = activeDesign.parts.some(p => p.category === 'mainboard')
+    const hasArm = activeDesign.parts.some(p => p.category === 'landing')
 
     if (!hasHub || !hasArm) {
       toast.push('error', '先装好你的飞机吧！至少需要 1 个主板和 1 个机臂')

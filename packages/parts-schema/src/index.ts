@@ -5,10 +5,19 @@
  */
 import { z } from 'zod';
 
+// Physical part categories (determined by folder, not filename)
 export const PartCategoryEnum = z.enum([
-  'HUB', 'ARM', 'PLATE', 'JOINT', 'LAND', 'DECO', 'MOTOR', 'PROP',
+  'mainboard', 'landing', 'guard', 'joint', 'MOTOR', 'PROP',
 ]);
 export type PartCategory = z.infer<typeof PartCategoryEnum>;
+
+// Legacy aliases for backwards compatibility
+export const CATEGORY_ALIASES: Record<string, PartCategory> = {
+  HUB: 'mainboard', core: 'mainboard',
+  ARM: 'landing', arm: 'landing',
+  PLATE: 'guard', JOINT: 'guard', LAND: 'guard',
+  DECO: 'joint', deco: 'joint',
+};
 
 export const SnapPointSchema = z.object({
   id: z.string(),
