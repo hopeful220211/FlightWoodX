@@ -110,8 +110,10 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
   )
 }
 
-// 距离阈值（屏幕像素），小于此距离时高亮插座
-const SOCKET_HIGHLIGHT_THRESHOLD = 50
+// Screen-distance thresholds (pixels)
+const SNAP_PIXEL_THRESHOLD = 25    // snapped (green lock)
+const NEARBY_PIXEL_THRESHOLD = 60  // nearby (gold glow)
+const SOCKET_HIGHLIGHT_THRESHOLD = NEARBY_PIXEL_THRESHOLD // compat alias
 
 // 拖拽处理器：监听 HTML5 drag and drop 事件
 function DragHandler() {
@@ -263,12 +265,14 @@ function DragHandler() {
           }
         }
 
-        // 如果最近的插座在阈值范围内，高亮它
-        if (nearestSocket && minScreenDistance < SOCKET_HIGHLIGHT_THRESHOLD) {
+        // Set proximity-based highlight state
+        if (nearestSocket && minScreenDistance < NEARBY_PIXEL_THRESHOLD) {
+          const proximity = minScreenDistance < SNAP_PIXEL_THRESHOLD ? 'snapped' as const : 'nearby' as const
           setHighlightedSocket({
             instanceId: nearestSocket.instanceId,
             socketId: nearestSocket.socketId,
             plugId: nearestSocket.plugId,
+            proximity,
           })
         } else {
           setHighlightedSocket(null)
@@ -530,11 +534,13 @@ function DragHandler() {
           }
         }
 
-        if (nearestSocket && minScreenDistance < SOCKET_HIGHLIGHT_THRESHOLD) {
+        if (nearestSocket && minScreenDistance < NEARBY_PIXEL_THRESHOLD) {
+          const proximity = minScreenDistance < SNAP_PIXEL_THRESHOLD ? 'snapped' as const : 'nearby' as const
           setHighlightedSocket({
             instanceId: nearestSocket.instanceId,
             socketId: nearestSocket.socketId,
             plugId: nearestSocket.plugId,
+            proximity,
           })
         } else {
           setHighlightedSocket(null)
