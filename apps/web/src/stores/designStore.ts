@@ -10,9 +10,7 @@ import { getCachedPartConnectors } from '../hooks/usePartConnectors'
 import * as THREE from 'three'
 import { computeSnapTransform, quaternionToEuler } from '../components/design/snap'
 
-function isConnectionAllowed(_childCategory: string, _parentCategory: string): boolean {
-  return true
-}
+import { isConnectionAllowed } from '../utils/connectionRules'
 
 interface DesignState {
   designs: Design[]

@@ -14,17 +14,7 @@ import { computeSnapTransform, quaternionToEuler } from './snap'
 // 点击检测阈值（像素）
 const CLICK_THRESHOLD = 5
 
-/**
- * 检查两个零件类别之间是否允许连接
- * @param childCategory - 要连接的子零件类别（带 plug 的零件）
- * @param parentCategory - 父零件类别（带 socket 的零件）
- * @returns 是否允许连接
- */
-function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
-  // 移除所有连接限制，允许任意零件之间连接
-  // 包括机身和保护板也可以连接到 plug
-  return true
-}
+import { isConnectionAllowed } from './../../utils/connectionRules'
 
 // 全局指针位置追踪（用于区分点击和拖拽）
 let pointerDownPosition: { x: number; y: number } | null = null

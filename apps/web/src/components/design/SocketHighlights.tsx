@@ -6,13 +6,7 @@ import { useDesignStore } from '../../stores/designStore'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
 
-/**
- * 检查两个零件类别之间是否允许连接
- */
-function isConnectionAllowed(childCategory: string, parentCategory: string): boolean {
-  // 移除所有连接限制，允许任意零件之间连接
-  return true
-}
+import { isConnectionAllowed } from '../../utils/connectionRules'
 
 interface SocketInfo {
   instanceId: string

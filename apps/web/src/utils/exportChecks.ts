@@ -1,5 +1,6 @@
 import type { PartInstance } from '../types/design'
 import type { PartCategory } from '@fwx/parts-schema'
+import { checkCategorySymmetry } from './symmetryCheck'
 
 export type CheckLevel = 'pass' | 'warning' | 'error'
 
@@ -30,16 +31,36 @@ function checkArmCount(parts: PartInstance[]): CheckResult {
 
 function checkArmSymmetry(parts: PartInstance[]): CheckResult {
   const arms = parts.filter(p => p.category === 'landing')
-  if (arms.length < 2) return { id: 'armSymmetry', level: 'pass', title: '机臂对称性正常' }
+  if (arms.length < 2) return { id: 'armSymmetry', level: 'pass', title: '起落架对称性正常' }
 
-  const positions = arms.map(a => a.position)
-  const cx = positions.reduce((s, p) => s + p[0], 0) / positions.length
-  const cz = positions.reduce((s, p) => s + p[2], 0) / positions.length
-  const maxOffset = Math.max(Math.abs(cx), Math.abs(cz))
+  const isSymmetric = checkCategorySymmetry(arms.map(a => ({ partId: a.partId, position: a.position })))
+  if (isSymmetric) return { id: 'armSymmetry', level: 'pass', title: '起落架对称分布' }
+  return { id: 'armSymmetry', level: 'error', title: '起落架不对称', detail: '起落架需要左右对称摆放', fixHint: '调整起落架位置让左右对称' }
+}
 
-  if (maxOffset < 0.01) return { id: 'armSymmetry', level: 'pass', title: '机臂对称分布' }
-  if (maxOffset < 0.05) return { id: 'armSymmetry', level: 'warning', title: '机臂分布稍有偏移', detail: '不影响飞行，但可能会轻微倾斜', fixHint: '尝试让机臂分布更均匀' }
-  return { id: 'armSymmetry', level: 'warning', title: '机臂不对称', detail: '机臂不对称会让飞机歪', fixHint: '调整机臂位置让它更均匀' }
+function checkArmSameType(parts: PartInstance[]): CheckResult {
+  const arms = parts.filter(p => p.category === 'landing')
+  if (arms.length <= 1) return { id: 'armSameType', level: 'pass', title: '起落架型号一致' }
+  const types = new Set(arms.map(a => a.partId))
+  if (types.size === 1) return { id: 'armSameType', level: 'pass', title: '起落架型号一致' }
+  return { id: 'armSameType', level: 'error', title: '起落架型号不一致', detail: '所有起落架必须使用同一型号', fixHint: '把不同型号的起落架换成同一种' }
+}
+
+function checkGuardSymmetry(parts: PartInstance[]): CheckResult {
+  const guards = parts.filter(p => p.category === 'guard')
+  if (guards.length <= 1) return { id: 'guardSymmetry', level: 'pass', title: '保护板对称性正常' }
+
+  const isSymmetric = checkCategorySymmetry(guards.map(g => ({ partId: g.partId, position: g.position })))
+  if (isSymmetric) return { id: 'guardSymmetry', level: 'pass', title: '保护板对称分布' }
+  return { id: 'guardSymmetry', level: 'error', title: '保护板不对称', detail: '保护板需要左右对称摆放', fixHint: '调整保护板位置让左右对称' }
+}
+
+function checkGuardSameType(parts: PartInstance[]): CheckResult {
+  const guards = parts.filter(p => p.category === 'guard')
+  if (guards.length <= 1) return { id: 'guardSameType', level: 'pass', title: '保护板型号一致' }
+  const types = new Set(guards.map(g => g.partId))
+  if (types.size === 1) return { id: 'guardSameType', level: 'pass', title: '保护板型号一致' }
+  return { id: 'guardSameType', level: 'error', title: '保护板型号不一致', detail: '所有保护板必须使用同一型号', fixHint: '把不同型号的保护板换成同一种' }
 }
 
 function checkMotorCount(parts: PartInstance[]): CheckResult {
@@ -85,27 +106,29 @@ function checkWeightBalance(parts: PartInstance[]): CheckResult {
 }
 
 function checkTotalWeight(parts: PartInstance[]): CheckResult {
-  // Rough weight: each part ~5-15g, motor thrust ~20g per motor
-  const armCount = countByCategory(parts, 'landing')
-  const totalWeight = parts.length * 8 // rough average
-  const maxThrust = armCount * 20 // rough per-motor thrust
+  // Use actual part weights from registry (1-5g each, 35g limit)
+  const { getPartById } = require('@fwx/parts-schema')
+  const totalWeight = parts.reduce((sum, p) => {
+    const entry = getPartById(p.partId)
+    return sum + (entry?.weightG ?? 2)
+  }, 0)
 
-  if (maxThrust === 0 && totalWeight > 0) {
-    return { id: 'totalWeight', level: 'error', title: '没有电机推力', detail: '需要机臂和电机才能产生推力', fixHint: '确保有足够的机臂' }
-  }
-  if (totalWeight < maxThrust * 0.8) return { id: 'totalWeight', level: 'pass', title: '重量合适' }
-  if (totalWeight < maxThrust) return { id: 'totalWeight', level: 'warning', title: '有点重', detail: '推力刚好够，飞行时间可能较短', fixHint: '试试减少一些非必要零件' }
-  return { id: 'totalWeight', level: 'error', title: '飞机太重了', detail: '电机推不动这么重的飞机', fixHint: '减少零件数量或选更轻的零件' }
+  if (totalWeight <= 24.5) return { id: 'totalWeight', level: 'pass', title: `重量合适（${totalWeight.toFixed(1)}g）` }
+  if (totalWeight <= 35) return { id: 'totalWeight', level: 'warning', title: `有点重（${totalWeight.toFixed(1)}g / 35g）`, detail: '接近重量上限', fixHint: '试试减少一些零件' }
+  return { id: 'totalWeight', level: 'error', title: `超重了（${totalWeight.toFixed(1)}g / 35g）`, detail: '飞机太重，电机推不动', fixHint: '减少零件数量' }
 }
 
 const ALL_CHECKS = [
   checkMainboard,
   checkArmCount,
+  checkArmSameType,
   checkArmSymmetry,
   checkMotorCount,
   checkConnectorPairs,
   checkLandingGear,
   checkGuard,
+  checkGuardSameType,
+  checkGuardSymmetry,
   checkWeightBalance,
   checkTotalWeight,
 ]

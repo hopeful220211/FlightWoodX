@@ -63,7 +63,7 @@ export function canAddPart(part: PartEntry, state: BuildState): CompatibilityRes
     }
   }
 
-  // Guard: max 4
+  // Guard: max 4, valid final counts are {1, 2, 4} (enforced by canAdvanceStep)
   if (part.category === 'guard') {
     const count = state.parts.filter(p => p.category === 'guard').length
     if (count >= 4) {
