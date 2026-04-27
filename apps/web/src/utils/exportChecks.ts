@@ -43,7 +43,7 @@ function checkArmSameType(parts: PartInstance[]): CheckResult {
   if (arms.length <= 1) return { id: 'armSameType', level: 'pass', title: '起落架型号一致' }
   const types = new Set(arms.map(a => a.partId))
   if (types.size === 1) return { id: 'armSameType', level: 'pass', title: '起落架型号一致' }
-  return { id: 'armSameType', level: 'error', title: '起落架型号不一致', detail: '所有起落架必须使用同一型号', fixHint: '把不同型号的起落架换成同一种' }
+  return { id: 'armSameType', level: 'warning', title: '你的飞机用了不同型号的机臂哦', detail: '确保左右对称就好', fixHint: '混搭时注意重量和长度平衡' }
 }
 
 function checkGuardSymmetry(parts: PartInstance[]): CheckResult {
