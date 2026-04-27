@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { STEP_CATEGORIES, STEP_INFO, getPartsForStep } from '@fwx/parts-schema'
+import { useMemo } from 'react'
+import { STEP_CATEGORIES, STEP_INFO } from '@fwx/parts-schema'
 import type { BuildStep, PartCategory } from '@fwx/parts-schema'
 import { partsData } from '../../../data/parts'
 import type { Part } from '../../../types/design'
@@ -14,24 +14,10 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
   const info = STEP_INFO[currentStep]
   const categories = STEP_CATEGORIES[currentStep]
 
-  // For GUARD step, allow sub-type selection
-  const [guardSubType, setGuardSubType] = useState<PartCategory | null>(null)
-
-  const isGuardStep = currentStep === 'GUARD'
-
   const filteredParts = useMemo(() => {
     if (currentStep === 'MOTOR' || currentStep === 'REVIEW') return []
-
-    if (isGuardStep && guardSubType) {
-      return partsData.filter(p => p.category === guardSubType)
-    }
-
-    if (isGuardStep && !guardSubType) {
-      return [] // Show type selector first
-    }
-
     return partsData.filter(p => categories.includes(p.category as PartCategory))
-  }, [currentStep, categories, isGuardStep, guardSubType])
+  }, [currentStep, categories])
 
   if (currentStep === 'REVIEW') {
     return (
@@ -81,38 +67,6 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
         </h3>
         <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
       </div>
-
-      {/* Guard step: sub-type selector */}
-      {isGuardStep && !guardSubType && (
-        <div className="p-3 space-y-2">
-          <p className="text-xs text-gray-600 mb-2">选择保护罩类型：</p>
-          {[
-            { cat: 'PLATE' as PartCategory, label: '一体版', desc: '保护最强、最稳，适合初学者' },
-            { cat: 'JOINT' as PartCategory, label: '分体版', desc: '更轻更灵活，适合中级' },
-            { cat: 'LAND' as PartCategory, label: '半体版', desc: '折中方案，兼顾保护与重量' },
-          ].map(({ cat, label, desc }) => (
-            <button
-              key={cat}
-              onClick={() => setGuardSubType(cat)}
-              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-tech-300 hover:bg-tech-50 transition-colors"
-            >
-              <div className="text-sm font-medium text-gray-800">{label}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{desc}</div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {isGuardStep && guardSubType && (
-        <div className="px-3 pt-2">
-          <button
-            onClick={() => setGuardSubType(null)}
-            className="text-xs text-tech-600 hover:text-tech-700"
-          >
-            ← 返回选类型
-          </button>
-        </div>
-      )}
 
       {/* Part grid */}
       {filteredParts.length > 0 && (
