@@ -11,6 +11,7 @@ import { WeightBar } from './components/WeightBar'
 import { ViolationBubble } from './components/ViolationBubble'
 import { checkBeforeAdd, checkDualMainboard } from '../../utils/realtimeChecks'
 import type { Violation } from '../../utils/realtimeChecks'
+import { MotorInstallStep } from './components/steps/MotorInstallStep'
 import type { Part } from '../../types/design'
 
 export function GuidedDesignPage() {
@@ -97,55 +98,61 @@ export function GuidedDesignPage() {
 
   if (!activeDesign) return null
 
+  const isMotorStep = currentStep === 'MOTOR'
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
-      {/* Top: Step progress + Weight bar */}
       <div className="shrink-0">
         <StepProgressBar currentStep={currentStep} stepReached={stepReached} />
-        <WeightBar />
+        {!isMotorStep && <WeightBar />}
       </div>
 
-      {/* Violation bubble (floating, auto-dismiss) */}
       <ViolationBubble violation={violation} />
 
-      {/* Middle: Three columns */}
-      <div className="flex-1 flex min-h-0">
-        <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto">
-            <StepPartPanel
+      {isMotorStep ? (
+        <div className="flex-1 min-h-0 bg-paper-50">
+          <MotorInstallStep />
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 flex min-h-0">
+            <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto">
+                <StepPartPanel
+                  currentStep={currentStep}
+                  onPartClick={handlePartClick}
+                  onPartDragStart={handlePartDragStart}
+                />
+              </div>
+            </aside>
+
+            <main className="flex-1 relative min-h-0 min-w-0">
+              <ThreeCanvas />
+            </main>
+
+            <aside className="w-56 shrink-0 bg-white border-l border-gray-100 overflow-y-auto">
+              <StepGuide
+                currentStep={currentStep}
+                canAdvance={canAdvance}
+                advanceReason={advanceReason}
+              />
+            </aside>
+          </div>
+
+          <div className="shrink-0">
+            <StepActions
               currentStep={currentStep}
-              onPartClick={handlePartClick}
-              onPartDragStart={handlePartDragStart}
+              canAdvance={canAdvance}
+              onAdvance={handleAdvance}
+              onGoBack={handleGoBack}
+              onReset={handleReset}
+              onSave={handleSave}
+              onSaveAndExport={handleSaveAndExport}
+              onArFlight={handleArFlight}
             />
           </div>
-        </aside>
-
-        <main className="flex-1 relative min-h-0 min-w-0">
-          <ThreeCanvas />
-        </main>
-
-        <aside className="w-56 shrink-0 bg-white border-l border-gray-100 overflow-y-auto">
-          <StepGuide
-            currentStep={currentStep}
-            canAdvance={canAdvance}
-            advanceReason={advanceReason}
-          />
-        </aside>
-      </div>
-
-      {/* Bottom: Actions */}
-      <div className="shrink-0">
-        <StepActions
-          currentStep={currentStep}
-          canAdvance={canAdvance}
-          onAdvance={handleAdvance}
-          onGoBack={handleGoBack}
-          onReset={handleReset}
-          onSave={handleSave}
-          onSaveAndExport={handleSaveAndExport}
-          onArFlight={handleArFlight}
-        />
-      </div>
+        </>
+      )}
     </div>
   )
 }

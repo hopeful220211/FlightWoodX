@@ -18,9 +18,10 @@ const HIGHLIGHT_INTENSITY = 0.8;
 interface GLBPartProps {
   instance: PartInstance;
   partData?: { id: string; name: string; modelUrl: string };
+  dimmed?: boolean;
 }
 
-export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
+export function GLBPart({ instance, partData: propPartData, dimmed = false }: GLBPartProps) {
   const partData = propPartData || partsData.find((p) => p.id === instance.partId);
   const setSelectedInstanceId = useDesignStore((state) => state.setSelectedInstanceId);
   const selectedInstanceId = useDesignStore((state) => state.selectedInstanceId);
@@ -163,6 +164,23 @@ export function GLBPart({ instance, partData: propPartData }: GLBPartProps) {
       }
     });
   }, [clonedScene, isSelected]);
+
+  // Dim parts during drag (semi-transparent + desaturated)
+  useEffect(() => {
+    if (!clonedScene) return;
+    clonedScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((mat) => {
+          if (mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial) {
+            mat.transparent = true;
+            mat.opacity = dimmed ? 0.4 : 1;
+            mat.needsUpdate = true;
+          }
+        });
+      }
+    });
+  }, [clonedScene, dimmed]);
 
   return (
     <group

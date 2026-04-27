@@ -113,9 +113,6 @@ export function canAdvanceStep(state: BuildState): { canAdvance: boolean; reason
         : { canAdvance: false, reason: `至少需要 4 个起落架（当前 ${count} 个）` }
     }
 
-    case 'MOTOR':
-      return { canAdvance: true }
-
     case 'GUARD': {
       const count = state.parts.filter(p => p.category === 'guard').length
       const valid = [1, 2, 4]
@@ -129,6 +126,9 @@ export function canAdvanceStep(state: BuildState): { canAdvance: boolean; reason
 
     case 'REVIEW':
       return { canAdvance: true }
+
+    case 'MOTOR':
+      return { canAdvance: true } // Auto-install, always advanceable
 
     default:
       return { canAdvance: false }

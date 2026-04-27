@@ -24,24 +24,26 @@ export const CATEGORY_FOLDERS: Record<string, string> = {
 }
 
 /** Step ↔ allowed categories mapping (RFC-008 new workflow) */
+/** Step ID → allowed part categories for that step */
 export const STEP_CATEGORIES: Record<BuildStep, PartCategory[]> = {
-  HUB: ['mainboard'],
-  ARM: ['landing'],
-  MOTOR: ['MOTOR', 'PROP'],
-  GUARD: ['guard'],
-  DECO: ['joint'],
-  REVIEW: [],
+  HUB: ['mainboard'],       // Step 1: mainboard
+  ARM: ['landing'],          // Step 2: landings (step ID is legacy 'ARM')
+  GUARD: ['guard'],          // Step 3: guards
+  DECO: ['joint'],           // Step 4: joints/decorations (optional)
+  REVIEW: [],                // Step 5: check
+  MOTOR: ['MOTOR', 'PROP'],  // Step 6: auto-install motors (last!)
 }
 
-export const BUILD_STEPS: BuildStep[] = ['HUB', 'ARM', 'MOTOR', 'GUARD', 'DECO', 'REVIEW']
+/** New workflow order per RFC-008 §6.3 */
+export const BUILD_STEPS: BuildStep[] = ['HUB', 'ARM', 'GUARD', 'DECO', 'REVIEW', 'MOTOR']
 
-export const STEP_INFO: Record<BuildStep, { label: string; number: number; description: string }> = {
-  HUB: { label: '主板', number: 1, description: '选一块主板作为无人机的核心' },
-  ARM: { label: '起落架', number: 2, description: '安装起落架，4-8 个' },
-  MOTOR: { label: '电机', number: 3, description: '电机自动安装在每条起落架末端' },
-  GUARD: { label: '保护板', number: 4, description: '选保护板保护螺旋桨' },
-  DECO: { label: '装饰件', number: 5, description: '加装饰衔接件（可选）' },
-  REVIEW: { label: '检查', number: 6, description: '检查飞行能力并导出' },
+export const STEP_INFO: Record<BuildStep, { label: string; number: number; description: string; optional?: boolean }> = {
+  HUB:    { label: '主板',   number: 1, description: '选一块主板作为无人机的核心' },
+  ARM:    { label: '起落架', number: 2, description: '安装起落架（4-8 个）' },
+  GUARD:  { label: '保护板', number: 3, description: '选保护板保护螺旋桨（1/2/4 个）' },
+  DECO:   { label: '装饰件', number: 4, description: '加装饰衔接件（可跳过）', optional: true },
+  REVIEW: { label: '检查',   number: 5, description: '检查飞行能力' },
+  MOTOR:  { label: '安装电机', number: 6, description: '电机自动安装，飞机准备起飞！' },
 }
 
 // === Part factory functions ===

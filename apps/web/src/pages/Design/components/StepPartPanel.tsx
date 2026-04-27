@@ -125,13 +125,10 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/plain', part.id)
                   e.dataTransfer.effectAllowed = 'move'
-                  // Use thumbnail as drag image
-                  if (part.thumbnailUrl) {
-                    const img = new Image()
-                    img.src = part.thumbnailUrl
-                    img.width = 64
-                    img.height = 64
-                    e.dataTransfer.setDragImage(img, 32, 32)
+                  // Use the rendered <img> element as drag image (no card background)
+                  const imgEl = e.currentTarget.querySelector('img')
+                  if (imgEl) {
+                    e.dataTransfer.setDragImage(imgEl, 32, 32)
                   }
                   onPartDragStart(part.id)
                 }}

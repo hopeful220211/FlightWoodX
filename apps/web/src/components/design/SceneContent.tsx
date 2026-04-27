@@ -106,6 +106,7 @@ function DragSnapLogic() {
 
 export function SceneContent() {
   const activeDesign = useDesignStore((state) => state.getActiveDesign())
+  const isDragging = useDesignStore((state) => !!state.draggingPartId)
 
   return (
     <>
@@ -115,7 +116,7 @@ export function SceneContent() {
         if (!partData) return null
         return (
           <PartErrorBoundary key={instance.instanceId} partId={instance.partId}>
-            <GLBPart instance={instance} partData={partData} />
+            <GLBPart instance={instance} partData={partData} dimmed={isDragging} />
           </PartErrorBoundary>
         )
       })}

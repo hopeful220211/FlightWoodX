@@ -60,8 +60,11 @@ export const PartSchema = z.object({
 });
 export type Part = z.infer<typeof PartSchema>;
 
+// Step IDs are internal identifiers, NOT category names.
+// 'HUB' = mainboard step, 'ARM' = landing step, etc.
+// Category names are: mainboard, landing, guard, joint.
 export const BuildStepEnum = z.enum([
-  'HUB', 'ARM', 'MOTOR', 'GUARD', 'DECO', 'REVIEW',
+  'HUB', 'ARM', 'GUARD', 'DECO', 'REVIEW', 'MOTOR',
 ]);
 export type BuildStep = z.infer<typeof BuildStepEnum>;
 
