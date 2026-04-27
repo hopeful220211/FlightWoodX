@@ -1,23 +1,13 @@
-import { useMemo, useEffect, useRef } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { STEP_CATEGORIES, STEP_INFO } from '@fwx/parts-schema'
 import type { BuildStep, PartCategory } from '@fwx/parts-schema'
 import { partsData } from '../../../data/parts'
 import type { Part } from '../../../types/design'
 
-// Pre-load all thumbnails once so setDragImage has loaded images
-const thumbnailCache = new Map<string, HTMLImageElement>()
-function getPreloadedThumbnail(partId: string, url: string): HTMLImageElement | null {
-  if (thumbnailCache.has(partId)) {
-    const img = thumbnailCache.get(partId)!
-    return img.complete ? img : null
-  }
-  const img = new Image()
-  img.src = url
-  img.style.width = '64px'
-  img.style.height = '64px'
-  thumbnailCache.set(partId, img)
-  return null // not loaded yet, will be ready next time
-}
+// 1x1 transparent PNG for suppressing default drag image
+const EMPTY_IMG = new Image()
+EMPTY_IMG.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 
 interface StepPartPanelProps {
   currentStep: BuildStep
@@ -29,17 +19,36 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
   const info = STEP_INFO[currentStep]
   const categories = STEP_CATEGORIES[currentStep]
 
-  // Pre-load all thumbnails on mount for instant setDragImage
-  useEffect(() => {
-    partsData.forEach(p => {
-      if (p.thumbnailUrl) getPreloadedThumbnail(p.id, p.thumbnailUrl)
-    })
-  }, [])
-
   const filteredParts = useMemo(() => {
     if (currentStep === 'MOTOR' || currentStep === 'REVIEW') return []
     return partsData.filter(p => categories.includes(p.category as PartCategory))
   }, [currentStep, categories])
+
+  // Custom drag overlay state (replaces unreliable setDragImage)
+  const [dragPreview, setDragPreview] = useState<{ url: string; x: number; y: number } | null>(null)
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    if (dragPreview) {
+      setDragPreview(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)
+    }
+  }, [dragPreview])
+
+  const handleDragEnd = useCallback(() => {
+    setDragPreview(null)
+  }, [])
+
+  useEffect(() => {
+    if (dragPreview) {
+      window.addEventListener('dragover', handleDragOver)
+      window.addEventListener('dragend', handleDragEnd)
+      window.addEventListener('drop', handleDragEnd)
+      return () => {
+        window.removeEventListener('dragover', handleDragOver)
+        window.removeEventListener('dragend', handleDragEnd)
+        window.removeEventListener('drop', handleDragEnd)
+      }
+    }
+  }, [dragPreview, handleDragOver, handleDragEnd])
 
   if (currentStep === 'REVIEW') {
     return (
@@ -57,26 +66,12 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
           <h3 className="text-sm font-bold text-gray-700">第 {info.number} 步 · {info.label}</h3>
           <p className="text-xs text-gray-500 mt-1">{info.description}</p>
         </div>
-
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <p className="text-sm font-medium text-green-800">电机已自动安装</p>
           <p className="text-xs text-green-600 mt-1">
-            每条机臂末端会自动安装一个电机和螺旋桨。你可以直接点"下一步"继续。
+            每条起落架末端会自动安装一个电机和螺旋桨。
           </p>
         </div>
-
-        <p className="text-xs text-gray-400">
-          如果想调整机臂数量，请回到上一步。
-        </p>
-
-        {/* Future: advanced options (disabled) */}
-        <details className="text-xs text-gray-400">
-          <summary className="cursor-pointer hover:text-gray-500">高级选项（即将开放）</summary>
-          <div className="mt-2 space-y-1 opacity-50 pointer-events-none">
-            <p>电机型号：小型 / 中型 / 大型</p>
-            <p>螺旋桨颜色：黑 / 白 / 红</p>
-          </div>
-        </details>
       </div>
     )
   }
@@ -86,6 +81,9 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
       <div className="p-3 border-b border-gray-100">
         <h3 className="text-sm font-bold text-gray-700">
           第 {info.number} 步 · {info.label}
+          {(info as { optional?: boolean }).optional && (
+            <span className="ml-1 text-xs font-normal text-ink-400">（可跳过）</span>
+          )}
         </h3>
         <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
       </div>
@@ -101,26 +99,11 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/plain', part.id)
                   e.dataTransfer.effectAllowed = 'move'
-                  // Custom drag image: clone the <img> already visible in the card.
-                  // This avoids all setDragImage quirks — the clone IS the rendered pixel data.
-                  const imgEl = e.currentTarget.querySelector('img')
-                  if (imgEl) {
-                    const clone = imgEl.cloneNode(true) as HTMLImageElement
-                    clone.style.width = '64px'
-                    clone.style.height = '64px'
-                    clone.style.position = 'absolute'
-                    clone.style.top = '0'
-                    clone.style.left = '0'
-                    clone.style.opacity = '0.01'
-                    clone.style.background = 'transparent'
-                    clone.style.border = 'none'
-                    clone.style.padding = '0'
-                    clone.style.margin = '0'
-                    clone.style.borderRadius = '0'
-                    clone.style.boxShadow = 'none'
-                    document.body.appendChild(clone)
-                    e.dataTransfer.setDragImage(clone, 32, 32)
-                    setTimeout(() => clone.remove(), 100)
+                  // Suppress default drag image with 1x1 transparent pixel
+                  e.dataTransfer.setDragImage(EMPTY_IMG, 0, 0)
+                  // Show our custom overlay instead
+                  if (part.thumbnailUrl) {
+                    setDragPreview({ url: part.thumbnailUrl, x: e.clientX, y: e.clientY })
                   }
                   onPartDragStart(part.id)
                 }}
@@ -144,6 +127,36 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
             ))}
           </div>
         </div>
+      )}
+
+      {filteredParts.length === 0 && currentStep !== 'MOTOR' && currentStep !== 'REVIEW' && (
+        <div className="p-4 text-center text-xs text-gray-400">
+          此步骤暂无可选零件
+        </div>
+      )}
+
+      {/* Custom drag preview overlay — bypasses setDragImage entirely */}
+      {dragPreview && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            left: dragPreview.x - 32,
+            top: dragPreview.y - 32,
+            width: 64,
+            height: 64,
+            pointerEvents: 'none',
+            zIndex: 99999,
+            opacity: 0.85,
+            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))',
+          }}
+        >
+          <img
+            src={dragPreview.url}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
+        </div>,
+        document.body,
       )}
     </div>
   )

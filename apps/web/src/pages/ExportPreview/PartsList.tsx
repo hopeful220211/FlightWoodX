@@ -41,7 +41,7 @@ function groupParts(parts: Design['parts']): Map<string, GroupedPart[]> {
   const groups = new Map<string, GroupedPart[]>()
   for (const [partId, { count, category }] of countMap) {
     const partData = partsData.find(p => p.id === partId)
-    const registryEntry = PART_REGISTRY.find(r => r.glbFile.replace('.glb', '') === partId)
+    const registryEntry = PART_REGISTRY.find(r => r.id === partId)
     const name = registryEntry?.name.zh ?? partData?.name ?? partId
     const categoryLabel = CATEGORY_LABELS[category] ?? category
 
