@@ -1,13 +1,8 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useMemo } from 'react'
 import { STEP_CATEGORIES, STEP_INFO } from '@fwx/parts-schema'
 import type { BuildStep, PartCategory } from '@fwx/parts-schema'
 import { partsData } from '../../../data/parts'
 import type { Part } from '../../../types/design'
-
-// 1x1 transparent PNG for suppressing default drag image
-const EMPTY_IMG = new Image()
-EMPTY_IMG.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 
 interface StepPartPanelProps {
   currentStep: BuildStep
@@ -23,32 +18,6 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
     if (currentStep === 'MOTOR' || currentStep === 'REVIEW') return []
     return partsData.filter(p => categories.includes(p.category as PartCategory))
   }, [currentStep, categories])
-
-  // Custom drag overlay state (replaces unreliable setDragImage)
-  const [dragPreview, setDragPreview] = useState<{ url: string; x: number; y: number } | null>(null)
-
-  const handleDragOver = useCallback((e: DragEvent) => {
-    if (dragPreview) {
-      setDragPreview(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)
-    }
-  }, [dragPreview])
-
-  const handleDragEnd = useCallback(() => {
-    setDragPreview(null)
-  }, [])
-
-  useEffect(() => {
-    if (dragPreview) {
-      window.addEventListener('dragover', handleDragOver)
-      window.addEventListener('dragend', handleDragEnd)
-      window.addEventListener('drop', handleDragEnd)
-      return () => {
-        window.removeEventListener('dragover', handleDragOver)
-        window.removeEventListener('dragend', handleDragEnd)
-        window.removeEventListener('drop', handleDragEnd)
-      }
-    }
-  }, [dragPreview, handleDragOver, handleDragEnd])
 
   if (currentStep === 'REVIEW') {
     return (
@@ -68,9 +37,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
         </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <p className="text-sm font-medium text-green-800">电机已自动安装</p>
-          <p className="text-xs text-green-600 mt-1">
-            每条起落架末端会自动安装一个电机和螺旋桨。
-          </p>
+          <p className="text-xs text-green-600 mt-1">每条起落架末端会自动安装一个电机和螺旋桨。</p>
         </div>
       </div>
     )
@@ -88,25 +55,12 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
         <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
       </div>
 
-      {/* Part grid */}
       {filteredParts.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3">
           <div className="grid grid-cols-2 gap-2">
             {filteredParts.map(part => (
               <div
                 key={part.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', part.id)
-                  e.dataTransfer.effectAllowed = 'move'
-                  // Suppress default drag image with 1x1 transparent pixel
-                  e.dataTransfer.setDragImage(EMPTY_IMG, 0, 0)
-                  // Show our custom overlay instead
-                  if (part.thumbnailUrl) {
-                    setDragPreview({ url: part.thumbnailUrl, x: e.clientX, y: e.clientY })
-                  }
-                  onPartDragStart(part.id)
-                }}
                 onClick={() => onPartClick(part)}
                 className="bg-white border border-gray-200 rounded-lg p-2 cursor-pointer hover:border-tech-300 hover:shadow-sm transition-all"
               >
@@ -114,11 +68,25 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                   <img
                     src={part.thumbnailUrl}
                     alt={part.name}
-                    className="w-full aspect-square object-contain bg-gray-50 rounded"
+                    className="w-full aspect-square object-contain bg-transparent rounded"
                     loading="lazy"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', part.id)
+                      e.dataTransfer.effectAllowed = 'move'
+                      onPartDragStart(part.id)
+                    }}
                   />
                 ) : (
-                  <div className="w-full aspect-square bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">
+                  <div
+                    className="w-full aspect-square bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', part.id)
+                      e.dataTransfer.effectAllowed = 'move'
+                      onPartDragStart(part.id)
+                    }}
+                  >
                     3D
                   </div>
                 )}
@@ -130,33 +98,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
       )}
 
       {filteredParts.length === 0 && currentStep !== 'MOTOR' && currentStep !== 'REVIEW' && (
-        <div className="p-4 text-center text-xs text-gray-400">
-          此步骤暂无可选零件
-        </div>
-      )}
-
-      {/* Custom drag preview overlay — bypasses setDragImage entirely */}
-      {dragPreview && createPortal(
-        <div
-          style={{
-            position: 'fixed',
-            left: dragPreview.x - 32,
-            top: dragPreview.y - 32,
-            width: 64,
-            height: 64,
-            pointerEvents: 'none',
-            zIndex: 99999,
-            opacity: 0.85,
-            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))',
-          }}
-        >
-          <img
-            src={dragPreview.url}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          />
-        </div>,
-        document.body,
+        <div className="p-4 text-center text-xs text-gray-400">此步骤暂无可选零件</div>
       )}
     </div>
   )
