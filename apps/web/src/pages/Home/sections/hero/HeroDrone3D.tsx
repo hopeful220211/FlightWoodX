@@ -1,47 +1,64 @@
 /**
- * Hero drone display: 3 layered drone images with floating animations.
- * Front drone (web_1) is largest, middle (web_2) smaller, back (web_3) smallest.
- * Each has a unique float pattern: vertical bob + slow horizontal sway.
+ * Hero drone display: 3 layered PNG images creating depth illusion.
+ * Images overflow naturally beyond container — no clipping.
+ *
+ * Layout (matching reference):
+ * - web_3: top-right corner, small, faded, partially off-screen
+ * - web_2: middle-right, medium, slightly faded
+ * - web_1: right-center to bottom-right, large, sharp, dominant
  */
-
-const drones = [
-  {
-    src: '/resource/picture/UI/web_3.png',
-    alt: '远处无人机',
-    // Back: smallest, top-right, most blur
-    className: 'absolute top-0 right-0 w-[35%] opacity-50 blur-[1px]',
-    style: { animation: 'droneFloat3 7s ease-in-out infinite' },
-  },
-  {
-    src: '/resource/picture/UI/web_2.png',
-    alt: '中间无人机',
-    // Middle: medium size, center-right
-    className: 'absolute top-[15%] right-[5%] w-[55%] opacity-75',
-    style: { animation: 'droneFloat2 6s ease-in-out infinite' },
-  },
-  {
-    src: '/resource/picture/UI/web_1.png',
-    alt: '主无人机',
-    // Front: largest, bottom-center-right, sharpest
-    className: 'absolute bottom-0 right-[-5%] w-[85%]',
-    style: { animation: 'droneFloat1 5s ease-in-out infinite' },
-  },
-]
 
 export function HeroDrone3D() {
   return (
-    <div className="relative w-full h-full min-h-[300px]">
-      {drones.map((drone, i) => (
-        <img
-          key={i}
-          src={drone.src}
-          alt={drone.alt}
-          className={drone.className}
-          style={drone.style}
-          loading={i === 2 ? 'eager' : 'lazy'}
-          draggable={false}
-        />
-      ))}
+    <div className="absolute inset-0 overflow-visible">
+      {/* Back drone — small, top-right, faded */}
+      <img
+        src="/resource/picture/UI/web_3.png"
+        alt=""
+        className="absolute pointer-events-none select-none"
+        style={{
+          width: '40%',
+          top: '-15%',
+          right: '-20%',
+          opacity: 0.35,
+          filter: 'blur(2px)',
+          animation: 'droneFloat3 7s ease-in-out infinite',
+        }}
+        loading="lazy"
+        draggable={false}
+      />
+
+      {/* Middle drone — medium, right side upper area */}
+      <img
+        src="/resource/picture/UI/web_2.png"
+        alt=""
+        className="absolute pointer-events-none select-none"
+        style={{
+          width: '60%',
+          top: '-5%',
+          right: '-15%',
+          opacity: 0.6,
+          filter: 'blur(0.5px)',
+          animation: 'droneFloat2 6s ease-in-out infinite',
+        }}
+        loading="lazy"
+        draggable={false}
+      />
+
+      {/* Front drone — large, dominant, sharp */}
+      <img
+        src="/resource/picture/UI/web_1.png"
+        alt="FlightWoodX 木质无人机"
+        className="absolute pointer-events-none select-none"
+        style={{
+          width: '120%',
+          top: '5%',
+          right: '-25%',
+          animation: 'droneFloat1 5s ease-in-out infinite',
+        }}
+        loading="eager"
+        draggable={false}
+      />
 
       <style>{`
         @keyframes droneFloat1 {

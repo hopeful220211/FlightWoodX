@@ -36,7 +36,7 @@ export function HeroSection() {
 
   return (
     <>
-      <section className="relative min-h-screen bg-paper-50 overflow-hidden">
+      <section className="relative min-h-screen bg-paper-50 overflow-x-clip">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid min-h-[calc(100vh-72px)] items-center gap-12 pt-[72px] pb-16 lg:grid-cols-[55%_45%] lg:gap-8">
 
@@ -131,8 +131,8 @@ export function HeroSection() {
               </AnimatedEntry>
             </div>
 
-            {/* Right column: 3D drone */}
-            <AnimatedEntry delay={300} className="relative flex items-center justify-center lg:h-[500px]">
+            {/* Right column: drone images - overflow allowed */}
+            <AnimatedEntry delay={300} className="relative lg:h-[600px]">
               <HeroDrone3D />
             </AnimatedEntry>
           </div>
