@@ -73,7 +73,7 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
       <OrbitControls
         makeDefault
         enablePan={false}
-        minDistance={0.05}
+        minDistance={0.2}
         maxDistance={10}
         target={[0, 0, 0]}
         mouseButtons={{
