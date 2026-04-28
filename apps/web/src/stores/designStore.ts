@@ -8,7 +8,7 @@ import { STORAGE_KEYS } from '../constants/storageKeys'
 import { partsData } from '../data/parts'
 import { getCachedPartConnectors } from '../hooks/usePartConnectors'
 import * as THREE from 'three'
-import { computeSnapTransform, quaternionToEuler } from '../components/design/snap'
+import { computePerpendicularSnap, quaternionToEuler } from '../components/design/snap'
 
 import { isConnectionAllowed } from '../utils/connectionRules'
 
@@ -397,24 +397,13 @@ export const useDesignStore = create<DesignState>()(
         const childConnectorLocalPosition = childConnector.position.clone()
         const childConnectorLocalQuaternion = childConnector.quaternion.clone()
 
-        // 使用 computeSnapTransform 函数计算基础对齐
-        const { quaternion: baseQuaternion } = computeSnapTransform({
+        // Direct perpendicular snap — works for all model conventions
+        const { position: newPosition, quaternion: newQuaternion } = computePerpendicularSnap({
           socketWorldPosition: parentConnectorWorldPosition,
           socketWorldQuaternion: parentConnectorWorldQuaternion,
           plugLocalPosition: childConnectorLocalPosition,
           plugLocalQuaternion: childConnectorLocalQuaternion,
         })
-
-        // 额外旋转：先绕X轴旋转180度，再绕Z轴旋转90度
-        const rotX180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
-        const rotZ90 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2)
-        const extraRotation = rotX180.clone().multiply(rotZ90)
-
-        const newQuaternion = baseQuaternion.clone().multiply(extraRotation)
-
-        // 重新计算位置（因为旋转改变后，连接器偏移也要重新计算）
-        const childConnectorOffsetRotated = childConnectorLocalPosition.clone().applyQuaternion(newQuaternion)
-        const newPosition = parentConnectorWorldPosition.clone().sub(childConnectorOffsetRotated)
 
         state.addPartToActiveDesign({
           partId,

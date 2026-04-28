@@ -94,17 +94,17 @@ export function GLBPart({ instance, partData: propPartData, dimmed = false }: GL
         const processedMaterials = materials.map((mat) => {
           const clonedMat = mat.clone();
 
-          // 对所有有 color 属性的材质应用木质颜色
+          // 统一所有零件为同一木质颜色（不保留原始色差）
           if ('color' in clonedMat && clonedMat.color instanceof THREE.Color) {
-            // 用 lerp 插值到木色，保留 30% 原始颜色特征
-            clonedMat.color.lerp(woodColor, 0.7);
+            clonedMat.color.copy(woodColor);
           }
 
-          // 对支持 PBR 属性的材质设置物理特性
+          // 统一 PBR 物理属性
           if (clonedMat instanceof THREE.MeshStandardMaterial ||
               clonedMat instanceof THREE.MeshPhysicalMaterial) {
-            clonedMat.roughness = 0.82;
+            clonedMat.roughness = 0.75;
             clonedMat.metalness = 0;
+            clonedMat.envMapIntensity = 0.3;
           }
 
           // 保存处理后的颜色用于高亮效果

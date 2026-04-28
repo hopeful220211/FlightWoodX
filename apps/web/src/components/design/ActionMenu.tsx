@@ -5,7 +5,7 @@ import { useDesignStore } from '../../stores/designStore'
 import { Trash2, FlipVertical2, Repeat } from 'lucide-react'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
-import { computeSnapTransform, quaternionToEuler } from './snap'
+import { computePerpendicularSnap, quaternionToEuler } from './snap'
 
 export function ActionMenu() {
   const selectedInstanceId = useDesignStore((state) => state.selectedInstanceId)
@@ -22,7 +22,7 @@ export function ActionMenu() {
   // Position menu above the selected part
   const menuPosition: [number, number, number] = [
     instance.position[0],
-    instance.position[1] + 0.08,
+    instance.position[1] + 0.02,
     instance.position[2],
   ]
 
@@ -69,11 +69,15 @@ export function ActionMenu() {
       new THREE.Euler(currentRotation[0], currentRotation[1], currentRotation[2])
     )
 
-    // 获取零件自身的局部Z轴（世界坐标系中的方向）
-    const partLocalZ = new THREE.Vector3(0, 0, 1).applyQuaternion(currentQuat)
-
-    // 绕零件自身的局部Z轴旋转180度（以连接点为中心）
-    const flipQuat = new THREE.Quaternion().setFromAxisAngle(partLocalZ, Math.PI)
+    // Flip around the socket's -Y world direction (the insertion axis)
+    // This keeps the part vertically inserted but rotates it 180° in-place
+    let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+    if (socket.type === 'plug') {
+      const pFlip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
+      socketWorldQuaternion = socketWorldQuaternion.clone().multiply(pFlip)
+    }
+    const insertionAxis = new THREE.Vector3(0, -1, 0).applyQuaternion(socketWorldQuaternion)
+    const flipQuat = new THREE.Quaternion().setFromAxisAngle(insertionAxis, Math.PI)
 
     // 计算新位置：绕零件局部Z轴旋转，以连接点为中心
     // newPos = pivot + flipQuat * (currentPos - pivot)
@@ -116,35 +120,21 @@ export function ActionMenu() {
     const parentPos = new THREE.Vector3(...parentInst.position)
     const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
     const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-    let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+    const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
 
-    // Plug-to-plug fix
-    if (socket.type === 'plug' && nextPlug.type === 'plug') {
-      const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
-      socketWorldQuaternion = socketWorldQuaternion.clone().multiply(flip)
-    }
-
-    const { quaternion: baseQuaternion } = computeSnapTransform({
+    const { position: newPos, quaternion: newQuaternion } = computePerpendicularSnap({
       socketWorldPosition,
       socketWorldQuaternion,
       plugLocalPosition: nextPlug.position,
       plugLocalQuaternion: nextPlug.quaternion,
     })
 
-    // 额外旋转：先绕X轴旋转180度，再绕Z轴旋转90度（与添加零件时保持一致）
-    const rotX180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
-    const rotZ90 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2)
-    const extraRotation = rotX180.clone().multiply(rotZ90)
-
-    const newQuaternion = baseQuaternion.clone().multiply(extraRotation)
-
-    // 重新计算位置（因为旋转改变后，插头偏移也要重新计算）
     const plugOffsetRotated = nextPlug.position.clone().applyQuaternion(newQuaternion)
     const newPosition = socketWorldPosition.clone().sub(plugOffsetRotated)
 
     updatePartInActiveDesign(selectedInstanceId, {
       activeConnectorId: nextPlug.id,
-      position: [newPosition.x, newPosition.y, newPosition.z],
+      position: [newPos.x, newPos.y, newPos.z],
       rotation: quaternionToEuler(newQuaternion),
     })
   }

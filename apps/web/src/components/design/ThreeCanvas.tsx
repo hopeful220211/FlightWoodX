@@ -9,7 +9,7 @@ import { SocketHighlights } from './SocketHighlights'
 import { CameraController, type CameraView } from './CameraController'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
-import { computeSnapTransform, quaternionToEuler } from './snap'
+import { computePerpendicularSnap, quaternionToEuler } from './snap'
 import { checkBeforeAdd } from '../../utils/realtimeChecks'
 
 // 点击检测阈值（像素）
@@ -50,9 +50,9 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
     <Canvas
       shadows
       camera={{
-        position: [0.6, 0.6, 0.8], // 更近的视角，让无人机显示更大
+        position: [0.3, 0.3, 0.4],
         fov: 50,
-        near: 0.1,
+        near: 0.01,
         far: 1000,
       }}
       style={{ touchAction: 'none' }}
@@ -112,7 +112,7 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
 }
 
 // 距离阈值（屏幕像素），小于此距离时高亮插座
-const SOCKET_HIGHLIGHT_THRESHOLD = 50
+const SOCKET_HIGHLIGHT_THRESHOLD = 80
 
 // 拖拽处理器：监听 HTML5 drag and drop 事件
 function DragHandler() {
@@ -332,29 +332,14 @@ function DragHandler() {
               const parentPos = new THREE.Vector3(...parentInst.position)
               const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
               const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-              let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+              const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
 
-              // Plug-to-plug fix: flip parent plug 180° around X to act as socket
-              if (socket.type === 'plug' && plug.type === 'plug') {
-                const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
-                socketWorldQuaternion = socketWorldQuaternion.clone().multiply(flip)
-              }
-
-              const { quaternion: baseQuaternion } = computeSnapTransform({
+              const { position: newPosition, quaternion: newQuaternion } = computePerpendicularSnap({
                 socketWorldPosition,
                 socketWorldQuaternion,
                 plugLocalPosition: plug.position,
                 plugLocalQuaternion: plug.quaternion,
               })
-
-              const rotX180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
-              const rotZ90 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2)
-              const extraRotation = rotX180.clone().multiply(rotZ90)
-
-              const newQuaternion = baseQuaternion.clone().multiply(extraRotation)
-
-              const plugOffsetRotated = plug.position.clone().applyQuaternion(newQuaternion)
-              const newPosition = socketWorldPosition.clone().sub(plugOffsetRotated)
 
               addPartToActiveDesign({
                 partId,
@@ -376,7 +361,8 @@ function DragHandler() {
             addPartSmart(partId)
           }
         } else {
-          // 如果没有高亮插座，使用智能添加方法（会自动放在中心或吸附到可用插座）
+          // 没有高亮插座 — 可能松手瞬间鼠标移出了范围
+          console.warn('[Drop] No highlighted socket at drop time, falling back to addPartSmart')
           addPartSmart(partId)
         }
         setGhostPart(null)
@@ -599,28 +585,14 @@ function DragHandler() {
             const parentPos = new THREE.Vector3(...parentInst.position)
             const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
             const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-            let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+            const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
 
-            // Plug-to-plug fix
-            if (socket.type === 'plug' && plug.type === 'plug') {
-              const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
-              socketWorldQuaternion = socketWorldQuaternion.clone().multiply(flip)
-            }
-
-            const { quaternion: baseQuaternion } = computeSnapTransform({
+            const { position: newPosition, quaternion: newQuaternion } = computePerpendicularSnap({
               socketWorldPosition,
               socketWorldQuaternion,
               plugLocalPosition: plug.position,
               plugLocalQuaternion: plug.quaternion,
             })
-
-            const rotX180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
-            const rotZ90 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2)
-            const extraRotation = rotX180.clone().multiply(rotZ90)
-
-            const newQuaternion = baseQuaternion.clone().multiply(extraRotation)
-            const plugOffsetRotated = plug.position.clone().applyQuaternion(newQuaternion)
-            const newPosition = socketWorldPosition.clone().sub(plugOffsetRotated)
 
             addPartToActiveDesign({
               partId,

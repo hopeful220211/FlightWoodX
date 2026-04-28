@@ -179,11 +179,11 @@ function SocketIndicator({ position, instanceId, socketId }: SocketIndicatorProp
   return (
     <group position={position}>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.005, 12, 12]} />
+        <sphereGeometry args={[0.0015, 10, 10]} />
         <meshStandardMaterial
           ref={materialRef}
-          color="#a08060"
-          emissive="#a08060"
+          color="#4AADE8"
+          emissive="#4AADE8"
           emissiveIntensity={0.5}
           transparent
           opacity={0.8}
@@ -192,10 +192,10 @@ function SocketIndicator({ position, instanceId, socketId }: SocketIndicatorProp
       </mesh>
 
       <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]} visible={false}>
-        <ringGeometry args={[0.008, 0.012, 24]} />
+        <ringGeometry args={[0.0024, 0.0036, 20]} />
         <meshBasicMaterial
           ref={ringMaterialRef}
-          color="#8b6b50"
+          color="#4AADE8"
           transparent
           opacity={0}
           side={THREE.DoubleSide}

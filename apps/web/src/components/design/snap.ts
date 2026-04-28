@@ -25,6 +25,44 @@ export function computeSnapTransform(params: {
   return { position, quaternion: rotation }
 }
 
+/**
+ * Compute snap transform that guarantees:
+ * 1. Plug -Y faces opposite to socket -Y (face to face insertion)
+ * 2. Part stands upright (perpendicular to parent surface)
+ *
+ * Works for ALL models regardless of connector export convention.
+ * Does NOT use computeSnapTransform (which only aligns same-direction).
+ */
+export function computePerpendicularSnap(params: {
+  socketWorldPosition: THREE.Vector3
+  socketWorldQuaternion: THREE.Quaternion
+  plugLocalPosition: THREE.Vector3
+  plugLocalQuaternion: THREE.Quaternion
+}) {
+  const { socketWorldPosition, socketWorldQuaternion, plugLocalPosition, plugLocalQuaternion } = params
+
+  // Step 1: Rotation that makes plug's -Y OPPOSE socket's -Y
+  // R_face = socketQuat × rotX180 × plugQuat⁻¹
+  // This works because: R_face × plugQuat × (0,-1,0) = socketQuat × rotX180 × (0,-1,0) = socketQuat × (0,1,0) = -(socket -Y)
+  const rotX180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
+  const faceRotation = socketWorldQuaternion.clone()
+    .multiply(rotX180)
+    .multiply(plugLocalQuaternion.clone().invert())
+
+  // Step 2: Stand upright — rotate 90° around socket's -Y world direction
+  const socketNegY = new THREE.Vector3(0, -1, 0).applyQuaternion(socketWorldQuaternion)
+  const standUp = new THREE.Quaternion().setFromAxisAngle(socketNegY, Math.PI / 2)
+
+  // Final quaternion: stand up first (world space), then face (local)
+  const quaternion = standUp.clone().multiply(faceRotation)
+
+  // Position: socket pos - rotated plug offset
+  const plugOffset = plugLocalPosition.clone().applyQuaternion(quaternion)
+  const position = socketWorldPosition.clone().sub(plugOffset)
+
+  return { position, quaternion }
+}
+
 export function quaternionToEuler(q: THREE.Quaternion): [number, number, number] {
   const e = new THREE.Euler().setFromQuaternion(q, 'XYZ')
   return [e.x, e.y, e.z]

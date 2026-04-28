@@ -1,108 +1,68 @@
-import { Suspense, useRef, useState, useEffect } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, useGLTF } from '@react-three/drei'
-import * as THREE from 'three'
+/**
+ * Hero drone display: 3 layered drone images with floating animations.
+ * Front drone (web_1) is largest, middle (web_2) smaller, back (web_3) smallest.
+ * Each has a unique float pattern: vertical bob + slow horizontal sway.
+ */
 
-const MODEL_PATH = '/models/mainboards/core_hub_01.glb'
-const STATIC_FALLBACK = '/resource/picture/flight_png/untitled.297.png'
-
-function DroneModel() {
-  const { scene } = useGLTF(MODEL_PATH)
-  const groupRef = useRef<THREE.Group>(null)
-  const [hovered, setHovered] = useState(false)
-  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [autoRotate, setAutoRotate] = useState(true)
-
-  useEffect(() => {
-    if (!groupRef.current) return
-    // Center the model
-    const box = new THREE.Box3().setFromObject(groupRef.current)
-    const center = box.getCenter(new THREE.Vector3())
-    groupRef.current.position.sub(center)
-  }, [scene])
-
-  // Auto-rotate when not hovered
-  useFrame((_, delta) => {
-    if (groupRef.current && autoRotate && !hovered) {
-      groupRef.current.rotation.y += delta * 0.5 // ~30°/s
-    }
-  })
-
-  const handlePointerEnter = () => {
-    setHovered(true)
-    setAutoRotate(false)
-    if (idleTimer.current) clearTimeout(idleTimer.current)
-  }
-
-  const handlePointerLeave = () => {
-    setHovered(false)
-    idleTimer.current = setTimeout(() => setAutoRotate(true), 2000)
-  }
-
-  return (
-    <group
-      ref={groupRef}
-      onPointerEnter={handlePointerEnter}
-      onPointerLeave={handlePointerLeave}
-    >
-      <primitive object={scene.clone()} />
-    </group>
-  )
-}
-
-function StaticFallback() {
-  return (
-    <img
-      src={STATIC_FALLBACK}
-      alt="木质无人机"
-      className="h-auto w-full drop-shadow-2xl animate-float"
-      loading="eager"
-    />
-  )
-}
+const drones = [
+  {
+    src: '/resource/picture/UI/web_3.png',
+    alt: '远处无人机',
+    // Back: smallest, top-right, most blur
+    className: 'absolute top-0 right-0 w-[35%] opacity-50 blur-[1px]',
+    style: { animation: 'droneFloat3 7s ease-in-out infinite' },
+  },
+  {
+    src: '/resource/picture/UI/web_2.png',
+    alt: '中间无人机',
+    // Middle: medium size, center-right
+    className: 'absolute top-[15%] right-[5%] w-[55%] opacity-75',
+    style: { animation: 'droneFloat2 6s ease-in-out infinite' },
+  },
+  {
+    src: '/resource/picture/UI/web_1.png',
+    alt: '主无人机',
+    // Front: largest, bottom-center-right, sharpest
+    className: 'absolute bottom-0 right-[-5%] w-[85%]',
+    style: { animation: 'droneFloat1 5s ease-in-out infinite' },
+  },
+]
 
 export function HeroDrone3D() {
-  const [use3D, setUse3D] = useState(true)
-
-  useEffect(() => {
-    // Performance fallback
-    if (typeof navigator !== 'undefined' && navigator.hardwareConcurrency < 4) {
-      setUse3D(false)
-    }
-    // Reduced motion fallback
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    if (mq.matches) {
-      setUse3D(false)
-    }
-  }, [])
-
-  if (!use3D) {
-    return <StaticFallback />
-  }
-
   return (
-    <div className="w-full h-full min-h-[300px]">
-      <Canvas
-        camera={{ position: [0.3, 0.2, 0.3], fov: 45, near: 0.01, far: 100 }}
-        gl={{ antialias: true, alpha: true }}
-        dpr={[1, 2]}
-        style={{ background: 'transparent' }}
-      >
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[3, 3, 2]} intensity={1.8} color="#F5E6D3" />
-        <directionalLight position={[-2, 1, -1]} intensity={0.5} />
-
-        <Suspense fallback={null}>
-          <DroneModel />
-        </Suspense>
-
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={Math.PI / 2.2}
+    <div className="relative w-full h-full min-h-[300px]">
+      {drones.map((drone, i) => (
+        <img
+          key={i}
+          src={drone.src}
+          alt={drone.alt}
+          className={drone.className}
+          style={drone.style}
+          loading={i === 2 ? 'eager' : 'lazy'}
+          draggable={false}
         />
-      </Canvas>
+      ))}
+
+      <style>{`
+        @keyframes droneFloat1 {
+          0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+          25% { transform: translateY(-8px) translateX(3px) rotate(0.3deg); }
+          50% { transform: translateY(-4px) translateX(-2px) rotate(-0.2deg); }
+          75% { transform: translateY(-10px) translateX(1px) rotate(0.2deg); }
+        }
+        @keyframes droneFloat2 {
+          0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+          30% { transform: translateY(-6px) translateX(-4px) rotate(-0.4deg); }
+          60% { transform: translateY(-10px) translateX(2px) rotate(0.3deg); }
+          80% { transform: translateY(-3px) translateX(-1px) rotate(-0.1deg); }
+        }
+        @keyframes droneFloat3 {
+          0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+          20% { transform: translateY(-4px) translateX(3px) rotate(0.5deg); }
+          50% { transform: translateY(-7px) translateX(-3px) rotate(-0.3deg); }
+          70% { transform: translateY(-2px) translateX(2px) rotate(0.2deg); }
+        }
+      `}</style>
     </div>
   )
 }

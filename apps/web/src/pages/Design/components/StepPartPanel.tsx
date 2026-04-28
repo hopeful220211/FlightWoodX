@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { STEP_CATEGORIES, STEP_INFO } from '@fwx/parts-schema'
 import type { BuildStep, PartCategory } from '@fwx/parts-schema'
 import { partsData } from '../../../data/parts'
+import { useDesignStore } from '../../../stores/designStore'
 import type { Part } from '../../../types/design'
 
 interface StepPartPanelProps {
@@ -76,6 +77,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                       e.dataTransfer.effectAllowed = 'move'
                       onPartDragStart(part.id)
                     }}
+                    onDragEnd={() => useDesignStore.getState().setDraggingPartId(null)}
                   />
                 ) : (
                   <div
@@ -86,6 +88,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                       e.dataTransfer.effectAllowed = 'move'
                       onPartDragStart(part.id)
                     }}
+                    onDragEnd={() => useDesignStore.getState().setDraggingPartId(null)}
                   >
                     3D
                   </div>
