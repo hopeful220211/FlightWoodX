@@ -116,9 +116,14 @@ export function ActionMenu() {
     const parentPos = new THREE.Vector3(...parentInst.position)
     const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
     const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-    const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+    let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
 
-    // 使用基础对齐
+    // Plug-to-plug fix
+    if (socket.type === 'plug' && nextPlug.type === 'plug') {
+      const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
+      socketWorldQuaternion = socketWorldQuaternion.clone().multiply(flip)
+    }
+
     const { quaternion: baseQuaternion } = computeSnapTransform({
       socketWorldPosition,
       socketWorldQuaternion,

@@ -332,9 +332,14 @@ function DragHandler() {
               const parentPos = new THREE.Vector3(...parentInst.position)
               const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
               const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-              const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+              let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
 
-              // 使用基础对齐
+              // Plug-to-plug fix: flip parent plug 180° around X to act as socket
+              if (socket.type === 'plug' && plug.type === 'plug') {
+                const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
+                socketWorldQuaternion = socketWorldQuaternion.clone().multiply(flip)
+              }
+
               const { quaternion: baseQuaternion } = computeSnapTransform({
                 socketWorldPosition,
                 socketWorldQuaternion,
@@ -342,14 +347,12 @@ function DragHandler() {
                 plugLocalQuaternion: plug.quaternion,
               })
 
-              // 额外旋转：先绕X轴旋转180度，再绕Z轴旋转90度（与 addPartSmart 保持一致）
               const rotX180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
               const rotZ90 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2)
               const extraRotation = rotX180.clone().multiply(rotZ90)
 
               const newQuaternion = baseQuaternion.clone().multiply(extraRotation)
 
-              // 重新计算位置（因为旋转改变后，插头偏移也要重新计算）
               const plugOffsetRotated = plug.position.clone().applyQuaternion(newQuaternion)
               const newPosition = socketWorldPosition.clone().sub(plugOffsetRotated)
 
@@ -596,7 +599,13 @@ function DragHandler() {
             const parentPos = new THREE.Vector3(...parentInst.position)
             const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
             const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-            const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+            let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+
+            // Plug-to-plug fix
+            if (socket.type === 'plug' && plug.type === 'plug') {
+              const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
+              socketWorldQuaternion = socketWorldQuaternion.clone().multiply(flip)
+            }
 
             const { quaternion: baseQuaternion } = computeSnapTransform({
               socketWorldPosition,

@@ -384,9 +384,16 @@ export const useDesignStore = create<DesignState>()(
         const parentPos = new THREE.Vector3(...targetParent.position)
         const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...targetParent.rotation))
         const parentConnectorWorldPosition = parentConnector.position.clone().applyQuaternion(parentQuat).add(parentPos)
-        const parentConnectorWorldQuaternion = parentQuat.clone().multiply(parentConnector.quaternion.clone())
+        let parentConnectorWorldQuaternion = parentQuat.clone().multiply(parentConnector.quaternion.clone())
 
-        // 子连接器的本地变换（已经是相对于子零件的）
+        // Plug-to-plug fix: flip parent plug 180° around X to act as socket
+        const isPlugToPlug = parentConnector.type === 'plug' && childConnector.type === 'plug'
+        if (isPlugToPlug) {
+          const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
+          parentConnectorWorldQuaternion = parentConnectorWorldQuaternion.clone().multiply(flip)
+        }
+
+        // 子连接器的本地变换
         const childConnectorLocalPosition = childConnector.position.clone()
         const childConnectorLocalQuaternion = childConnector.quaternion.clone()
 
