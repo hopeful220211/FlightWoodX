@@ -13,7 +13,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <GuestModeBanner />
+      {/* GuestModeBanner removed — too intrusive */}
       <main className={pathname === '/' ? '' : 'pt-[72px]'}>
         <Outlet />
       </main>

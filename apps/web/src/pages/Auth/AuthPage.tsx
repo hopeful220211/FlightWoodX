@@ -257,9 +257,7 @@ export function AuthPage() {
             <span>游客模式 — 立即体验</span>
             <ArrowRight size={16} />
           </button>
-          <p className="mt-3 text-xs text-slate-500 text-center">
-            无需注册，设计仅保存在本浏览器中
-          </p>
+          {/* subtitle removed */}
 
           {/* 返回首页 */}
           <div className="mt-4 text-center">
