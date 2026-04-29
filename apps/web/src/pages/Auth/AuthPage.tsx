@@ -75,7 +75,8 @@ export function AuthPage() {
 
   const handleGuestMode = () => {
     enterGuestMode()
-    navigate('/design')
+    // Small delay to let zustand persist update before navigation
+    setTimeout(() => navigate('/design'), 50)
   }
 
   const switchMode = () => {
