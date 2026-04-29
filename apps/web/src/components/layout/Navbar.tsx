@@ -62,6 +62,8 @@ export function Navbar() {
     }
   }, [showUserMenu])
 
+  const isGuest = user?.isGuest === true
+
   const handleLogout = () => {
     logout()
     setShowUserMenu(false)
@@ -103,41 +105,59 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="touch-target inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm font-semibold shadow-sm transition hover:bg-wood-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-50"
+                  className="touch-target inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm font-semibold shadow-sm transition hover:bg-wood-50"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-wood-200 text-wood-900 dark:bg-slate-800 dark:text-white">
-                    {user?.avatarUrl ? (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-wood-200 text-wood-900">
+                    {isGuest ? (
+                      <span className="text-xs leading-none">✈️</span>
+                    ) : user?.avatarUrl ? (
                       <img src={user.avatarUrl} alt={user.nickname} className="h-full w-full rounded-full object-cover" />
                     ) : (
                       <User size={14} />
                     )}
                   </div>
                   <span className="hidden md:inline">{user?.username || user?.nickname || '用户'}</span>
+                  {isGuest && (
+                    <span className="hidden md:inline text-xs text-ink-500 px-1.5 py-0.5 bg-paper-100 rounded">游客</span>
+                  )}
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-black/10 bg-white shadow-lift dark:border-white/10 dark:bg-slate-900">
-                    <NavLink
-                      to="/profile"
-                      className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      个人中心
-                    </NavLink>
-                    <NavLink
-                      to="/admin"
-                      className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      管理后台
-                    </NavLink>
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-black/10 bg-white shadow-lift">
+                    {!isGuest && (
+                      <>
+                        <NavLink
+                          to="/profile"
+                          className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          个人中心
+                        </NavLink>
+                        <NavLink
+                          to="/admin"
+                          className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          管理后台
+                        </NavLink>
+                      </>
+                    )}
+                    {isGuest && (
+                      <NavLink
+                        to="/auth"
+                        className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        注册账号
+                      </NavLink>
+                    )}
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-wood-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
                     >
                       <LogOut size={16} />
-                      退出登录
+                      {isGuest ? '清空本地数据' : '退出登录'}
                     </button>
                   </div>
                 )}

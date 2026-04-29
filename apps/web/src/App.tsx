@@ -14,8 +14,15 @@ import { AuthPage } from './pages/Auth/AuthPage'
 import { AdminLayout } from './pages/Admin/AdminLayout'
 import { partsData } from './data/parts'
 import { prefetchAndExtractConnectors } from './hooks/usePartConnectors'
+import { useAuthStore } from './stores/authStore'
 
 export default function App() {
+  const restoreSession = useAuthStore((s) => s.restoreSession)
+
+  useEffect(() => {
+    restoreSession()
+  }, [restoreSession])
+
   useEffect(() => {
     const initApp = async () => {
       console.log('--- [App Init] Starting model prefetch... ---')
@@ -42,7 +49,7 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<HomePage />} />
 
-        {/* Protected Routes */}
+        {/* Protected Routes (guests allowed) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/design" element={<DesignPageRouter />} />

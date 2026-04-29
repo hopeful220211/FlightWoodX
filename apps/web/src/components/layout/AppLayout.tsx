@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { Navbar } from './Navbar'
+import { GuestModeBanner } from './GuestModeBanner'
 import { useHydrate } from '../../hooks/useHydrate'
 import { HelpCircle } from 'lucide-react'
 import { Tooltip } from '../common/Tooltip'
@@ -12,6 +13,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen">
       <Navbar />
+      <GuestModeBanner />
       <main className={pathname === '/' ? '' : 'pt-[72px]'}>
         <Outlet />
       </main>

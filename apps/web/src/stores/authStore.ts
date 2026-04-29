@@ -2,12 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { register as apiRegister, login as apiLogin } from '../utils/api'
 import { clearDesignStore } from './designStore'
+import { createGuestSession, getGuestSession, clearGuestSession } from '../utils/guestSession'
 
 export interface User {
   id: string
   username: string
-  email: string
-  role: 'student' | 'teacher' | 'admin'
+  email?: string
+  role: 'student' | 'teacher' | 'admin' | 'guest'
+  isGuest?: boolean
   nickname?: string
   avatarUrl?: string
   lastLogin?: string
@@ -21,20 +23,19 @@ export interface AuthState {
   register: (username: string, email: string, password: string) => Promise<{ success: boolean; message: string }>
   logout: () => void
   setUser: (user: User) => void
+  enterGuestMode: () => void
+  exitGuestMode: () => void
+  restoreSession: () => void
 }
-
-// 注意：本地存储功能已移除，现在使用后端 API
-// 管理后台页面会直接从 localStorage 读取测试数据（如果有）
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
 
       register: async (username, email, password) => {
-        // 验证输入
         if (!username || username.length < 3) {
           return { success: false, message: '用户名至少需要3个字符' }
         }
@@ -45,7 +46,6 @@ export const useAuthStore = create<AuthState>()(
           return { success: false, message: '密码至少需要6个字符' }
         }
 
-        // 调用后端 API 注册
         const result = await apiRegister({ username, email, password })
 
         if (result.success && result.data) {
@@ -67,12 +67,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       login: async (email, password) => {
-        // 验证输入
         if (!email || !password) {
           return { success: false, message: '请输入邮箱和密码' }
         }
 
-        // 调用后端 API 登录
         const result = await apiLogin({ email, password })
 
         if (result.success && result.data) {
@@ -94,13 +92,53 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        const user = get().user
+        if (user?.isGuest) {
+          clearGuestSession()
+        }
         set({ user: null, token: null, isAuthenticated: false })
         clearDesignStore()
       },
+
       setUser: (user) => set((state) => ({ ...state, user })),
+
+      enterGuestMode: () => {
+        const session = createGuestSession()
+        const guestUser: User = {
+          id: session.guestId,
+          username: session.nickname,
+          role: 'guest',
+          isGuest: true,
+        }
+        set({ user: guestUser, token: null, isAuthenticated: true })
+      },
+
+      exitGuestMode: () => {
+        clearGuestSession()
+        set({ user: null, token: null, isAuthenticated: false })
+        clearDesignStore()
+      },
+
+      restoreSession: () => {
+        const state = get()
+        // Already authenticated (real user or guest restored by persist)
+        if (state.isAuthenticated && state.user) return
+
+        // Try restoring guest session
+        const guestSession = getGuestSession()
+        if (guestSession) {
+          const guestUser: User = {
+            id: guestSession.guestId,
+            username: guestSession.nickname,
+            role: 'guest',
+            isGuest: true,
+          }
+          set({ user: guestUser, token: null, isAuthenticated: true })
+        }
+      },
     }),
     {
-      name: 'auth-storage', // localStorage key
-    }
-  )
+      name: 'auth-storage',
+    },
+  ),
 )
