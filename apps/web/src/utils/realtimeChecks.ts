@@ -80,12 +80,13 @@ export function checkDualMainboard(parts: PartInstance[]): Violation | null {
   if (mainboards.length !== 2) return null
 
   const yDiff = Math.abs(mainboards[0].position[1] - mainboards[1].position[1])
-  if (yDiff < 0.05) {
+  // Models scaled to 2mm thickness — Y gap between stacked mainboards is small
+  if (yDiff < 0.005) {
     return {
       id: 'mainboard-parallel',
-      level: 'error',
+      level: 'warning',
       message: '两块主板要放在上下两层',
-      hint: '不能放在同一高度',
+      hint: '建议不要放在同一高度',
     }
   }
 
@@ -94,9 +95,9 @@ export function checkDualMainboard(parts: PartInstance[]): Violation | null {
   if (tilt0 > 0.1 || tilt1 > 0.1) {
     return {
       id: 'mainboard-level',
-      level: 'error',
+      level: 'warning',
       message: '两块主板都要保持水平',
-      hint: '不能斜放',
+      hint: '建议保持水平放置',
     }
   }
 

@@ -132,7 +132,7 @@ export function HeroSection() {
             </div>
 
             {/* Right column: drone images */}
-            <AnimatedEntry delay={300} className="relative flex items-center justify-center lg:h-[500px]">
+            <AnimatedEntry delay={300} className="relative flex items-center justify-center max-w-[400px] mx-auto lg:max-w-none lg:mx-0 lg:h-[500px]">
               <HeroDrone3D />
             </AnimatedEntry>
           </div>

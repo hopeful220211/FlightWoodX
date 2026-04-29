@@ -5,18 +5,18 @@
  * Rule: "what sockets on parent can accept what child category"
  *
  *   mainboard sockets → accept landing, joint
- *   landing sockets   → accept guard
+ *   landing sockets   → accept guard, mainboard (dual-mainboard via landing)
  *   guard sockets     → accept nothing (terminal)
- *   joint sockets     → accept nothing (terminal)
+ *   joint sockets     → accept mainboard (dual-mainboard via deco connector)
  */
 
 import type { PartCategory } from '@fwx/parts-schema'
 
 const COMPATIBILITY: Record<string, PartCategory[]> = {
   mainboard: ['landing', 'joint'],
-  landing: ['guard'],
+  landing: ['guard', 'mainboard'],
   guard: [],
-  joint: [],
+  joint: ['mainboard'],
 }
 
 /**

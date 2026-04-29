@@ -86,23 +86,7 @@ export function canAdvanceStep(state: BuildState): { canAdvance: boolean; reason
       if (mainboards.length === 0) {
         return { canAdvance: false, reason: '请先选择一块主板' }
       }
-      // Dual-board geometry check
-      if (mainboards.length === 2) {
-        const pos0 = mainboards[0]?.position
-        const pos1 = mainboards[1]?.position
-        if (pos0 && pos1) {
-          const yDiff = Math.abs(pos0[1] - pos1[1])
-          if (yDiff < 0.05) {
-            return { canAdvance: false, reason: '两块主板要放在上下两层（不能在同一高度）' }
-          }
-          const r0 = mainboards[0]?.rotation ?? [0, 0, 0]
-          const r1 = mainboards[1]?.rotation ?? [0, 0, 0]
-          if (Math.max(Math.abs(r0[0]), Math.abs(r0[2])) > 0.1 ||
-              Math.max(Math.abs(r1[0]), Math.abs(r1[2])) > 0.1) {
-            return { canAdvance: false, reason: '两块主板都要保持水平' }
-          }
-        }
-      }
+      // Dual-board checks are advisory only (shown via realtimeChecks violations)
       return { canAdvance: true }
     }
 

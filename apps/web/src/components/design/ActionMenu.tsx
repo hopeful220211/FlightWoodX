@@ -106,12 +106,14 @@ export function ActionMenu() {
     if (!part || !parentInst || !parentPart) return
 
     const childConns = getCachedPartConnectors(part.modelUrl)
+    // Prefer plugs; if none (e.g. mainboard has only sockets), use sockets
     const plugs = childConns.filter((c) => c.type === 'plug')
-    if (!plugs.length) return
+    const usableConns = plugs.length > 0 ? plugs : childConns.filter((c) => c.type === 'socket')
+    if (!usableConns.length) return
 
-    const currentId = inst.activeConnectorId ?? plugs[0]!.id
-    const idx = Math.max(0, plugs.findIndex((p) => p.id === currentId))
-    const nextPlug = plugs[(idx + 1) % plugs.length]!
+    const currentId = inst.activeConnectorId ?? usableConns[0]!.id
+    const idx = Math.max(0, usableConns.findIndex((p) => p.id === currentId))
+    const nextPlug = usableConns[(idx + 1) % usableConns.length]!
 
     const parentConns = getCachedPartConnectors(parentPart.modelUrl) ?? []
     const socket = parentConns.find((c) => c.id === inst.attachedTo?.parentConnectorId) ?? null
@@ -128,9 +130,6 @@ export function ActionMenu() {
       plugLocalPosition: nextPlug.position,
       plugLocalQuaternion: nextPlug.quaternion,
     })
-
-    const plugOffsetRotated = nextPlug.position.clone().applyQuaternion(newQuaternion)
-    const newPosition = socketWorldPosition.clone().sub(plugOffsetRotated)
 
     updatePartInActiveDesign(selectedInstanceId, {
       activeConnectorId: nextPlug.id,
