@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDesignStore } from '../../stores/designStore'
 import { useToast } from '../../components/common/Toast'
+import { useDesignSync } from '../../hooks/useDesignSync'
 import { ThreeCanvas } from '../../components/design/ThreeCanvas'
 import { StepProgressBar } from './components/StepProgressBar'
 import { StepPartPanel } from './components/StepPartPanel'
@@ -25,6 +26,7 @@ export function GuidedDesignPage() {
   const addPartSmart = useDesignStore(s => s.addPartSmart)
   const setDraggingPartId = useDesignStore(s => s.setDraggingPartId)
   const toast = useToast()
+  const { saveToServer } = useDesignSync()
   const [violation, setViolation] = useState<Violation | null>(null)
 
   const currentStep = activeDesign?.currentStep ?? 'HUB'
@@ -51,6 +53,8 @@ export function GuidedDesignPage() {
       if (dualCheck) {
         setViolation({ ...dualCheck })
       }
+      // Debounced sync to backend
+      saveToServer(updatedDesign)
     }
 
     toast.push('success', `已添加 ${part.name}`)
@@ -77,8 +81,9 @@ export function GuidedDesignPage() {
   }, [resetCurrentStep, toast])
 
   const handleSave = useCallback(() => {
+    if (activeDesign) saveToServer(activeDesign)
     toast.push('success', '已保存')
-  }, [toast])
+  }, [toast, activeDesign, saveToServer])
 
   const handleSaveAndExport = useCallback(async () => {
     if (!activeDesign) return

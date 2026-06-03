@@ -61,6 +61,10 @@ app.use('/api/designs', designRoutes)
 const projectRoutes = require('./routes/projects')
 app.use('/api/projects', projectRoutes)
 
+// 无人机设计路由（2.0 — 设计器产物持久化）
+const droneDesignRoutes = require('./routes/droneDesigns')
+app.use('/api/drone-designs', droneDesignRoutes)
+
 // ===== 连接数据库 =====
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)

@@ -427,6 +427,69 @@ export async function updateProfile(data: {
   })
 }
 
+// ============= 无人机设计 (DroneDesign) API =============
+
+export interface DroneDesignData {
+  id: string
+  _id?: string
+  ownerId: string
+  name: string
+  params: { hubType: string; layer: string; armCount: number; armLengthMm: number; guardStyle?: string }
+  parts: unknown[]
+  weightG: number
+  status: string
+  glbUrl?: string
+  thumbnailUrl?: string
+  localId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** List current user's drone designs */
+export async function getDroneDesigns(): Promise<ApiResponse<DroneDesignData[]>> {
+  const res = await apiFetch<{ designs: DroneDesignData[] }>('/drone-designs')
+  if (res.success && res.data) {
+    const designs = (res.data as unknown as { designs?: DroneDesignData[] }).designs ?? res.data
+    return { ...res, data: designs as DroneDesignData[] }
+  }
+  return res as ApiResponse<DroneDesignData[]>
+}
+
+/** Save (create) a drone design to backend */
+export async function createDroneDesign(data: {
+  name: string
+  params?: DroneDesignData['params']
+  parts?: unknown[]
+  weightG?: number
+  localId?: string
+}): Promise<ApiResponse<DroneDesignData>> {
+  const res = await apiFetch<{ design: DroneDesignData }>('/drone-designs', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  if (res.success && res.data) {
+    const design = (res.data as unknown as { design?: DroneDesignData }).design ?? res.data
+    return { ...res, data: design as DroneDesignData }
+  }
+  return res as ApiResponse<DroneDesignData>
+}
+
+/** Update a drone design */
+export async function updateDroneDesign(
+  designId: string,
+  data: Partial<{ name: string; params: DroneDesignData['params']; parts: unknown[]; weightG: number; status: string }>,
+): Promise<ApiResponse<DroneDesignData>> {
+  return apiFetch<DroneDesignData>(`/drone-designs/${designId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/** Delete a drone design */
+export async function deleteDroneDesign(designId: string): Promise<ApiResponse> {
+  return apiFetch(`/drone-designs/${designId}`, { method: 'DELETE' })
+}
+
 // ============= 学习课程相关 API =============
 
 export interface Course {

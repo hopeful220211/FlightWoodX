@@ -20,8 +20,12 @@ const DroneDesignSchema = new mongoose.Schema(
     params: { type: ParametricBodyParamsSchema, required: true },
     glbUrl: { type: String }, // 二进制资产走对象存储，库里只存 URL
     thumbnailUrl: { type: String },
-    weightG: { type: Number, required: true },
+    weightG: { type: Number, default: 0 },
     status: { type: String, enum: ['draft', 'published', 'archived'], default: 'draft' },
+    /** Client-side parts array (PartInstance[]), stored as-is for M2 sync */
+    parts: { type: mongoose.Schema.Types.Mixed, default: [] },
+    /** Client-side local design ID, used to map server ↔ localStorage */
+    localId: { type: String, index: true, sparse: true },
   },
   { timestamps: true },
 )
