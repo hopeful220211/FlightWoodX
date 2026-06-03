@@ -150,7 +150,7 @@ export function LovedBySection() {
 
   return (
     <section
-      className="bg-paper-100 py-24 lg:py-32"
+      className="bg-white py-24 lg:py-32"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -215,7 +215,7 @@ export function LovedBySection() {
             {/* CTA link */}
             <button
               onClick={scrollToCurriculum}
-              className="group inline-flex w-fit items-center gap-1 whitespace-nowrap text-sm font-medium text-wood-500 hover:text-wood-600 transition-colors underline underline-offset-2 hover:decoration-2"
+              className="group inline-flex w-fit items-center gap-1 whitespace-nowrap text-sm font-medium text-sky-600 hover:text-sky-700 transition-colors underline underline-offset-2 hover:decoration-2"
             >
               了解更多课程
               <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
@@ -230,7 +230,7 @@ export function LovedBySection() {
                     key={i}
                     onClick={() => handleManualChange(i)}
                     className={`rounded-full transition-colors ${
-                      i === current ? 'w-2 h-2 bg-wood-500' : 'w-2 h-2 bg-ink-200 hover:bg-ink-400'
+                      i === current ? 'w-2 h-2 bg-sky-500' : 'w-2 h-2 bg-sky-200 hover:bg-sky-400'
                     }`}
                     aria-label={`查看第 ${i + 1} 条反馈`}
                   />

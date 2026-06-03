@@ -23,7 +23,7 @@ const cards = [
 
 export function WhyUsSection() {
   return (
-    <section className="bg-paper-50 py-24 lg:py-32">
+    <section className="bg-sky-50/40 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
           <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
@@ -37,8 +37,8 @@ export function WhyUsSection() {
         <div className="grid gap-6 md:grid-cols-3">
           {cards.map((card, i) => (
             <ScrollReveal key={card.title} delay={i * 100}>
-              <div className="group bg-paper-100 rounded-md p-[30px] transition-all duration-300 hover:-translate-y-[3px] hover:shadow-soft">
-                <div className="h-[200px] rounded-sm overflow-hidden bg-paper-200 mb-5">
+              <div className="group bg-white rounded-xl p-[30px] border border-sky-100/60 transition-all duration-300 hover:-translate-y-[3px] hover:shadow-soft">
+                <div className="h-[200px] rounded-lg overflow-hidden bg-sky-50 mb-5">
                   <img
                     src={card.img}
                     alt={card.title}
@@ -51,7 +51,7 @@ export function WhyUsSection() {
                   />
                 </div>
                 <h3 className="font-display text-2xl font-semibold text-ink-900">{card.title}</h3>
-                <p className="mt-1 text-sm font-medium text-wood-500">{card.subtitle}</p>
+                <p className="mt-1 text-sm font-medium text-sky-500">{card.subtitle}</p>
                 <p className="mt-3 text-base leading-relaxed text-ink-600">{card.desc}</p>
               </div>
             </ScrollReveal>

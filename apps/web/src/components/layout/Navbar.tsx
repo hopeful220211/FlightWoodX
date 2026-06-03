@@ -1,194 +1,224 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, User, LogOut } from 'lucide-react'
-import { useMemo, useState, useRef, useEffect } from 'react'
+import { Menu, X, User, LogOut, LayoutDashboard, Trophy, Users2, Puzzle, ChevronDown } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '../common/Button'
 import { useAuthStore } from '../../stores/authStore'
 
-const navItems = [
-  { to: '/learn', label: '学习中心' },
-  { to: '/design', label: '设计工作台' },
-  { to: '/gallery', label: '作品展示' },
+/* ── 公共导航（未登录也可见） ── */
+const publicItems = [
+  { to: '/', label: '首页', exact: true },
+  { to: '/competitions', label: '赛事' },
+  { to: '/community', label: '社区' },
+  { to: '/parts', label: '零件库' },
+] as const
+
+/* ── 登录后主导航 ── */
+const authedItems = [
+  { to: '/dashboard', label: '工作台', icon: LayoutDashboard },
+  { to: '/projects', label: '我的项目', icon: Puzzle },
+  { to: '/competitions', label: '赛事', icon: Trophy },
+  { to: '/community', label: '社区', icon: Users2 },
 ] as const
 
 export function Navbar() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const [open, setOpen] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const [scrolled, setScrolled] = useState(false)
 
   const { isAuthenticated, user, logout } = useAuthStore()
-
   const isHomePage = pathname === '/'
+  const isGuest = user?.isGuest === true
 
-  // Scroll-triggered glass effect on homepage
+  // Glass-effect on scroll (homepage starts transparent)
   useEffect(() => {
-    if (!isHomePage) {
-      setScrolled(true)
-      return
-    }
-    const onScroll = () => setScrolled(window.scrollY > 100)
+    if (!isHomePage) { setScrolled(true); return }
+    const onScroll = () => setScrolled(window.scrollY > 60)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [isHomePage])
 
-  const linkBase =
-    'touch-target inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold transition'
-
-  const getLinkClass = useMemo(
-    () =>
-      ({ isActive }: { isActive: boolean }) =>
-        [
-          linkBase,
-          isActive
-            ? 'bg-wood-200 text-wood-900 dark:bg-slate-800 dark:text-white'
-            : 'text-slate-700 hover:bg-wood-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-900',
-        ].join(' '),
-    [],
-  )
-
-  // 点击外部关闭用户菜单
+  // Close user menu on outside click
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setShowUserMenu(false)
-      }
+    if (!userMenuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false)
     }
-    if (showUserMenu) {
-      window.addEventListener('mousedown', handleClickOutside)
-      return () => window.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showUserMenu])
+    window.addEventListener('mousedown', handler)
+    return () => window.removeEventListener('mousedown', handler)
+  }, [userMenuOpen])
 
-  const isGuest = user?.isGuest === true
+  const handleLogout = () => { logout(); setUserMenuOpen(false); setMobileOpen(false) }
 
-  const handleLogout = () => {
-    logout()
-    setShowUserMenu(false)
-    setOpen(false)
-  }
+  const linkCls = (active: boolean) =>
+    `inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+      active
+        ? 'bg-sky-100 text-sky-700'
+        : 'text-ink-600 hover:bg-sky-50 hover:text-sky-700'
+    }`
+
+  const navItems = isAuthenticated ? authedItems : publicItems
 
   return (
     <>
       <header
-        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'border-b border-black/5 bg-paper-50/90 backdrop-blur-[12px] dark:border-white/10 dark:bg-slate-950/70'
+            ? 'border-b border-sky-100/60 bg-white/85 backdrop-blur-xl shadow-sm'
             : 'bg-transparent'
         }`}
       >
-        <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-6">
+          {/* ── Logo ── */}
           <NavLink
             to="/"
-            className="touch-target inline-flex items-center gap-2 rounded-lg px-2 text-base font-extrabold tracking-tight text-wood-800 dark:text-wood-200"
-            onClick={() => setOpen(false)}
+            className="inline-flex items-center gap-2.5 text-base font-extrabold tracking-tight text-sky-800"
+            onClick={() => setMobileOpen(false)}
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-wood-200 shadow-sm dark:bg-slate-800 overflow-hidden">
-              <img src="/web_logo.png" alt="FlightWoodX Logo" className="h-full w-full object-contain" />
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 shadow-sm overflow-hidden">
+              <img src="/web_logo.png" alt="Logo" className="h-full w-full object-contain" />
             </span>
-            FlightWoodX
+            <span className="hidden sm:inline">FlightWoodX</span>
           </NavLink>
 
-          {isAuthenticated ? (
-            <>
-              <nav className="hidden items-center gap-2 md:flex">
-                {navItems.map((item) => (
-                  <NavLink key={item.to} to={item.to} className={getLinkClass} end>
-                    {item.label}
-                  </NavLink>
-                ))}
-              </nav>
+          {/* ── Desktop Nav ── */}
+          <nav className="hidden items-center gap-1 md:flex">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={'exact' in item && item.exact}
+                className={({ isActive }) => linkCls(isActive)}
+              >
+                {'icon' in item && <item.icon size={16} />}
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
 
+          {/* ── Right Actions ── */}
+          <div className="flex items-center gap-2">
+            {isAuthenticated ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="touch-target inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-sm font-semibold shadow-sm transition hover:bg-wood-50"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-sm font-semibold shadow-sm transition hover:bg-sky-50"
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-wood-200 text-wood-900">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-100 text-sky-700">
                     {isGuest ? (
-                      <span className="text-xs leading-none">✈️</span>
+                      <span className="text-xs">G</span>
                     ) : user?.avatarUrl ? (
                       <img src={user.avatarUrl} alt={user.nickname} className="h-full w-full rounded-full object-cover" />
                     ) : (
                       <User size={14} />
                     )}
                   </div>
-                  <span className="hidden md:inline">{user?.username || user?.nickname || '用户'}</span>
-                  {isGuest && (
-                    <span className="hidden md:inline text-xs text-ink-500 px-1.5 py-0.5 bg-paper-100 rounded">游客</span>
-                  )}
+                  <span className="hidden md:inline max-w-[100px] truncate">{user?.username || user?.nickname || '用户'}</span>
+                  <ChevronDown size={14} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-black/10 bg-white shadow-lift">
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-52 rounded-xl border border-sky-100 bg-white py-1 shadow-lift animate-[fadeInUp_150ms_ease-out]">
                     {!isGuest && (
                       <>
-                        <NavLink
-                          to="/profile"
-                          className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
-                          onClick={() => setShowUserMenu(false)}
-                        >
+                        <NavLink to="/me" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
                           个人中心
                         </NavLink>
-                        <NavLink
-                          to="/admin"
-                          className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          管理后台
+                        <NavLink to="/design" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
+                          设计工作台
                         </NavLink>
+                        <NavLink to="/learn" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
+                          学习中心
+                        </NavLink>
+                        {user?.role === 'admin' && (
+                          <NavLink to="/admin" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
+                            管理后台
+                          </NavLink>
+                        )}
+                        <hr className="my-1 border-sky-100" />
                       </>
                     )}
                     {isGuest && (
-                      <NavLink
-                        to="/auth"
-                        className="block px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
-                        onClick={() => setShowUserMenu(false)}
-                      >
+                      <NavLink to="/auth" className="block px-4 py-2.5 text-sm font-medium text-sky-600 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
                         注册账号
                       </NavLink>
                     )}
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-wood-50"
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-600 hover:bg-sky-50 transition"
                     >
-                      <LogOut size={16} />
-                      {isGuest ? '清空本地数据' : '退出登录'}
+                      <LogOut size={14} />
+                      {isGuest ? '退出游客模式' : '退出登录'}
                     </button>
                   </div>
                 )}
               </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => navigate('/auth')} className="hidden md:inline-flex">
-                登录 / 注册
-              </Button>
+            ) : (
+              <>
+                <Button size="sm" variant="ghost" onClick={() => navigate('/auth')} className="hidden md:inline-flex">
+                  登录
+                </Button>
+                <Button size="sm" onClick={() => navigate('/auth')} className="hidden md:inline-flex">
+                  免费注册
+                </Button>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-lg border border-sky-200 bg-white p-2.5 text-ink-700 transition hover:bg-sky-50 md:hidden"
+                  aria-label={mobileOpen ? '关闭菜单' : '打开菜单'}
+                  onClick={() => setMobileOpen(v => !v)}
+                >
+                  {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+              </>
+            )}
+
+            {/* Mobile hamburger (authed) */}
+            {isAuthenticated && (
               <button
                 type="button"
-                className="touch-target inline-flex items-center justify-center rounded-lg border border-black/10 bg-white px-3 text-slate-800 shadow-sm transition hover:bg-wood-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-50 md:hidden"
-                aria-label={open ? '关闭菜单' : '打开菜单'}
-                onClick={() => setOpen((v) => !v)}
+                className="inline-flex items-center justify-center rounded-lg border border-sky-200 bg-white p-2.5 text-ink-700 transition hover:bg-sky-50 md:hidden"
+                aria-label={mobileOpen ? '关闭菜单' : '打开菜单'}
+                onClick={() => setMobileOpen(v => !v)}
               >
-                {open ? <X size={18} /> : <Menu size={18} />}
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {open && !isAuthenticated ? (
-          <div className="border-t border-black/5 bg-white dark:border-white/10 dark:bg-slate-950 md:hidden">
-            <div className="mx-auto max-w-6xl px-4 py-3">
-              <Button className="w-full" onClick={() => navigate('/auth')}>
-                登录 / 注册
-              </Button>
+        {/* ── Mobile Menu ── */}
+        {mobileOpen && (
+          <div className="border-t border-sky-100 bg-white md:hidden animate-[fadeInUp_200ms_ease-out]">
+            <div className="mx-auto max-w-7xl space-y-1 px-4 py-3">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={'exact' in item && item.exact}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition ${
+                      isActive ? 'bg-sky-100 text-sky-700' : 'text-ink-600 hover:bg-sky-50'
+                    }`
+                  }
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {'icon' in item && <item.icon size={16} />}
+                  {item.label}
+                </NavLink>
+              ))}
+              {!isAuthenticated && (
+                <Button className="w-full mt-2" onClick={() => { navigate('/auth'); setMobileOpen(false) }}>
+                  登录 / 注册
+                </Button>
+              )}
             </div>
           </div>
-        ) : null}
+        )}
       </header>
     </>
   )

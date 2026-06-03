@@ -27,7 +27,7 @@ export function ForWhoSection() {
   const navigate = useNavigate()
 
   return (
-    <section className="bg-paper-50 py-24 lg:py-32">
+    <section className="bg-sky-50/40 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
           <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">

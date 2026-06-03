@@ -39,12 +39,12 @@ export function Button({
 
   const variantCls =
     variant === 'secondary'
-      ? 'bg-wood-200 text-wood-900 hover:bg-wood-300 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700'
+      ? 'bg-wood-100 text-wood-800 hover:bg-wood-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700'
       : variant === 'outline'
-        ? 'border border-black/10 bg-white text-slate-900 hover:bg-wood-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-50 dark:hover:bg-slate-900'
+        ? 'border border-sky-200 bg-white text-ink-700 hover:bg-sky-50 hover:border-sky-300 dark:border-white/10 dark:bg-slate-950 dark:text-slate-50 dark:hover:bg-slate-900'
         : variant === 'ghost'
-          ? 'bg-transparent text-slate-800 hover:bg-wood-100 dark:text-slate-100 dark:hover:bg-slate-900'
-          : 'bg-tech-600 text-white hover:bg-tech-700'
+          ? 'bg-transparent text-ink-700 hover:bg-sky-50 dark:text-slate-100 dark:hover:bg-slate-900'
+          : 'bg-sky-500 text-white hover:bg-sky-600 shadow-sky-glow'
 
   return (
     <button

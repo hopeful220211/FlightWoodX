@@ -31,7 +31,7 @@ const awards = [
 function AwardBadge({ award, delay }: { award: typeof awards[number]; delay: number }) {
   return (
     <ScrollReveal delay={delay} className="flex flex-col items-center text-center">
-      <div className="group relative w-[200px] h-[200px] lg:w-[240px] lg:h-[240px] flex items-center justify-center rounded-md bg-paper-50 border border-accent-gold/20 transition-all duration-300 hover:shadow-[0_0_40px_rgba(212,167,74,0.2)] hover:scale-[1.03]">
+      <div className="group relative w-[200px] h-[200px] lg:w-[240px] lg:h-[240px] flex items-center justify-center rounded-xl bg-sky-50/50 border border-sky-100 transition-all duration-300 hover:shadow-sky-glow hover:scale-[1.03]">
         <img
           src={award.img}
           alt={award.name}
@@ -58,7 +58,7 @@ function AwardBadge({ award, delay }: { award: typeof awards[number]; delay: num
 
 export function AwardsSection() {
   return (
-    <section id="awards" className="bg-paper-100 py-24 lg:py-32">
+    <section id="awards" className="bg-white py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
           <h2 className="font-display text-4xl lg:text-[56px] font-semibold text-ink-900 leading-tight">

@@ -8,13 +8,13 @@ export function FinalCTASection() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
   return (
-    <section className="relative bg-ink-900 py-24 lg:py-32 overflow-hidden">
-      {/* Subtle wood texture overlay */}
-      <div className="absolute inset-0 opacity-[0.04] bg-[url('/resource/picture/flight_png/untitled.160.png')] bg-cover bg-center" />
+    <section className="relative bg-sky-900 py-24 lg:py-32 overflow-hidden">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-800/50 to-sky-950/80" />
 
       <div className="relative mx-auto max-w-4xl px-4 text-center">
         <ScrollReveal>
-          <h2 className="font-display text-4xl lg:text-[60px] font-semibold text-paper-50 leading-tight">
+          <h2 className="font-display text-4xl lg:text-[60px] font-semibold text-white leading-tight">
             准备好开启你的
             <br />
             创造之旅了吗？
@@ -22,22 +22,28 @@ export function FinalCTASection() {
         </ScrollReveal>
 
         <ScrollReveal delay={100}>
-          <p className="mt-4 text-xl text-wood-400">
-            从设计到飞行，从想法到起飞
+          <p className="mt-4 text-xl text-sky-200">
+            设计 → 编程 → 仿真 → 参赛 → 分享，全链路闭环
           </p>
         </ScrollReveal>
 
         <ScrollReveal delay={200} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={() => navigate(isAuthenticated ? '/design' : '/auth')}
-            className="group inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-md bg-wood-500 px-8 py-4 text-base font-medium text-white transition-all hover:brightness-[0.92]"
+            className="group inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-xl bg-white px-8 py-4 text-base font-semibold text-sky-700 shadow-sky-glow transition-all hover:bg-sky-50"
           >
             免费开始设计
             <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
           </button>
           <button
+            onClick={() => navigate('/competitions')}
+            className="inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-xl border border-white/30 px-8 py-4 text-base font-medium text-white transition-colors hover:bg-white/10"
+          >
+            查看赛事
+          </button>
+          <button
             onClick={() => navigate('/auth?type=school')}
-            className="inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-md border border-paper-50/30 px-8 py-4 text-base font-medium text-paper-50 transition-colors hover:bg-white/10"
+            className="inline-flex w-fit items-center gap-2 whitespace-nowrap rounded-xl border border-white/20 px-8 py-4 text-base font-medium text-sky-200 transition-colors hover:bg-white/10"
           >
             联系我们
           </button>

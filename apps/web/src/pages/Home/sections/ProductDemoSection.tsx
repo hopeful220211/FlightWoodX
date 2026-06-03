@@ -7,8 +7,8 @@ import { useAuthStore } from '../../../stores/authStore'
 const features = [
   { icon: Layers, text: '6 步引导式搭建' },
   { icon: Puzzle, text: '77 种木质零件' },
-  { icon: Eye, text: '3D 实时预览' },
-  { icon: ShieldCheck, text: '飞行安全检查' },
+  { icon: Eye, text: '3D 仿真试飞' },
+  { icon: ShieldCheck, text: '积木编程 → 指令协议 → 仿真' },
 ]
 
 export function ProductDemoSection() {
@@ -16,7 +16,7 @@ export function ProductDemoSection() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
   return (
-    <section className="bg-paper-100 py-24 lg:py-32">
+    <section className="bg-white py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <div className="grid gap-12 lg:grid-cols-[60%_40%] items-center">
 
@@ -56,7 +56,7 @@ export function ProductDemoSection() {
               <ul className="space-y-3">
                 {features.map((f) => (
                   <li key={f.text} className="flex items-center gap-3 text-ink-700">
-                    <f.icon size={18} className="text-wood-500 shrink-0" />
+                    <f.icon size={18} className="text-sky-500 shrink-0" />
                     <span className="text-base">{f.text}</span>
                   </li>
                 ))}
@@ -65,7 +65,7 @@ export function ProductDemoSection() {
               <Button
                 onClick={() => navigate(isAuthenticated ? '/design' : '/auth')}
                 rightIcon={<ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />}
-                className="group bg-wood-500 hover:brightness-[0.92] text-white mt-2"
+                className="group mt-2"
               >
                 立即体验
               </Button>

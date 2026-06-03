@@ -24,12 +24,12 @@
 }
 
 body {
-    @apply bg-wood-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50;
+    @apply bg-white text-ink-900 dark:bg-slate-950 dark:text-slate-50;
     @apply font-sans;
 }
 
   :focus-visible {
-    outline: 3px solid theme('colors.tech.400');
+    outline: 3px solid theme('colors.sky.400');
     outline-offset: 3px;
   }
 }

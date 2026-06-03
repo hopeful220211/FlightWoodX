@@ -14,10 +14,9 @@ export function Card({ header, footer, hoverable = true, className, children, ..
   return (
     <div
       className={cn(
-        // UI/UX 优化：更柔和的阴影与毛玻璃效果（文档要求）
-        'bg-white/80 backdrop-blur-sm rounded-lg shadow-lg shadow-wood-100/50 transition-all duration-300',
-        'dark:bg-slate-900/70 dark:shadow-slate-950/40',
-        hoverable ? 'hover:shadow-xl hover:shadow-wood-200/60 hover:-translate-y-1' : undefined,
+        'bg-white/90 backdrop-blur-sm rounded-xl border border-sky-100/60 shadow-soft transition-all duration-300',
+        'dark:bg-slate-900/70 dark:border-slate-800 dark:shadow-slate-950/40',
+        hoverable ? 'hover:shadow-lift hover:border-sky-200 hover:-translate-y-1' : undefined,
         className,
       )}
       {...rest}

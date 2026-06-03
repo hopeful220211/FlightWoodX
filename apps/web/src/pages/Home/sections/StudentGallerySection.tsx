@@ -26,7 +26,7 @@ export function StudentGallerySection() {
   }
 
   return (
-    <section className="bg-paper-50 py-24 lg:py-32">
+    <section className="bg-sky-50/40 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="flex items-end justify-between mb-10">
           <div>
@@ -70,7 +70,7 @@ export function StudentGallerySection() {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-paper-200">
+                  <div className="flex h-full w-full items-center justify-center bg-sky-50">
                     <span className="text-sm text-ink-400">即将展示</span>
                   </div>
                 )}
@@ -89,7 +89,7 @@ export function StudentGallerySection() {
         <ScrollReveal delay={200} className="mt-8 text-center">
           <button
             onClick={() => navigate('/gallery')}
-            className="inline-flex w-fit items-center gap-2 whitespace-nowrap text-sm font-medium text-wood-500 hover:text-wood-600 transition-colors"
+            className="inline-flex w-fit items-center gap-2 whitespace-nowrap text-sm font-medium text-sky-600 hover:text-sky-700 transition-colors"
           >
             查看全部作品
             <ArrowRight size={16} />

@@ -85,7 +85,7 @@ export function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-wood-50 via-gray-50 to-wood-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-sky-gradient p-4">
       <Card className="w-full max-w-md">
         <div className="p-8">
           {/* Logo 和标题 */}

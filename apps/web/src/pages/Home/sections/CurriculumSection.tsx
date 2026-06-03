@@ -9,7 +9,7 @@ const stages = [
 
 export function CurriculumSection() {
   return (
-    <section className="bg-paper-100 py-24 lg:py-32">
+    <section className="bg-white py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="text-center mb-16">
           <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
@@ -23,9 +23,9 @@ export function CurriculumSection() {
         {/* Horizontal timeline */}
         <div className="relative">
           {/* Timeline line — desktop only */}
-          <div className="hidden lg:block absolute top-[28px] left-[12.5%] right-[12.5%] h-[2px] bg-wood-200">
+          <div className="hidden lg:block absolute top-[28px] left-[12.5%] right-[12.5%] h-[2px] bg-sky-200">
             <div
-              className="h-full bg-wood-500 transition-all duration-1000"
+              className="h-full bg-sky-500 transition-all duration-1000"
               style={{ width: '100%' }}
             />
           </div>
@@ -36,12 +36,12 @@ export function CurriculumSection() {
               <ScrollReveal key={stage.num} delay={i * 120}>
                 <div className="relative flex flex-col items-center text-center">
                   {/* Timeline dot */}
-                  <div className="hidden lg:flex w-14 h-14 rounded-full bg-wood-500 text-white items-center justify-center text-sm font-semibold mb-6 relative z-10">
+                  <div className="hidden lg:flex w-14 h-14 rounded-full bg-sky-500 text-white items-center justify-center text-sm font-semibold mb-6 relative z-10">
                     {stage.num}
                   </div>
 
                   {/* Card */}
-                  <div className="w-full bg-paper-50 rounded-md p-6">
+                  <div className="w-full bg-sky-50/50 rounded-xl p-6 border border-sky-100/60">
                     {/* Large watermark number */}
                     <div
                       className="text-[48px] font-semibold leading-none lg:hidden"
@@ -52,7 +52,7 @@ export function CurriculumSection() {
                     <h3 className="font-display text-[22px] font-semibold text-ink-900 mt-1">
                       {stage.title}
                     </h3>
-                    <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-wood-100 text-wood-600">
+                    <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-sky-100 text-sky-700">
                       {stage.lessons}
                     </span>
                     <p className="mt-3 text-sm text-ink-600 leading-relaxed">
