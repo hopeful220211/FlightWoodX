@@ -65,6 +65,10 @@ app.use('/api/projects', projectRoutes)
 const droneDesignRoutes = require('./routes/droneDesigns')
 app.use('/api/drone-designs', droneDesignRoutes)
 
+// 积木程序路由（2.0 — Blockly XML + IR 持久化）
+const programRoutes = require('./routes/programs')
+app.use('/api/programs', programRoutes)
+
 // ===== 连接数据库 =====
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)
