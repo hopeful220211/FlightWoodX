@@ -142,6 +142,41 @@ exports.getMe = async (req, res) => {
   }
 }
 
+// 更新个人资料
+exports.updateProfile = async (req, res) => {
+  try {
+    const allowedFields = ['username', 'profile']
+    const updates = {}
+
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key]
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: '没有可更新的字段' })
+    }
+
+    const user = await User.findByIdAndUpdate(req.userId, updates, {
+      new: true,
+      runValidators: true,
+    }).select('-password')
+
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' })
+    }
+
+    res.json({ user })
+  } catch (error) {
+    console.error('UpdateProfile error:', error)
+    res.status(500).json({
+      error: '更新个人资料失败',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    })
+  }
+}
+
 // 获取所有用户（管理员功能）
 exports.getAllUsers = async (req, res) => {
   try {

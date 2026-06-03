@@ -57,6 +57,10 @@ app.use('/api/admin', adminRoutes)
 const designRoutes = require('./routes/designs')
 app.use('/api/designs', designRoutes)
 
+// 项目路由（2.0 — 设计+程序的整合体）
+const projectRoutes = require('./routes/projects')
+app.use('/api/projects', projectRoutes)
+
 // ===== 连接数据库 =====
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)

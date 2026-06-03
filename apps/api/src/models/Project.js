@@ -4,8 +4,8 @@ const mongoose = require('mongoose')
 const ProjectSchema = new mongoose.Schema(
   {
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    designId: { type: mongoose.Schema.Types.ObjectId, ref: 'DroneDesign', required: true },
-    programId: { type: mongoose.Schema.Types.ObjectId, ref: 'Program', required: true },
+    designId: { type: mongoose.Schema.Types.ObjectId, ref: 'DroneDesign' },  // optional until M2
+    programId: { type: mongoose.Schema.Types.ObjectId, ref: 'Program' },    // optional until M3
     name: { type: String, required: true, trim: true },
     coverUrl: { type: String },
     visibility: { type: String, enum: ['private', 'public'], default: 'private' },

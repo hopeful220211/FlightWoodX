@@ -36,7 +36,7 @@ export function AuthPage() {
 
       if (result.success) {
         toast.push('success', '登录成功！')
-        navigate('/')
+        navigate('/dashboard')
       } else {
         toast.push('error', result.message)
       }
@@ -61,7 +61,7 @@ export function AuthPage() {
 
       if (result.success) {
         toast.push('success', '注册成功！')
-        navigate('/')
+        navigate('/dashboard')
       } else {
         toast.push('error', result.message)
       }
@@ -75,7 +75,7 @@ export function AuthPage() {
 
   const handleGuestMode = () => {
     enterGuestMode()
-    navigate('/')
+    navigate('/dashboard')
   }
 
   const switchMode = () => {

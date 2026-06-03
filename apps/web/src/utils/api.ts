@@ -345,6 +345,88 @@ export async function uploadFile(file: File): Promise<ApiResponse<{ url: string 
   }
 }
 
+// ============= 项目 (2.0) 相关 API =============
+
+export interface ProjectData {
+  id: string
+  ownerId: string
+  name: string
+  designId?: string
+  programId?: string
+  coverUrl?: string
+  visibility: 'private' | 'public'
+  createdAt: string
+  updatedAt: string
+}
+
+/** 获取当前用户的所有项目 */
+export async function getProjects(): Promise<ApiResponse<ProjectData[]>> {
+  const res = await apiFetch<{ projects: ProjectData[] }>('/projects')
+  // Backend returns { projects: [...] }
+  if (res.success && res.data) {
+    const projects = (res.data as unknown as { projects?: ProjectData[] }).projects ?? res.data
+    return { ...res, data: projects as ProjectData[] }
+  }
+  return res as ApiResponse<ProjectData[]>
+}
+
+/** 获取单个项目 */
+export async function getProject(projectId: string): Promise<ApiResponse<ProjectData>> {
+  const res = await apiFetch<{ project: ProjectData }>(`/projects/${projectId}`)
+  if (res.success && res.data) {
+    const project = (res.data as unknown as { project?: ProjectData }).project ?? res.data
+    return { ...res, data: project as ProjectData }
+  }
+  return res as ApiResponse<ProjectData>
+}
+
+/** 创建新项目 */
+export async function createProject(data: {
+  name: string
+  designId?: string
+  programId?: string
+  visibility?: string
+}): Promise<ApiResponse<ProjectData>> {
+  const res = await apiFetch<{ project: ProjectData }>('/projects', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  if (res.success && res.data) {
+    const project = (res.data as unknown as { project?: ProjectData }).project ?? res.data
+    return { ...res, data: project as ProjectData }
+  }
+  return res as ApiResponse<ProjectData>
+}
+
+/** 更新项目 */
+export async function updateProject(
+  projectId: string,
+  data: Partial<{ name: string; designId: string; programId: string; coverUrl: string; visibility: string }>,
+): Promise<ApiResponse<ProjectData>> {
+  return apiFetch<ProjectData>(`/projects/${projectId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/** 删除项目 */
+export async function deleteProject(projectId: string): Promise<ApiResponse> {
+  return apiFetch(`/projects/${projectId}`, {
+    method: 'DELETE',
+  })
+}
+
+/** 更新用户个人资料 */
+export async function updateProfile(data: {
+  username?: string
+  profile?: { displayName?: string; avatar?: string; grade?: string }
+}): Promise<ApiResponse> {
+  return apiFetch('/auth/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
 // ============= 学习课程相关 API =============
 
 export interface Course {
