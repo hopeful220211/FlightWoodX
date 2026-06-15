@@ -7,6 +7,10 @@ require('dotenv').config()
 
 const app = express()
 
+// 部署在 Nginx / SLB 反向代理之后：信任一层代理，
+// 否则 express-rate-limit 会按代理 IP 限流，req.ip 也拿不到真实客户端 IP。
+app.set('trust proxy', 1)
+
 // ===== 中间件配置 =====
 app.use(helmet())
 
@@ -34,12 +38,16 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // ===== 路由 =====
-// 健康检查
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'FlightWoodX Backend is running!',
-    timestamp: new Date().toISOString()
+// 健康检查：同时反映数据库连接状态，供 SLB / 容器探活用
+app.get(['/api/health', '/healthz'], (req, res) => {
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting']
+  const dbState = states[mongoose.connection.readyState] || 'unknown'
+  const healthy = mongoose.connection.readyState === 1
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'OK' : 'DEGRADED',
+    message: 'FlightWoodX Backend',
+    db: dbState,
+    timestamp: new Date().toISOString(),
   })
 })
 
@@ -69,31 +77,65 @@ app.use('/api/drone-designs', droneDesignRoutes)
 const programRoutes = require('./routes/programs')
 app.use('/api/programs', programRoutes)
 
+// ===== 404：未匹配任何路由，返回统一 JSON（而非默认 HTML）=====
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not Found', path: req.originalUrl })
+})
+
+// ===== 错误处理（放在所有路由之后、监听之前）=====
+app.use((err, req, res, next) => {
+  console.error('Error:', err)
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  })
+})
+
 // ===== 连接数据库 =====
 if (process.env.MONGODB_URI) {
-  mongoose.connect(process.env.MONGODB_URI)
+  mongoose
+    .connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    })
     .then(() => {
       console.log('Connected to MongoDB')
     })
     .catch((error) => {
-      console.error('MongoDB connection error:', error)
+      console.error('MongoDB connection error:', error.message)
     })
+
+  mongoose.connection.on('error', (error) => {
+    console.error('MongoDB runtime error:', error.message)
+  })
+  mongoose.connection.on('disconnected', () => {
+    console.warn('MongoDB disconnected — mongoose will attempt to reconnect')
+  })
 } else {
   console.warn('MONGODB_URI not set — skipping database connection')
 }
 
 // ===== 启动服务器 =====
 const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)
   console.log(`Health check: http://localhost:${PORT}/api/health`)
 })
 
-// ===== 错误处理 =====
-app.use((err, req, res, next) => {
-  console.error('Error:', err)
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+// ===== 优雅关闭（容器 stop / pm2 reload 会发 SIGTERM）=====
+function shutdown(signal) {
+  console.log(`${signal} received — shutting down gracefully`)
+  server.close(() => {
+    mongoose.connection.close(false).then(() => {
+      console.log('Closed out connections')
+      process.exit(0)
+    })
   })
-})
+  // 兜底：10s 内没关干净就强制退出
+  setTimeout(() => {
+    console.error('Could not close connections in time — forcing exit')
+    process.exit(1)
+  }, 10000).unref()
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))

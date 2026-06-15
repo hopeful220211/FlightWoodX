@@ -1,0 +1,15 @@
+# Docker build context = 仓库根（见 apps/api/Dockerfile）
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+**/.DS_Store
+.git
+.github
+.agents
+.claude
+docs
+# api 镜像不需要前端源码与静态资产
+apps/web
