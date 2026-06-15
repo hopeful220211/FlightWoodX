@@ -1,6 +1,7 @@
 const express = require('express')
 const { authenticate } = require('../middleware/auth')
 const Project = require('../models/Project')
+const { putObject } = require('../lib/storage')
 
 const router = express.Router()
 
@@ -127,5 +128,35 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ error: '删除项目失败' })
   }
 })
+
+/**
+ * POST /api/projects/:id/cover
+ * 上传项目封面（前端把 3D 画面截图传上来）。用 express.raw 直接收图片二进制，
+ * 避开 JSON body 体积限制，零额外依赖。存储后把 URL 写进 project.coverUrl。
+ */
+router.post(
+  '/:id/cover',
+  express.raw({ type: ['image/png', 'image/webp', 'image/jpeg'], limit: '5mb' }),
+  async (req, res) => {
+    try {
+      if (!req.body || !req.body.length) {
+        return res.status(400).json({ error: '未收到图片数据' })
+      }
+      const project = await Project.findOne({ _id: req.params.id, ownerId: req.userId })
+      if (!project) return res.status(404).json({ error: '项目不存在' })
+
+      const contentType = req.headers['content-type'] || 'image/png'
+      const url = await putObject('covers', req.body, contentType)
+
+      project.coverUrl = url
+      await project.save()
+
+      res.json({ coverUrl: url })
+    } catch (error) {
+      console.error('[projects] Cover upload error:', error)
+      res.status(500).json({ error: '封面上传失败' })
+    }
+  },
+)
 
 module.exports = router

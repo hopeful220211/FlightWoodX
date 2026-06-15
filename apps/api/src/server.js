@@ -77,6 +77,17 @@ app.use('/api/drone-designs', droneDesignRoutes)
 const programRoutes = require('./routes/programs')
 app.use('/api/programs', programRoutes)
 
+// 用户成就统计路由（需求二）
+const meRoutes = require('./routes/me')
+app.use('/api/me', meRoutes)
+
+// 上传文件静态服务（disk 存储驱动用；生产走对象存储 + CDN）。
+// 单独放开 CORP，允许前端跨源加载图片。
+const { UPLOAD_DIR } = require('./lib/storage')
+app.use('/uploads', express.static(UPLOAD_DIR, {
+  setHeaders: (res) => res.set('Cross-Origin-Resource-Policy', 'cross-origin'),
+}))
+
 // ===== 404：未匹配任何路由，返回统一 JSON（而非默认 HTML）=====
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.originalUrl })

@@ -39,6 +39,26 @@ const UserSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  // ===== 成就统计（需求二）=====
+  // 时长以秒累计（前端按 seconds 上报），/me/stats 返回时换算成分钟
+  studySeconds: {
+    type: Number,
+    default: 0
+  },
+  designSeconds: {
+    type: Number,
+    default: 0
+  },
+  // 已完成课时 id 列表（去重），lessonsCompleted = 长度
+  completedLessons: {
+    type: [String],
+    default: []
+  },
+  // 仿真试飞次数（可选）
+  flightCount: {
+    type: Number,
+    default: 0
   }
 })
 
