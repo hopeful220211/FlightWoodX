@@ -47,11 +47,16 @@ export interface DroneDesign {
   id: string;
   ownerId: string;
   name: string;
-  params: ParametricBodyParams;
+  /** 前端 Design 完整快照（RFC-013 方案 B）。本期为 unknown，后续可收紧。 */
+  designData: unknown;
+  /** 前端本地 id，用于按 (ownerId, localId) 幂等 upsert（RFC-013）。 */
+  localId?: string;
   glbUrl?: string;
   thumbnailUrl?: string;
   weightG: number;
   status: DroneDesignStatus;
+  /** @deprecated 改为可选以向后兼容存量数据；新设计走 designData。 */
+  params?: ParametricBodyParams;
   createdAt: IsoDateString;
   updatedAt: IsoDateString;
 }

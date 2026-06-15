@@ -17,7 +17,9 @@ const DroneDesignSchema = new mongoose.Schema(
   {
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true },
-    params: { type: ParametricBodyParamsSchema, required: true },
+    params: { type: ParametricBodyParamsSchema }, // RFC-013：改可选，新设计走 designData
+    /** 前端 Design 完整快照（RFC-013 方案 B：后端不解析内容，原样存取） */
+    designData: { type: mongoose.Schema.Types.Mixed, default: null },
     glbUrl: { type: String }, // 二进制资产走对象存储，库里只存 URL
     thumbnailUrl: { type: String },
     weightG: { type: Number, default: 0 },
@@ -28,6 +30,13 @@ const DroneDesignSchema = new mongoose.Schema(
     localId: { type: String, index: true, sparse: true },
   },
   { timestamps: true },
+)
+
+// (ownerId, localId) 复合唯一索引 —— 支撑按本地 id 幂等 upsert（RFC-013）。
+// partial：仅对 localId 为字符串的文档生效，避免无 localId 的存量文档互相冲突。
+DroneDesignSchema.index(
+  { ownerId: 1, localId: 1 },
+  { unique: true, partialFilterExpression: { localId: { $type: 'string' } } },
 )
 
 module.exports = mongoose.model('DroneDesign', DroneDesignSchema)
