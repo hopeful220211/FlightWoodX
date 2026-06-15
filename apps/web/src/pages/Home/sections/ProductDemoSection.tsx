@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Layers, Puzzle, Eye, ShieldCheck, ArrowRight } from 'lucide-react'
 import { ScrollReveal } from '../../../components/common/ScrollReveal'
+import { SectionHeading } from '../components/SectionHeading'
 import { Button } from '../../../components/common/Button'
 import { useAuthStore } from '../../../stores/authStore'
 
@@ -23,7 +24,7 @@ export function ProductDemoSection() {
           {/* Left: screenshot */}
           <ScrollReveal direction="left" distance={30}>
             <div
-              className="rounded-lg overflow-hidden shadow-2xl"
+              className="rounded-2xl overflow-hidden shadow-[0_30px_70px_rgba(23,74,126,0.22)] ring-1 ring-sky-100/70"
               style={{ transform: 'perspective(1400px) rotateY(-3deg) rotateX(1deg)' }}
             >
               <img
@@ -44,18 +45,16 @@ export function ProductDemoSection() {
           {/* Right: text */}
           <ScrollReveal direction="right" distance={20} delay={100}>
             <div className="space-y-6">
-              <h2 className="font-display text-3xl lg:text-[44px] font-semibold text-ink-900 leading-tight">
-                你看到的，
-                <br />
-                是孩子看到的
-              </h2>
-              <p className="text-base text-ink-600 leading-relaxed">
-                我们不做虚假宣传截图。这就是学生每天打开的界面。
-              </p>
+              <SectionHeading
+                align="left"
+                eyebrow="真实界面"
+                title={<>你看到的，<br />是孩子看到的</>}
+                lead="我们不做虚假宣传截图。这就是学生每天打开的界面。"
+              />
 
               <ul className="space-y-3">
                 {features.map((f) => (
-                  <li key={f.text} className="flex items-center gap-3 text-ink-700">
+                  <li key={f.text} className="flex items-center gap-3 text-sky-800">
                     <f.icon size={18} className="text-sky-500 shrink-0" />
                     <span className="text-base">{f.text}</span>
                   </li>

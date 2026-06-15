@@ -1,4 +1,5 @@
 import { ScrollReveal } from '../../../components/common/ScrollReveal'
+import { SectionHeading } from '../components/SectionHeading'
 
 const stages = [
   { num: '01', title: '认识榫卯', lessons: '3 课时', desc: '传统工艺入门，理解结构基础' },
@@ -11,13 +12,12 @@ export function CurriculumSection() {
   return (
     <section className="bg-white py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
-        <ScrollReveal className="text-center mb-16">
-          <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
-            12 课时 · 从想到做到飞
-          </h2>
-          <p className="font-display mt-4 text-xl text-ink-600">
-            系统设计的完整学习路径
-          </p>
+        <ScrollReveal className="mb-16">
+          <SectionHeading
+            eyebrow="教学体系"
+            title="12 课时 · 从想到做到飞"
+            lead="系统设计的完整学习路径"
+          />
         </ScrollReveal>
 
         {/* Horizontal timeline */}
@@ -41,21 +41,21 @@ export function CurriculumSection() {
                   </div>
 
                   {/* Card */}
-                  <div className="w-full bg-sky-50/50 rounded-xl p-6 border border-sky-100/60">
+                  <div className="w-full h-full rounded-2xl border border-sky-100/70 bg-sky-50/50 p-6 shadow-[0_2px_18px_rgba(42,136,219,0.04)] transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-[0_18px_48px_rgba(42,136,219,0.12)]">
                     {/* Large watermark number */}
                     <div
                       className="text-[48px] font-semibold leading-none lg:hidden"
-                      style={{ color: 'rgba(166, 112, 56, 0.15)' }}
+                      style={{ color: 'rgba(42, 136, 219, 0.15)' }}
                     >
                       {stage.num}
                     </div>
-                    <h3 className="font-display text-[22px] font-semibold text-ink-900 mt-1">
+                    <h3 className="font-display text-[22px] font-semibold text-sky-900 mt-1">
                       {stage.title}
                     </h3>
                     <span className="inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full bg-sky-100 text-sky-700">
                       {stage.lessons}
                     </span>
-                    <p className="mt-3 text-sm text-ink-600 leading-relaxed">
+                    <p className="mt-3 text-sm text-sky-700 leading-relaxed">
                       {stage.desc}
                     </p>
                   </div>
@@ -69,7 +69,7 @@ export function CurriculumSection() {
         <ScrollReveal delay={500} className="mt-12 text-center">
           <button
             disabled
-            className="inline-flex items-center gap-2 text-sm font-medium text-ink-400 cursor-not-allowed"
+            className="inline-flex items-center gap-2 text-sm font-medium text-sky-500 cursor-not-allowed"
           >
             下载完整教案 PDF（即将开放）
           </button>

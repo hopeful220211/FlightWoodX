@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import { ScrollReveal } from '../../../components/common/ScrollReveal'
+import { SectionHeading } from '../components/SectionHeading'
 
 type TestimonialRole = 'child' | 'parent' | 'teacher'
 
@@ -31,9 +32,9 @@ const TESTIMONIALS: Testimonial[] = [
     name: '周女士',
     identity: '小学四年级学生家长',
     role: 'parent',
-    avatarColor: '#E8E2D8',
+    avatarColor: '#B9DBFE',
     avatarInitial: '周',
-    avatarTextColor: '#1A1A1A',
+    avatarTextColor: '#174A7E',
     quote: '孩子回家不再只盯着 iPad 是最直观的变化。他会主动跟我讲榫卯是什么、为什么老木匠不用钉子——这些话我这个当妈的都答不上来。FlightWoodX 让"动手"这件事重新变得有分量。',
   },
   {
@@ -41,7 +42,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: '小雨',
     identity: '三年级学生',
     role: 'child',
-    avatarColor: '#8FB88F',
+    avatarColor: '#4AA3F0',
     avatarInitial: '雨',
     avatarTextColor: 'white',
     quote: '最喜欢的是电脑上设计完，真的能飞起来那一刻。我设计的第一架飞歪了，我自己找到是因为一边机臂长了一点——然后自己改过来就飞直了。感觉像科学家。',
@@ -51,7 +52,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: '林先生',
     identity: '初中一年级学生父亲，IT 行业',
     role: 'parent',
-    avatarColor: '#b8864f',
+    avatarColor: '#2B88DB',
     avatarInitial: '林',
     avatarTextColor: 'white',
     quote: '作为程序员，我见过太多"编程启蒙"产品——大部分是把语法包装成卡通。FlightWoodX 不一样，它让孩子直接面对真实的工程问题：结构、力学、空气动力学。这是我花钱买不到的东西。',
@@ -61,7 +62,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: '陈老师',
     identity: '市级重点小学科学教师，12 年教龄',
     role: 'teacher',
-    avatarColor: '#3D3D3D',
+    avatarColor: '#175798',
     avatarInitial: '陈',
     avatarTextColor: '#FAF8F4',
     quote: '我带过很多 STEAM 产品进课堂，学生 3 天就腻了。FlightWoodX 是第一个让学生主动要求延长课时的——因为他们想亲眼看到自己设计的那架飞起来。这个"亲手造"的过程是无法被 App 替代的。',
@@ -70,14 +71,14 @@ const TESTIMONIALS: Testimonial[] = [
 
 const ROLE_BG: Record<TestimonialRole, string> = {
   child: 'rgba(125, 184, 217, 0.2)',
-  parent: '#E8E2D8',
-  teacher: 'rgba(143, 184, 143, 0.2)',
+  parent: 'rgba(185, 219, 254, 0.45)',
+  teacher: 'rgba(124, 191, 253, 0.18)',
 }
 
 function AvatarPlaceholder({ testimonial }: { testimonial: Testimonial }) {
   return (
     <div
-      className="w-[120px] h-[120px] md:w-[120px] md:h-[120px] w-[96px] h-[96px] rounded-md flex items-center justify-center shadow-md"
+      className="h-24 w-24 md:h-[120px] md:w-[120px] rounded-2xl flex items-center justify-center shadow-lg"
       style={{ backgroundColor: testimonial.avatarColor, color: testimonial.avatarTextColor }}
     >
       <span className="font-display font-semibold text-[40px]">
@@ -107,7 +108,6 @@ export function LovedBySection() {
     stop()
     const tick = () => {
       timerRef.current = window.setTimeout(() => {
-        console.log(`[testimonial] auto-tick after ${delayRef.current}ms`)
         setCurrent(i => (i + 1) % TOTAL)
         delayRef.current = NORMAL_DELAY
         timerRef.current = window.setTimeout(tick, NORMAL_DELAY)
@@ -124,19 +124,16 @@ export function LovedBySection() {
 
   const handleManualChange = useCallback((idx: number) => {
     const normalized = ((idx % TOTAL) + TOTAL) % TOTAL
-    console.log('[testimonial] manual click, next will wait 6000ms')
     setCurrent(normalized)
     delayRef.current = MANUAL_DELAY
     start()
   }, [start])
 
   const handleMouseEnter = useCallback(() => {
-    console.log('[testimonial] hover paused')
     stop()
   }, [stop])
 
   const handleMouseLeave = useCallback(() => {
-    console.log('[testimonial] hover resumed')
     start()
   }, [start])
 
@@ -155,18 +152,12 @@ export function LovedBySection() {
       onMouseLeave={handleMouseLeave}
     >
       <div className="mx-auto max-w-4xl px-4">
-        <ScrollReveal className="text-center mb-4">
-          <p className="text-sm font-medium tracking-wider text-ink-400 uppercase">
-            Loved by kids, parents & teachers
-          </p>
-        </ScrollReveal>
-        <ScrollReveal delay={100} className="text-center mb-12">
-          <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
-            来自孩子、家长和老师的声音
-          </h2>
-          <p className="font-display mt-3 text-lg text-ink-600">
-            真实的反馈，来自最早接触 FlightWoodX 的家庭和教育者
-          </p>
+        <ScrollReveal className="mb-12">
+          <SectionHeading
+            eyebrow="真实反馈"
+            title="来自孩子、家长和老师的声音"
+            lead="真实的反馈，来自最早接触 FlightWoodX 的家庭和教育者"
+          />
         </ScrollReveal>
 
         {/* Testimonial card */}
@@ -186,11 +177,11 @@ export function LovedBySection() {
           {/* Quote card */}
           <div
             key={t.id}
-            className="rounded-md px-8 py-12 md:px-12 md:py-14 pt-16 md:pt-20 transition-colors duration-300"
+            className="rounded-2xl px-8 py-12 md:px-12 md:py-14 pt-16 md:pt-20 transition-colors duration-300"
             style={{ backgroundColor: bgColor }}
           >
             <blockquote
-              className="font-display text-lg md:text-[22px] leading-[1.6] text-ink-900 text-center"
+              className="font-display text-lg md:text-[22px] leading-[1.6] text-sky-900 text-center"
               style={{
                 animation: 'fadeInLeft 400ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
               }}
@@ -205,8 +196,8 @@ export function LovedBySection() {
                 opacity: 0,
               }}
             >
-              <p className="text-base font-semibold text-ink-900">{t.name}</p>
-              <p className="text-sm text-ink-600">{t.identity}</p>
+              <p className="text-base font-semibold text-sky-900">{t.name}</p>
+              <p className="text-sm text-sky-700">{t.identity}</p>
             </div>
           </div>
 
@@ -241,14 +232,14 @@ export function LovedBySection() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleManualChange(current - 1)}
-                  className="flex h-12 w-12 items-center justify-center rounded-md bg-paper-100 text-ink-600 transition-colors hover:bg-paper-200"
+                  className="flex h-12 w-12 items-center justify-center rounded-md bg-sky-100 text-sky-700 transition-colors hover:bg-sky-200"
                   aria-label="上一条"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
                   onClick={() => handleManualChange(current + 1)}
-                  className="flex h-12 w-12 items-center justify-center rounded-md bg-ink-900 text-white transition-colors hover:bg-ink-700"
+                  className="flex h-12 w-12 items-center justify-center rounded-md bg-sky-600 text-white transition-colors hover:bg-sky-700"
                   aria-label="下一条"
                 >
                   <ChevronRight size={20} />

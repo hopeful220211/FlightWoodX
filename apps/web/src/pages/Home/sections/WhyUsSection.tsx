@@ -1,4 +1,5 @@
 import { ScrollReveal } from '../../../components/common/ScrollReveal'
+import { SectionHeading } from '../components/SectionHeading'
 
 const cards = [
   {
@@ -25,20 +26,19 @@ export function WhyUsSection() {
   return (
     <section className="bg-sky-50/40 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
-        <ScrollReveal className="text-center mb-16">
-          <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
-            不只是另一个 STEAM 玩具
-          </h2>
-          <p className="font-display mt-4 text-xl text-ink-600 max-w-2xl mx-auto">
-            我们重新定义了中国青少年 STEAM 教育的三件事
-          </p>
+        <ScrollReveal className="mb-16">
+          <SectionHeading
+            eyebrow="为什么是我们"
+            title="不只是另一个 STEAM 玩具"
+            lead="我们重新定义了中国青少年 STEAM 教育的三件事"
+          />
         </ScrollReveal>
 
         <div className="grid gap-6 md:grid-cols-3">
           {cards.map((card, i) => (
             <ScrollReveal key={card.title} delay={i * 100}>
-              <div className="group bg-white rounded-xl p-[30px] border border-sky-100/60 transition-all duration-300 hover:-translate-y-[3px] hover:shadow-soft">
-                <div className="h-[200px] rounded-lg overflow-hidden bg-sky-50 mb-5">
+              <div className="group h-full rounded-2xl border border-sky-100/70 bg-white p-[30px] shadow-[0_2px_18px_rgba(42,136,219,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(42,136,219,0.13)]">
+                <div className="h-[200px] rounded-xl overflow-hidden bg-sky-50 mb-5">
                   <img
                     src={card.img}
                     alt={card.title}
@@ -50,9 +50,9 @@ export function WhyUsSection() {
                     }}
                   />
                 </div>
-                <h3 className="font-display text-2xl font-semibold text-ink-900">{card.title}</h3>
+                <h3 className="font-display text-2xl font-semibold text-sky-900">{card.title}</h3>
                 <p className="mt-1 text-sm font-medium text-sky-500">{card.subtitle}</p>
-                <p className="mt-3 text-base leading-relaxed text-ink-600">{card.desc}</p>
+                <p className="mt-3 text-base leading-relaxed text-sky-700">{card.desc}</p>
               </div>
             </ScrollReveal>
           ))}

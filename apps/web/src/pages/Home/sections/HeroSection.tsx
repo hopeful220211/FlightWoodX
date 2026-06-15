@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Play, Trophy, Users, Puzzle, ChevronDown, Rocket } from 'lucide-react'
+import { ArrowRight, Play, Trophy, Puzzle, ChevronDown, Rocket } from 'lucide-react'
 import { Button } from '../../../components/common/Button'
 import { VideoModal } from '../../../components/common/VideoModal'
 import { AwardCapsule } from './hero/AwardCapsule'
 import { HeroDrone3D } from './hero/HeroDrone3D'
+import { CloudLayer } from '../components/CloudLayer'
 
 const demoVideoUrl = '/resource/videos/example.mp4'
 
@@ -37,7 +38,8 @@ export function HeroSection() {
   return (
     <>
       <section className="relative min-h-screen bg-sky-hero overflow-x-clip">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <CloudLayer />
+        <div className="relative z-[1] mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid min-h-[calc(100vh-64px)] items-center gap-12 pt-[64px] pb-16 lg:grid-cols-[55%_45%] lg:gap-8">
 
             {/* Left column */}
@@ -50,16 +52,16 @@ export function HeroSection() {
               <div className="space-y-1">
                 <AnimatedEntry delay={120}>
                   <h1
-                    className="font-bold leading-[0.95] text-sky-900"
-                    style={{ fontSize: 'clamp(64px, 9vw, 130px)' }}
+                    className="leading-[0.95] tracking-tight text-sky-900"
+                    style={{ fontSize: 'clamp(64px, 9vw, 130px)', fontFamily: '"Arial Black", Arial, sans-serif', fontWeight: 900 }}
                   >
                     FLIGHT
                   </h1>
                 </AnimatedEntry>
                 <AnimatedEntry delay={220}>
                   <h1
-                    className="font-bold leading-[0.95] text-wood-500"
-                    style={{ fontSize: 'clamp(64px, 9vw, 130px)' }}
+                    className="leading-[0.95] tracking-tight text-sky-500"
+                    style={{ fontSize: 'clamp(64px, 9vw, 130px)', fontFamily: '"Arial Black", Arial, sans-serif', fontWeight: 900 }}
                   >
                     WOOD X
                   </h1>
@@ -92,15 +94,13 @@ export function HeroSection() {
                 >
                   开始设计
                 </Button>
-                <Button
-                  size="lg"
-                  variant="secondary"
+                <button
                   onClick={() => navigate('/competitions')}
-                  rightIcon={<Trophy size={16} />}
-                  className="px-8"
+                  className="touch-target inline-flex min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-sky-100 px-8 text-base font-semibold text-sky-700 transition hover:bg-sky-200 active:translate-y-[1px] active:scale-95"
                 >
                   查看赛事
-                </Button>
+                  <Trophy size={16} />
+                </button>
                 <Button
                   size="lg"
                   variant="outline"

@@ -10,7 +10,7 @@ export function AwardCapsule({ onClick, delay = 0 }: AwardCapsuleProps) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-full border border-accent-gold bg-paper-100 px-4 py-2 text-[13px] font-medium text-ink-700 transition-colors hover:border-accent-gold/80 hover:bg-paper-200"
+      className="inline-flex items-center gap-2 rounded-full border border-accent-gold/70 bg-white/70 px-4 py-2 text-[13px] font-medium text-sky-800 backdrop-blur-sm transition-colors hover:border-accent-gold hover:bg-white"
       style={{
         opacity: 0,
         transform: 'translateY(12px)',

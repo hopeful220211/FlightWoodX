@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import { ScrollReveal } from '../../../components/common/ScrollReveal'
+import { SectionHeading } from '../components/SectionHeading'
 
 const works = [
   { id: '1', name: '森林守望者', author: '小明', img: '/resource/picture/student_works/work01.png' },
@@ -29,23 +30,23 @@ export function StudentGallerySection() {
     <section className="bg-sky-50/40 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="flex items-end justify-between mb-10">
-          <div>
-            <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
-              学生设计的无人机
-            </h2>
-            <p className="font-display mt-3 text-xl text-ink-600">每架都是独一无二的作品</p>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
+          <SectionHeading
+            align="left"
+            eyebrow="学生作品"
+            title="学生设计的无人机"
+            lead="每架都是独一无二的作品"
+          />
+          <div className="hidden md:flex items-center gap-2 shrink-0">
             <button
               onClick={() => scroll('left')}
-              className="flex h-10 w-10 items-center justify-center rounded-md border border-ink-200 text-ink-400 hover:border-ink-400 hover:text-ink-700 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-md border border-sky-200 text-sky-500 hover:border-sky-300 hover:text-sky-800 transition-colors"
               aria-label="向左滚动"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => scroll('right')}
-              className="flex h-10 w-10 items-center justify-center rounded-md border border-ink-200 text-ink-400 hover:border-ink-400 hover:text-ink-700 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-md border border-sky-200 text-sky-500 hover:border-sky-300 hover:text-sky-800 transition-colors"
               aria-label="向右滚动"
             >
               <ChevronRight size={20} />
@@ -61,7 +62,7 @@ export function StudentGallerySection() {
         >
           {works.map((work) => (
             <div key={work.id} className="w-[280px] shrink-0">
-              <div className="group relative aspect-square overflow-hidden rounded-md bg-paper-200">
+              <div className="group relative aspect-square overflow-hidden rounded-2xl bg-sky-200 shadow-[0_2px_18px_rgba(42,136,219,0.05)] transition-shadow duration-300 hover:shadow-[0_18px_48px_rgba(42,136,219,0.13)]">
                 {work.img ? (
                   <img
                     src={work.img}
@@ -71,11 +72,11 @@ export function StudentGallerySection() {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-sky-50">
-                    <span className="text-sm text-ink-400">即将展示</span>
+                    <span className="text-sm text-sky-500">即将展示</span>
                   </div>
                 )}
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-ink-900/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-sky-950/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                   <div>
                     <p className="text-sm font-semibold text-white">{work.name}</p>
                     <p className="text-xs text-white/70">{work.author}</p>

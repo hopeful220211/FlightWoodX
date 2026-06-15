@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { ScrollReveal } from '../../../components/common/ScrollReveal'
+import { SectionHeading } from '../components/SectionHeading'
 
 const personas = [
   {
@@ -29,10 +30,12 @@ export function ForWhoSection() {
   return (
     <section className="bg-sky-50/40 py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
-        <ScrollReveal className="text-center mb-16">
-          <h2 className="font-display text-4xl lg:text-[52px] font-semibold text-ink-900 leading-tight">
-            适合不同的你
-          </h2>
+        <ScrollReveal className="mb-16">
+          <SectionHeading
+            eyebrow="适合谁"
+            title="适合不同的你"
+            lead="无论你是学生、教师还是学校，都能找到合适的入口"
+          />
         </ScrollReveal>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -41,7 +44,7 @@ export function ForWhoSection() {
               <button
                 type="button"
                 onClick={() => navigate(p.href)}
-                className="group relative w-full h-[420px] md:h-[480px] rounded-lg overflow-hidden text-left"
+                className="group relative w-full h-[420px] md:h-[480px] rounded-2xl overflow-hidden text-left shadow-[0_2px_18px_rgba(42,136,219,0.06)] transition-shadow duration-300 hover:shadow-[0_22px_55px_rgba(23,74,126,0.22)]"
               >
                 {/* Background image */}
                 <img
@@ -56,7 +59,7 @@ export function ForWhoSection() {
                 />
 
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-ink-900/80 via-ink-900/20 to-transparent transition-colors duration-[400ms] group-hover:from-ink-900/90" />
+                <div className="absolute inset-0 bg-gradient-to-t from-sky-950/80 via-sky-950/20 to-transparent transition-colors duration-[400ms] group-hover:from-sky-950/90" />
 
                 {/* Content */}
                 <div className="absolute inset-0 flex flex-col justify-end p-6">

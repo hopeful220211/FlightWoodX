@@ -26,16 +26,20 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
-  const [scrolled, setScrolled] = useState(false)
+  const [scrolledOnHome, setScrolledOnHome] = useState(false)
 
   const { isAuthenticated, user, logout } = useAuthStore()
   const isHomePage = pathname === '/'
   const isGuest = user?.isGuest === true
 
+  // 非首页：导航栏始终为实底；首页：滚动超过 60px 后切换为毛玻璃。
+  // scrolled 由渲染推导，避免在 effect 内同步 setState。
+  const scrolled = !isHomePage || scrolledOnHome
+
   // Glass-effect on scroll (homepage starts transparent)
   useEffect(() => {
-    if (!isHomePage) { setScrolled(true); return }
-    const onScroll = () => setScrolled(window.scrollY > 60)
+    if (!isHomePage) return
+    const onScroll = () => setScrolledOnHome(window.scrollY > 60)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -78,8 +82,8 @@ export function Navbar() {
             className="inline-flex items-center gap-2.5 text-base font-extrabold tracking-tight text-sky-800"
             onClick={() => setMobileOpen(false)}
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 shadow-sm overflow-hidden">
-              <img src="/web_logo.png" alt="Logo" className="h-full w-full object-contain" />
+            <span className="inline-flex h-9 w-9 items-center justify-center">
+              <img src="/web_logo.png" alt="FlightWoodX" className="h-full w-full object-contain" />
             </span>
             <span className="hidden sm:inline">FlightWoodX</span>
           </NavLink>

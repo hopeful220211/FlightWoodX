@@ -55,6 +55,19 @@ body {
     animation: float 6s ease-in-out infinite;
   }
 
+  /* Drifting clouds in the hero sky */
+  @keyframes cloudDrift {
+    from { transform: translateX(-30vw); }
+    to   { transform: translateX(130vw); }
+  }
+
+  .hero-cloud {
+    animation-name: cloudDrift;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    will-change: transform;
+  }
+
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }

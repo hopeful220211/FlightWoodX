@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { ScrollReveal } from '../../../components/common/ScrollReveal'
+import { SectionHeading } from '../components/SectionHeading'
 import { useAuthStore } from '../../../stores/authStore'
 
 export function FinalCTASection() {
@@ -12,19 +13,14 @@ export function FinalCTASection() {
       {/* Subtle gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-sky-800/50 to-sky-950/80" />
 
-      <div className="relative mx-auto max-w-4xl px-4 text-center">
+      <div className="relative mx-auto max-w-4xl px-4">
         <ScrollReveal>
-          <h2 className="font-display text-4xl lg:text-[60px] font-semibold text-white leading-tight">
-            准备好开启你的
-            <br />
-            创造之旅了吗？
-          </h2>
-        </ScrollReveal>
-
-        <ScrollReveal delay={100}>
-          <p className="mt-4 text-xl text-sky-200">
-            设计 → 编程 → 仿真 → 参赛 → 分享，全链路闭环
-          </p>
+          <SectionHeading
+            tone="light"
+            eyebrow="开始创造"
+            title={<>准备好开启你的<br />创造之旅了吗？</>}
+            lead="设计 → 编程 → 仿真 → 参赛 → 分享，全链路闭环"
+          />
         </ScrollReveal>
 
         <ScrollReveal delay={200} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">

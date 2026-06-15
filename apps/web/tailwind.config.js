@@ -76,7 +76,7 @@ export default {
       },
       backgroundImage: {
         'sky-gradient': 'linear-gradient(180deg, #e0efff 0%, #f0f7ff 50%, #ffffff 100%)',
-        'sky-hero': 'linear-gradient(170deg, #b9dbfe 0%, #e0efff 40%, #f0f7ff 100%)',
+        'sky-hero': 'linear-gradient(180deg, #5ca8f5 0%, #7cbffd 22%, #a7d2fc 48%, #cfe6fe 74%, #eef6ff 100%)',
         'wood-warm': 'linear-gradient(135deg, #faf6f0 0%, #f0e6d6 100%)',
       },
     },
