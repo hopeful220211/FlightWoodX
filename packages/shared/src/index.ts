@@ -12,3 +12,4 @@ export * from './rbac';
 export * from './admin';
 export * from './growth';
 export * from './project';
+export * from './social';
