@@ -13,6 +13,7 @@ import { ViolationBubble } from './components/ViolationBubble'
 import { checkBeforeAdd, checkDualMainboard } from '../../utils/realtimeChecks'
 import type { Violation } from '../../utils/realtimeChecks'
 import { MotorInstallStep } from './components/steps/MotorInstallStep'
+import { ReviewStep } from './components/steps/ReviewStep'
 import type { Part } from '../../types/design'
 
 export function GuidedDesignPage() {
@@ -105,6 +106,7 @@ export function GuidedDesignPage() {
   if (!activeDesign) return null
 
   const isMotorStep = currentStep === 'MOTOR'
+  const isReviewStep = currentStep === 'REVIEW'
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
@@ -136,12 +138,18 @@ export function GuidedDesignPage() {
               <ThreeCanvas />
             </main>
 
-            <aside className="w-56 shrink-0 bg-white border-l border-gray-100 overflow-y-auto">
-              <StepGuide
-                currentStep={currentStep}
-                canAdvance={canAdvance}
-                advanceReason={advanceReason}
-              />
+            <aside
+              className={`${isReviewStep ? 'w-80' : 'w-56'} shrink-0 bg-white border-l border-gray-100 overflow-y-auto`}
+            >
+              {isReviewStep ? (
+                <ReviewStep />
+              ) : (
+                <StepGuide
+                  currentStep={currentStep}
+                  canAdvance={canAdvance}
+                  advanceReason={advanceReason}
+                />
+              )}
             </aside>
           </div>
 
