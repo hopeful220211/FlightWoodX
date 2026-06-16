@@ -8,7 +8,6 @@ const ScoreSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Submission',
       required: true,
-      index: true,
     },
     dimensions: {
       design: { type: Number, required: true },
@@ -21,5 +20,8 @@ const ScoreSchema = new mongoose.Schema(
   },
   { timestamps: true },
 )
+
+// 一个提交一条分数，避免重复录分让排行榜不稳（多轮评分是 P1，届时再放开 + 取发布分）。
+ScoreSchema.index({ submissionId: 1 }, { unique: true })
 
 module.exports = mongoose.model('Score', ScoreSchema)

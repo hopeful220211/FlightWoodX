@@ -85,6 +85,10 @@ app.use('/api/programs', programRoutes)
 const meRoutes = require('./routes/me')
 app.use('/api/me', meRoutes)
 
+// 赛事路由（RFC-018 P0：list/detail/register/submit/leaderboard）
+const competitionRoutes = require('./routes/competitions')
+app.use('/api/competitions', competitionRoutes)
+
 // 上传文件静态服务（disk 存储驱动用；生产走对象存储 + CDN）。
 // 单独放开 CORP，允许前端跨源加载图片。
 const { UPLOAD_DIR } = require('./lib/storage')

@@ -60,3 +60,21 @@ exports.optionalAuthenticate = (req, res, next) => {
     return res.status(401).json({ error: '无效的令牌' })
   }
 }
+
+// 可选认证：带了有效 token 就填 req.userId，没带或无效则按未登录继续（不报错）。
+// 用于公开但"登录后能多看一点"的接口，如赛事详情的 isRegistered。
+exports.optionalAuth = (req, _res, next) => {
+  try {
+    const authHeader = req.headers.authorization
+    if (authHeader) {
+      const token = authHeader.split(' ')[1]
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        req.userId = decoded.userId
+      }
+    }
+  } catch (_) {
+    // 无效 token 一律按未登录处理，不阻断公开接口
+  }
+  next()
+}
