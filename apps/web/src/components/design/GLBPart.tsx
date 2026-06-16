@@ -1,7 +1,8 @@
 // src/components/design/GLBPart.tsx
 
 import { useGLTF } from '@react-three/drei';
-import { useEffect, useMemo, useRef, useCallback } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import type { PartInstance } from '../../types/design';
 import { useDesignStore } from '../../stores/designStore';
@@ -45,6 +46,40 @@ function GLBPartInner({ instance, partData, dimmed }: GLBPartInnerProps) {
 
   // 检查当前零件是否被选中
   const isSelected = selectedInstanceId === instance.instanceId;
+
+  // 落位动效（G2）：新零件以一次性「缩放弹入」拼上机身——克制、短促、尊重 reduced-motion。
+  const baseScale = (instance.scale ?? [1, 1, 1]) as [number, number, number];
+  const animDoneRef = useRef(false);
+  const animTRef = useRef(0);
+  const reduceMotion = useRef(
+    typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+  ).current;
+
+  // 入场前先缩小（reduced-motion 直接最终态），避免首帧闪现全尺寸
+  useLayoutEffect(() => {
+    if (!groupRef.current) return;
+    const k = reduceMotion ? 1 : 0.35;
+    groupRef.current.scale.set(baseScale[0] * k, baseScale[1] * k, baseScale[2] * k);
+    // 仅挂载时执行一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useFrame((_, delta) => {
+    if (reduceMotion || animDoneRef.current || !groupRef.current) return;
+    animTRef.current += delta;
+    const dur = 0.4;
+    const t = Math.min(animTRef.current / dur, 1);
+    // easeOutBack：轻微过冲，像「咔哒」一声落位
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    const eased = 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    const s = 0.35 + 0.65 * eased;
+    groupRef.current.scale.set(baseScale[0] * s, baseScale[1] * s, baseScale[2] * s);
+    if (t >= 1) {
+      groupRef.current.scale.set(baseScale[0], baseScale[1], baseScale[2]);
+      animDoneRef.current = true;
+    }
+  });
 
   // 预加载连接点数据（调用 hook 以填充缓存）
   usePartConnectors(partData.modelUrl);
@@ -187,7 +222,6 @@ function GLBPartInner({ instance, partData, dimmed }: GLBPartInnerProps) {
       ref={groupRef}
       position={instance.position}
       rotation={instance.rotation}
-      scale={instance.scale || [1, 1, 1]}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
