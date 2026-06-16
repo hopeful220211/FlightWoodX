@@ -123,8 +123,8 @@ export function GuidedDesignPage() {
         </div>
       ) : (
         <>
-          <div className="flex-1 flex min-h-0">
-            <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col md:flex-row min-h-0">
+            <aside className="order-2 md:order-none w-full md:w-64 shrink-0 bg-white border-t md:border-t-0 md:border-r border-gray-100 flex flex-col min-h-0 max-h-[34vh] md:max-h-none">
               <div className="flex-1 overflow-y-auto">
                 <StepPartPanel
                   currentStep={currentStep}
@@ -134,12 +134,14 @@ export function GuidedDesignPage() {
               </div>
             </aside>
 
-            <main className="flex-1 relative min-h-0 min-w-0">
+            <main className="order-1 md:order-none relative min-h-0 min-w-0 h-[42vh] shrink-0 md:h-auto md:flex-1">
               <ThreeCanvas />
             </main>
 
             <aside
-              className={`${isReviewStep ? 'w-80' : 'w-56'} shrink-0 bg-white border-l border-gray-100 overflow-y-auto`}
+              className={`${
+                isReviewStep ? 'flex flex-col w-full md:w-80' : 'hidden md:block md:w-56'
+              } order-3 md:order-none shrink-0 bg-white border-t md:border-t-0 md:border-l border-gray-100 overflow-y-auto max-h-[42vh] md:max-h-none`}
             >
               {isReviewStep ? (
                 <ReviewStep />
