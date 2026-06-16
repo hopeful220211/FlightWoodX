@@ -22,7 +22,23 @@ interface GLBPartProps {
 }
 
 export function GLBPart({ instance, partData: propPartData, dimmed = false }: GLBPartProps) {
+  // 守卫放在不含 hook 的外层：找不到零件数据直接渲染 null。
+  // 内层组件拿到「保证存在」的 partData，所有 hook 都无条件调用（满足 rules-of-hooks）。
   const partData = propPartData || partsData.find((p) => p.id === instance.partId);
+  if (!partData) {
+    console.error(`[GLBPart] Part data not found for partId: ${instance.partId}`);
+    return null;
+  }
+  return <GLBPartInner instance={instance} partData={partData} dimmed={dimmed} />;
+}
+
+interface GLBPartInnerProps {
+  instance: PartInstance;
+  partData: { id: string; name: string; modelUrl: string };
+  dimmed: boolean;
+}
+
+function GLBPartInner({ instance, partData, dimmed }: GLBPartInnerProps) {
   const setSelectedInstanceId = useDesignStore((state) => state.setSelectedInstanceId);
   const selectedInstanceId = useDesignStore((state) => state.selectedInstanceId);
   const groupRef = useRef<THREE.Group>(null);
@@ -30,29 +46,10 @@ export function GLBPart({ instance, partData: propPartData, dimmed = false }: GL
   // 检查当前零件是否被选中
   const isSelected = selectedInstanceId === instance.instanceId;
 
-  // 如果找不到 partData，渲染 null
-  if (!partData) {
-    console.error(`[GLBPart] Part data not found for partId: ${instance.partId}`);
-    return null;
-  }
-
   // 预加载连接点数据（调用 hook 以填充缓存）
   usePartConnectors(partData.modelUrl);
 
   const { scene } = useGLTF(partData.modelUrl);
-
-  // 调试日志
-  useEffect(() => {
-    const partInfo = partsData.find((p) => p.id === instance.partId);
-    if (partInfo) {
-      console.log(`[Debug] Scene graph for ${partInfo.name} (${instance.instanceId}):`, scene);
-      const childNames: string[] = [];
-      scene.traverse((obj) => {
-        childNames.push(`${obj.name || '(unnamed)'} (${obj.type})`);
-      });
-      console.log(`[Debug] Child objects in ${partInfo.name}:`, childNames);
-    }
-  }, [scene, instance.instanceId, instance.partId]);
 
   // 追踪指针位置来区分点击和拖拽
   const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
@@ -72,7 +69,6 @@ export function GLBPart({ instance, partData: propPartData, dimmed = false }: GL
 
     // 只有当指针移动距离小于阈值时才视为点击
     if (distance < CLICK_THRESHOLD) {
-      console.log('[Debug] Clicked on instance:', instance.instanceId);
       setSelectedInstanceId(instance.instanceId);
     }
 
@@ -89,6 +85,10 @@ export function GLBPart({ instance, partData: propPartData, dimmed = false }: GL
     // 深度克隆材质，避免影响其他实例，并应用木质效果
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
+        // 投射 / 接收阴影，增强立体感（配合 ThreeCanvas 的平行光 + 地面）
+        child.castShadow = true;
+        child.receiveShadow = true;
+
         const materials = Array.isArray(child.material) ? child.material : [child.material];
 
         const processedMaterials = materials.map((mat) => {

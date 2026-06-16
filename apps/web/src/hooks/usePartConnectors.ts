@@ -139,8 +139,7 @@ export function getCachedPartConnectors(modelUrl: string): ConnectorInfo[] {
     return connectors
   }
 
-  // 返回空数组，调用方应处理这种情况
-  console.warn(`[getCachedPartConnectors] Model not preloaded: ${modelUrl}`)
+  // 未预加载（调用方在 useFrame 等高频路径里会反复命中，故不打日志，静默返回空数组）
   return []
 }
 
@@ -150,23 +149,18 @@ export function getCachedPartConnectors(modelUrl: string): ConnectorInfo[] {
  * @param modelUrl - 模型文件路径
  */
 export const prefetchAndExtractConnectors = async (modelUrl: string) => {
-  if (connectorCache.has(modelUrl)) {
-    console.log(`[Prefetch] Already cached: ${modelUrl}`)
-    return
-  }
-  
-  console.log(`[Prefetch] Starting manual load for: ${modelUrl}`)
+  if (connectorCache.has(modelUrl)) return
+
   const loader = new GLTFLoader()
   const dracoLoader = new DRACOLoader()
   dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
   loader.setDRACOLoader(dracoLoader)
-  
+
   try {
     const gltf = await loader.loadAsync(modelUrl)
     const connectors = extractConnectorsFromScene(gltf.scene)
     connectorCache.set(modelUrl, connectors)
     sceneCache.set(modelUrl, gltf.scene)
-    console.log(`[Prefetch] Success! Cached ${connectors.length} connectors for ${modelUrl}`)
   } catch (error) {
     console.error(`[Prefetch] Failed to load ${modelUrl}:`, error)
   } finally {

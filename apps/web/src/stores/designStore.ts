@@ -311,9 +311,6 @@ export const useDesignStore = create<DesignState>()(
         }
 
         // 寻找第一个空闲且合法的连接点（遍历所有零件）
-        console.log('--- [Find Socket] Starting ---')
-        console.log(`[Find Socket] Current parts in scene: ${activeDesign.parts.length}`)
-
         // 首先确定新零件的连接器（优先 plug，如果没有则用 socket）
         const childConns = getCachedPartConnectors(partData.modelUrl)
         const childPlugConnector = childConns.find((c) => c.type === 'plug')
@@ -346,7 +343,6 @@ export const useDesignStore = create<DesignState>()(
 
           // 检查连接规则
           if (!isConnectionAllowed(partData.category, instPartData.category)) {
-            console.log(`[Find Socket] Skipping ${instPartData.category} - connection not allowed with ${partData.category}`)
             continue
           }
 
@@ -368,7 +364,6 @@ export const useDesignStore = create<DesignState>()(
             if (!occupiedSockets.has(key)) {
               targetParent = inst
               targetSocketId = connector.id
-              console.log(`[Find Socket] SUCCESS: Found available ${connector.type} on ${instPartData.category} part (child connector: ${childConnector.type})`)
               break
             }
           }
@@ -432,8 +427,6 @@ export const useDesignStore = create<DesignState>()(
             parentConnectorId: targetSocketId,
           },
         })
-
-        console.log(`[Add Part] Successfully snapped ${partData.name} to socket ${targetSocketId}`)
       },
     }),
     {
