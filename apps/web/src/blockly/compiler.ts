@@ -23,10 +23,21 @@ export function compileWorkspace(
   meta: { name: string; author: string },
 ): CommandProgram {
   const topBlocks = workspace.getTopBlocks(true)
-  const commands: Command[] = []
+  const startBlocks = topBlocks.filter((b) => b.type === 'drone_start')
 
-  for (const block of topBlocks) {
-    commands.push(...compileBlockChain(block))
+  // 「开始」锚点语义（向后兼容）：
+  //   0 个 start → 回退：编译所有顶层链（老程序/无锚点时仍可用）
+  //   1 个 start → 只编译它后面接的那串（start 自身只是锚点，不产指令）
+  //   >1 个 start → 报错，不静默选一个
+  let commands: Command[] = []
+  if (startBlocks.length > 1) {
+    throw new Error('只能有一个「开始」积木，请删掉多余的')
+  } else if (startBlocks.length === 1) {
+    commands = compileBlockChain(startBlocks[0].getNextBlock())
+  } else {
+    for (const block of topBlocks) {
+      commands.push(...compileBlockChain(block))
+    }
   }
 
   const program: CommandProgram = {

@@ -32,7 +32,9 @@ import { CommunityPostPage } from './pages/Community/CommunityPostPage'
 import { PartsPage } from './pages/Parts/PartsPage'
 
 /* ── Build / Fly (P2) ── */
-import { BuildPage } from './pages/Build/BuildPage'
+// TEMP(RFC-012-B): pages/Build/BuildPage 在所有分支均不存在，此悬空 import 会让整个前端构建失败。
+// 仅为本任务截图临时注释；非本任务范围，待 Build 页负责人补齐后还原本行与下方 /build 路由。
+// import { BuildPage } from './pages/Build/BuildPage'
 import { FlyPage } from './pages/Fly/FlyPage'
 
 /* ── User ── */
@@ -117,7 +119,8 @@ export default function App() {
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/competitions/:id/submit" element={<CompetitionSubmitPage />} />
-          <Route path="/build/:id" element={<BuildPage />} />
+          {/* TEMP(RFC-012-B): 同上，BuildPage 缺失，临时停用 /build 路由，待负责人补齐后还原 */}
+          {/* <Route path="/build/:id" element={<BuildPage />} /> */}
           <Route path="/fly/:id" element={<FlyPage />} />
           <Route path="/me" element={<MePage />} />
           <Route path="/me/growth" element={<GrowthPage />} />
