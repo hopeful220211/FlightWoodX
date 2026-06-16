@@ -13,6 +13,7 @@ import { ViolationBubble } from './components/ViolationBubble'
 import { checkBeforeAdd, checkDualMainboard } from '../../utils/realtimeChecks'
 import type { Violation } from '../../utils/realtimeChecks'
 import { MotorInstallStep } from './components/steps/MotorInstallStep'
+import { ReviewStep } from './components/steps/ReviewStep'
 import type { Part } from '../../types/design'
 
 export function GuidedDesignPage() {
@@ -20,6 +21,7 @@ export function GuidedDesignPage() {
   const activeDesign = useDesignStore(s => s.getActiveDesign())
   const advanceStep = useDesignStore(s => s.advanceStep)
   const goBackStep = useDesignStore(s => s.goBackStep)
+  const goToStep = useDesignStore(s => s.goToStep)
   const canAdvanceCheck = useDesignStore(s => s.canAdvance)
   const getStepAdvanceReason = useDesignStore(s => s.getStepAdvanceReason)
   const resetCurrentStep = useDesignStore(s => s.resetCurrentStep)
@@ -104,11 +106,12 @@ export function GuidedDesignPage() {
   if (!activeDesign) return null
 
   const isMotorStep = currentStep === 'MOTOR'
+  const isReviewStep = currentStep === 'REVIEW'
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
       <div className="shrink-0">
-        <StepProgressBar currentStep={currentStep} stepReached={stepReached} />
+        <StepProgressBar currentStep={currentStep} stepReached={stepReached} onStepClick={goToStep} />
         {!isMotorStep && <WeightBar />}
       </div>
 
@@ -120,8 +123,8 @@ export function GuidedDesignPage() {
         </div>
       ) : (
         <>
-          <div className="flex-1 flex min-h-0">
-            <aside className="w-64 shrink-0 bg-white border-r border-gray-100 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col md:flex-row min-h-0">
+            <aside className="order-2 md:order-none w-full md:w-64 shrink-0 bg-white border-t md:border-t-0 md:border-r border-gray-100 flex flex-col min-h-0 max-h-[34vh] md:max-h-none">
               <div className="flex-1 overflow-y-auto">
                 <StepPartPanel
                   currentStep={currentStep}
@@ -131,16 +134,24 @@ export function GuidedDesignPage() {
               </div>
             </aside>
 
-            <main className="flex-1 relative min-h-0 min-w-0">
+            <main className="order-1 md:order-none relative min-h-0 min-w-0 h-[42vh] shrink-0 md:h-auto md:flex-1">
               <ThreeCanvas />
             </main>
 
-            <aside className="w-56 shrink-0 bg-white border-l border-gray-100 overflow-y-auto">
-              <StepGuide
-                currentStep={currentStep}
-                canAdvance={canAdvance}
-                advanceReason={advanceReason}
-              />
+            <aside
+              className={`${
+                isReviewStep ? 'flex flex-col w-full md:w-80' : 'hidden md:block md:w-56'
+              } order-3 md:order-none shrink-0 bg-white border-t md:border-t-0 md:border-l border-gray-100 overflow-y-auto max-h-[42vh] md:max-h-none`}
+            >
+              {isReviewStep ? (
+                <ReviewStep />
+              ) : (
+                <StepGuide
+                  currentStep={currentStep}
+                  canAdvance={canAdvance}
+                  advanceReason={advanceReason}
+                />
+              )}
             </aside>
           </div>
 

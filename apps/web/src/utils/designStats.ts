@@ -1,5 +1,6 @@
 import type { PartInstance } from '../types/design'
 import type { PartCategory } from '@fwx/parts-schema'
+import { calculateWeight } from './realtimeChecks'
 
 export interface DesignStats {
   totalWeightG: number
@@ -13,11 +14,9 @@ function countByCategory(parts: PartInstance[], cat: PartCategory): number {
 }
 
 export function calculateStats(parts: PartInstance[]): DesignStats {
-  // Weight: rough estimate per part category
-  const weights: Record<string, number> = {
-    HUB: 10, ARM: 5, PLATE: 12, JOINT: 6, LAND: 7, DECO: 3, MOTOR: 4, PROP: 2,
-  }
-  const totalWeightG = parts.reduce((sum, p) => sum + (weights[p.category] ?? 8), 0)
+  // 重量口径与顶部重量条统一：复用 calculateWeight（真实零件重量），
+  // 不再用第二套按旧分类码的估算表（HUB/ARM… 与现行新分类对不上，会回退成 8g）。
+  const totalWeightG = calculateWeight(parts)
 
   // Thrust: each ARM implies one motor, ~20g thrust per motor
   const armCount = countByCategory(parts, 'landing')
@@ -50,8 +49,9 @@ export function calculateStats(parts: PartInstance[]): DesignStats {
 }
 
 export function getWeightLabel(g: number): { text: string; ok: boolean } {
-  if (g <= 60) return { text: '够轻', ok: true }
-  if (g <= 100) return { text: '适中', ok: true }
+  // 与重量条 35g 上限口径一致
+  if (g <= 25) return { text: '够轻', ok: true }
+  if (g <= 35) return { text: '适中', ok: true }
   return { text: '偏重，可能影响起飞', ok: false }
 }
 
