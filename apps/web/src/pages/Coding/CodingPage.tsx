@@ -16,8 +16,9 @@ import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
 import { useProgramStore } from '../../stores/programStore'
 
-// Register custom blocks + get toolbox XML
-import { DRONE_TOOLBOX } from '../../blockly/blocks'
+// 自定义主题 + JSON 工具箱 + 分类图标注入（内部已 import './blocks' 注册积木）
+import { DRONE_THEME, DRONE_TOOLBOX, applyCategoryIcons } from '../../blockly/blocklyTheme'
+import '../../blockly/blocklyTheme.css'
 import { compileWorkspace } from '../../blockly/compiler'
 import { EXAMPLE_PROGRAM_XML } from '../../blockly/exampleProgram'
 import { FlightPlanPanel } from './components/FlightPlanPanel'
@@ -53,6 +54,10 @@ export function CodingPage() {
   useEffect(() => {
     if (!blocklyDiv.current || workspaceRef.current) return
 
+    // 更强的磁吸半径，让两块积木更容易「啪」地连成一串
+    Blockly.config.snapRadius = 36
+    Blockly.config.connectingSnapRadius = 36
+
     const ws = Blockly.inject(blocklyDiv.current, {
       toolbox: DRONE_TOOLBOX,
       grid: { spacing: 20, length: 3, colour: '#e0efff', snap: true },
@@ -60,10 +65,12 @@ export function CodingPage() {
       trashcan: true,
       move: { scrollbars: true, drag: true, wheel: true },
       renderer: 'zelos',
-      theme: Blockly.Themes.Classic,
+      theme: DRONE_THEME,
     })
 
     workspaceRef.current = ws
+    // 给分类图标 chip 注入白色 glyph（toolbox 已同步构建完成）
+    applyCategoryIcons(blocklyDiv.current)
 
     // Live compile on workspace change
     const onWorkspaceChange = () => {
@@ -81,6 +88,8 @@ export function CodingPage() {
         const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(ws))
         setBlocklyXml(xml)
       } catch (err) {
+        // 编译失败：清空 IR，确保「运行」被拦住，不会拿旧程序去跑（如拖了第二个「开始」）
+        setIr(null)
         setCompileError(err instanceof Error ? err.message : '编译错误')
       }
     }
@@ -161,9 +170,10 @@ export function CodingPage() {
           <Button size="sm" onClick={handleRun} leftIcon={<Play size={14} />}>运行</Button>
         </div>
 
-        {/* Blockly inject target + empty-state guide overlay */}
+        {/* Blockly inject target + empty-state guide overlay。
+            coding-blockly-shell 把 blocklyTheme.css 的作用域限定在编程页。 */}
         <div className="relative flex-1 min-h-0">
-          <div ref={blocklyDiv} className="absolute inset-0" />
+          <div ref={blocklyDiv} className="coding-blockly-shell absolute inset-0" />
           {isEmpty && <EmptyCanvasGuide onLoadExample={handleLoadExample} />}
         </div>
       </div>

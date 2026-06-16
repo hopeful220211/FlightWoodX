@@ -170,29 +170,16 @@ Blockly.Blocks['drone_while'] = {
   },
 }
 
-// ===== Toolbox (XML) =====
+// ===== 5. 开始（程序锚点 / hat 块） =====
 
-export const DRONE_TOOLBOX = `
-<xml xmlns="https://developers.google.com/blockly/xml">
-  <category name="✈️ 飞行动作" colour="${COLOR_ACTION}">
-    <block type="drone_takeoff"><field name="ALTITUDE">100</field></block>
-    <block type="drone_land"></block>
-    <block type="drone_move"><field name="DIRECTION">forward</field><field name="DISTANCE">50</field><field name="SPEED">30</field></block>
-    <block type="drone_rotate"><field name="DEGREES">90</field></block>
-    <block type="drone_hover"><field name="DURATION">1000</field></block>
-    <block type="drone_led"><field name="R">0</field><field name="G">255</field><field name="B">0</field></block>
-  </category>
-  <category name="📡 传感器" colour="${COLOR_SENSOR}">
-    <block type="drone_condition"><field name="SENSOR">frontDistanceCm</field><field name="OP">&lt;</field><field name="VALUE">30</field></block>
-  </category>
-  <category name="🧠 逻辑" colour="${COLOR_LOGIC}">
-    <block type="drone_wait_until"></block>
-    <block type="drone_lock_axis"></block>
-    <block type="drone_if_else"></block>
-  </category>
-  <category name="🔄 循环" colour="${COLOR_LOOP}">
-    <block type="drone_repeat"><field name="TIMES">4</field></block>
-    <block type="drone_while"></block>
-  </category>
-</xml>
-`
+Blockly.Blocks['drone_start'] = {
+  init(this: Blockly.Block) {
+    this.appendDummyInput().appendField('▶ 开始')
+    // 只有 next、没有 previous → 是个顶部圆帽，只能当链首，不能被塞进别处
+    this.setNextStatement(true, null)
+    this.setStyle('start_blocks') // hat:'cap' + 颜色来自 DRONE_THEME
+    this.setTooltip('程序从这里开始')
+  },
+}
+
+// 注：工具箱（JSON）与主题已迁到 blockly/blocklyTheme.ts
