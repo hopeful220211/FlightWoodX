@@ -27,10 +27,15 @@ interface DroneState {
   ledColor: [number, number, number]
 }
 
+/** 无人机碰撞半径（cm）。贴合模型横向≈36cm 的宽松玩法半径。 */
+const DRONE_RADIUS_CM = 18
+
 /** Obstacle for collision detection */
 export interface SimObstacle {
   posCm: [number, number, number]
   radiusCm: number
+  /** 圆柱视觉高度（cm）；预留给未来「飞越障碍顶」玩法，本轮禁飞柱判定不使用。 */
+  heightCm?: number
 }
 
 export interface SimAdapterOptions {
@@ -52,6 +57,7 @@ export class SimAdapter implements DroneAdapter {
   private tickMs: number
   private events: string[] = []
   private commandIndex = 0
+  private collided = false
 
   constructor(options: SimAdapterOptions = {}) {
     this.speed = options.speed ?? 1
@@ -76,6 +82,10 @@ export class SimAdapter implements DroneAdapter {
     this.state.heading = 0
     this.state.isFlying = false
     this.state.lockedAxes.clear()
+    this.collided = false
+
+    // 先 emit 一帧初始状态（让 3D 无人机回到起点），emitTelemetry 内含起点碰撞检查
+    this.emitTelemetry()
 
     try {
       await this.runCommands(program.commands)
@@ -107,6 +117,11 @@ export class SimAdapter implements DroneAdapter {
 
   getState(): Readonly<DroneState> {
     return this.state
+  }
+
+  /** 本轮是否因撞击障碍而中止（区别于用户手动停止）。 */
+  hasCollided(): boolean {
+    return this.collided
   }
 
   // ===== Command execution =====
@@ -154,6 +169,7 @@ export class SimAdapter implements DroneAdapter {
         }
 
         await this.animateMove(dx, dy, dz, speed)
+        if (this.aborted) break // 撞机/停止：不记该指令为完成
         this.events.push(`move ${direction} ${distanceCm}cm`)
         break
       }
@@ -299,7 +315,7 @@ export class SimAdapter implements DroneAdapter {
   }
 
   private getFrontDistance(): number {
-    const [x, y, z] = this.state.pos
+    const [x, , z] = this.state.pos
     const rad = (this.state.heading * Math.PI) / 180
     const fwd = [Math.sin(rad), 0, Math.cos(rad)]
 
@@ -324,6 +340,26 @@ export class SimAdapter implements DroneAdapter {
       frontDistanceCm: this.getFrontDistance(),
     }
     this.hooks.onTelemetry?.(t)
+    // 碰撞检测：覆盖所有有遥测的阶段；撞机后置 aborted 让各循环自然退出
+    if (!this.collided && this.checkCollision()) {
+      this.collided = true
+      this.aborted = true
+      this.events.push('💥 撞到障碍物')
+    }
+  }
+
+  /**
+   * 碰撞判定：障碍为「地面禁飞柱」，无人机 XZ 水平进入柱体即撞（本轮 MVP）。
+   * 「飞越障碍顶」属高级玩法，本轮延后（届时按 obstacle.heightCm 做 Y 区间判定）。
+   */
+  private checkCollision(): boolean {
+    const [x, , z] = this.state.pos
+    for (const obs of this.obstacles) {
+      const dx = obs.posCm[0] - x
+      const dz = obs.posCm[2] - z
+      if (Math.sqrt(dx * dx + dz * dz) < obs.radiusCm + DRONE_RADIUS_CM) return true
+    }
+    return false
   }
 
   private sleep(ms: number): Promise<void> {
