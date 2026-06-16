@@ -675,3 +675,91 @@ export async function getCourses(): Promise<ApiResponse<Course[]>> {
 export async function getCourse(courseId: string): Promise<ApiResponse<Course>> {
   return apiFetch<Course>(`/courses/${courseId}`)
 }
+
+// ===== 社区（RFC-017）=====
+// 展示 DTO 在前端本地组合；社交原语契约来自 @fwx/shared，不在此重定义。
+
+export interface CommunityAuthor {
+  id: string
+  username: string
+  avatar?: string
+}
+
+export interface CommunityPostCard {
+  id: string
+  title: string
+  description: string
+  author: CommunityAuthor | null
+  projectId: string
+  coverUrl?: string
+  forkFromId?: string
+  likeCount: number
+  likedByMe: boolean
+  createdAt: string
+}
+
+export interface CommunityPostDetail {
+  id: string
+  title: string
+  description: string
+  author: CommunityAuthor | null
+  project: { id: string; name: string; coverUrl?: string; designId?: string; programId?: string } | null
+  forkFrom: { postId: string; title: string; authorName?: string } | null
+  likeCount: number
+  likedByMe: boolean
+  createdAt: string
+}
+
+export interface CommunityListResult {
+  items: CommunityPostCard[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface CommunityListQuery {
+  page?: number
+  pageSize?: number
+  sort?: 'new' | 'hot'
+  q?: string
+}
+
+/** 社区作品分页列表（公域，游客可看） */
+export async function getCommunityPosts(query: CommunityListQuery = {}): Promise<ApiResponse<CommunityListResult>> {
+  const params = new URLSearchParams()
+  if (query.page) params.set('page', String(query.page))
+  if (query.pageSize) params.set('pageSize', String(query.pageSize))
+  if (query.sort) params.set('sort', query.sort)
+  if (query.q) params.set('q', query.q)
+  const qs = params.toString()
+  return apiFetch<CommunityListResult>(`/community/posts${qs ? `?${qs}` : ''}`)
+}
+
+/** 社区作品详情 */
+export async function getCommunityPost(id: string): Promise<ApiResponse<CommunityPostDetail>> {
+  const res = await apiFetch<{ post: CommunityPostDetail }>(`/community/posts/${id}`)
+  if (res.success && res.data) {
+    const post = (res.data as unknown as { post?: CommunityPostDetail }).post ?? (res.data as unknown as CommunityPostDetail)
+    return { ...res, data: post as CommunityPostDetail }
+  }
+  return res as ApiResponse<CommunityPostDetail>
+}
+
+/** 发布作品到社区（仅 public Project，幂等） */
+export async function createCommunityPost(data: {
+  projectId: string
+  title?: string
+  description?: string
+}): Promise<ApiResponse<{ post: { id: string; projectId: string; title: string }; alreadyPublished?: boolean }>> {
+  return apiFetch(`/community/posts`, { method: 'POST', body: JSON.stringify(data) })
+}
+
+/** 点赞（幂等） */
+export async function likeCommunityPost(id: string): Promise<ApiResponse<{ likeCount: number; likedByMe: boolean }>> {
+  return apiFetch(`/community/posts/${id}/like`, { method: 'POST' })
+}
+
+/** 取消点赞（幂等） */
+export async function unlikeCommunityPost(id: string): Promise<ApiResponse<{ likeCount: number; likedByMe: boolean }>> {
+  return apiFetch(`/community/posts/${id}/like`, { method: 'DELETE' })
+}
