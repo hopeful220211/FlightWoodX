@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Design, PartInstance } from '../types/design'
 import type { BuildStep } from '@fwx/parts-schema'
-import { canAdvanceStep, getNextStep, getPrevStep, STEP_CATEGORIES } from '@fwx/parts-schema'
+import { canAdvanceStep, getNextStep, getPrevStep, STEP_CATEGORIES, BUILD_STEPS } from '@fwx/parts-schema'
 import { STORAGE_KEYS } from '../constants/storageKeys'
 import { partsData } from '../data/parts'
 import { getCachedPartConnectors } from '../hooks/usePartConnectors'
@@ -30,6 +30,8 @@ interface DesignState {
   // --- Guided build flow ---
   advanceStep: () => boolean
   goBackStep: () => boolean
+  /** 直接跳到某个「已到达」的步骤（点击顶部进度条上已完成/当前的步骤）。锁定的未来步骤不允许。 */
+  goToStep: (step: BuildStep) => boolean
   canAdvance: () => boolean
   getStepAdvanceReason: () => string | undefined
   resetCurrentStep: () => void
@@ -192,6 +194,24 @@ export const useDesignStore = create<DesignState>()(
           designs: state.designs.map(d =>
             d.id === design.id
               ? { ...d, currentStep: prev, updatedAt: new Date().toISOString() }
+              : d
+          ),
+        }))
+        return true
+      },
+
+      goToStep: (step) => {
+        const design = get().getActiveDesign()
+        if (!design || design.buildMode !== 'guided') return false
+        const targetIdx = BUILD_STEPS.indexOf(step)
+        if (targetIdx < 0) return false
+        // 只允许跳到「已到达」的步骤（已完成或当前），锁定的未来步骤不允许
+        if (targetIdx > design.stepReached) return false
+        if (step === design.currentStep) return true
+        set(state => ({
+          designs: state.designs.map(d =>
+            d.id === design.id
+              ? { ...d, currentStep: step, updatedAt: new Date().toISOString() }
               : d
           ),
         }))

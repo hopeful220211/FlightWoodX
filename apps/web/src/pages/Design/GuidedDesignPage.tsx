@@ -20,6 +20,7 @@ export function GuidedDesignPage() {
   const activeDesign = useDesignStore(s => s.getActiveDesign())
   const advanceStep = useDesignStore(s => s.advanceStep)
   const goBackStep = useDesignStore(s => s.goBackStep)
+  const goToStep = useDesignStore(s => s.goToStep)
   const canAdvanceCheck = useDesignStore(s => s.canAdvance)
   const getStepAdvanceReason = useDesignStore(s => s.getStepAdvanceReason)
   const resetCurrentStep = useDesignStore(s => s.resetCurrentStep)
@@ -108,7 +109,7 @@ export function GuidedDesignPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
       <div className="shrink-0">
-        <StepProgressBar currentStep={currentStep} stepReached={stepReached} />
+        <StepProgressBar currentStep={currentStep} stepReached={stepReached} onStepClick={goToStep} />
         {!isMotorStep && <WeightBar />}
       </div>
 
