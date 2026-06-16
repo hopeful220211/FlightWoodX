@@ -37,6 +37,7 @@ import { FlyPage } from './pages/Fly/FlyPage'
 
 /* ── User ── */
 import { MePage } from './pages/Me/MePage'
+import { GrowthPage } from './pages/Me/Growth/GrowthPage'
 import { ProfilePage } from './pages/Profile/ProfilePage'
 
 /* ── Existing ── */
@@ -47,6 +48,8 @@ import { ARFlightPage } from './pages/ARFlight/ARFlightPage'
 
 /* ── Admin ── */
 import { AdminLayout } from './pages/Admin/AdminLayout'
+import { AdminOverviewPage } from './pages/Admin/pages/OverviewPage'
+import { AdminUsersPage, AdminCoursesPage, AdminPartsPage, AdminAuditPage } from './pages/Admin/pages/ModulePlaceholder'
 
 /* ── Stores / Init ── */
 import { partsData } from './data/parts'
@@ -77,10 +80,13 @@ export default function App() {
 
       {/* ── Admin (role-gated) ── */}
       <Route element={<RoleRoute roles={['admin']} />}>
-        <Route path="/admin" element={<AdminLayout />} />
-        <Route path="/admin/competitions" element={<AdminLayout />} />
-        <Route path="/admin/scoring" element={<AdminLayout />} />
-        <Route path="/admin/moderation" element={<AdminLayout />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminOverviewPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="courses" element={<AdminCoursesPage />} />
+          <Route path="parts" element={<AdminPartsPage />} />
+          <Route path="audit" element={<AdminAuditPage />} />
+        </Route>
       </Route>
 
       {/* ── Editor Layout (full-screen, step switcher) ── */}
@@ -114,6 +120,7 @@ export default function App() {
           <Route path="/build/:id" element={<BuildPage />} />
           <Route path="/fly/:id" element={<FlyPage />} />
           <Route path="/me" element={<MePage />} />
+          <Route path="/me/growth" element={<GrowthPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/learn" element={<LearnPage />} />
           <Route path="/design/export-preview/:designId" element={<ExportPreviewPage />} />

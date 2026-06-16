@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, User, LogOut, LayoutDashboard, Trophy, Users2, Puzzle, ChevronDown } from 'lucide-react'
+import { Menu, X, User, LogOut, LayoutDashboard, Trophy, Users2, ChevronDown, Sparkles } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '../common/Button'
 import { useAuthStore } from '../../stores/authStore'
@@ -7,17 +7,17 @@ import { useAuthStore } from '../../stores/authStore'
 /* ── 公共导航（未登录也可见） ── */
 const publicItems = [
   { to: '/', label: '首页', exact: true },
-  { to: '/competitions', label: '赛事' },
   { to: '/community', label: '社区' },
+  { to: '/competitions', label: '赛事' },
   { to: '/parts', label: '零件库' },
 ] as const
 
 /* ── 登录后主导航 ── */
 const authedItems = [
   { to: '/dashboard', label: '工作台', icon: LayoutDashboard },
-  { to: '/projects', label: '我的项目', icon: Puzzle },
-  { to: '/competitions', label: '赛事', icon: Trophy },
   { to: '/community', label: '社区', icon: Users2 },
+  { to: '/competitions', label: '赛事', icon: Trophy },
+  { to: '/me/growth', label: '成长', icon: Sparkles },
 ] as const
 
 export function Navbar() {
@@ -57,12 +57,19 @@ export function Navbar() {
 
   const handleLogout = () => { logout(); setUserMenuOpen(false); setMobileOpen(false) }
 
-  const linkCls = (active: boolean) =>
-    `inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-      active
+  // 字重随选中态（未选中细体 / 选中粗体）；颜色随导航栏背景：
+  // 透明态（悬在 Hero 上）用白字；滚动成白底/非首页时用深色保证可读。
+  const linkCls = (active: boolean, onGlass: boolean) => {
+    const weight = active ? 'font-semibold' : 'font-light'
+    const color = onGlass
+      ? active
         ? 'bg-sky-100 text-sky-700'
         : 'text-ink-600 hover:bg-sky-50 hover:text-sky-700'
-    }`
+      : active
+        ? 'text-white'
+        : 'text-white/75 hover:text-white'
+    return `inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${weight} ${color}`
+  }
 
   const navItems = isAuthenticated ? authedItems : publicItems
 
@@ -95,7 +102,7 @@ export function Navbar() {
                 key={item.to}
                 to={item.to}
                 end={'exact' in item && item.exact}
-                className={({ isActive }) => linkCls(isActive)}
+                className={({ isActive }) => linkCls(isActive, scrolled)}
               >
                 {'icon' in item && <item.icon size={16} />}
                 {item.label}
