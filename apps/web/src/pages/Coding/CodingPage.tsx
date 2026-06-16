@@ -109,6 +109,11 @@ export function CodingPage() {
         if (topBlocks > 0 && xml !== lastXmlRef.current) {
           lastXmlRef.current = xml
           useProgramStore.getState().setProgram(xml, program)
+        } else if (topBlocks === 0) {
+          // 画布被清空：同步清掉本地程序，免得项目详情页预览 / 仿真还读到旧程序。
+          // （挂载时若恢复了已存程序，topBlocks>0 走上面分支，不会误清。）
+          lastXmlRef.current = ''
+          if (useProgramStore.getState().commandProgram) useProgramStore.getState().clearProgram()
         }
       } catch (err) {
         // 编译失败：清空 IR，确保「运行」被拦住，不会拿旧程序去跑（如拖了第二个「开始」）
