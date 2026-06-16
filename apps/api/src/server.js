@@ -69,6 +69,10 @@ app.use('/api/designs', designRoutes)
 const projectRoutes = require('./routes/projects')
 app.use('/api/projects', projectRoutes)
 
+// 社区路由（RFC-017 — 发布/列表/详情/点赞，社交原语走共享 Reaction 契约）
+const communityRoutes = require('./routes/community')
+app.use('/api/community', communityRoutes)
+
 // 无人机设计路由（2.0 — 设计器产物持久化）
 const droneDesignRoutes = require('./routes/droneDesigns')
 app.use('/api/drone-designs', droneDesignRoutes)
