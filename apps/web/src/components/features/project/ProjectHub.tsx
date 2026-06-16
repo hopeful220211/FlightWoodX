@@ -12,7 +12,7 @@ import { useCallback, useRef, useState, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, Pencil, Code2, Play, Rocket, Share2, Download, Settings, GitBranch, Trophy,
+  ArrowLeft, Pencil, Code2, Play, Rocket, Share2, Download, Settings, GitBranch, Trophy, Send,
   Check, X, Loader2, AlertCircle, WifiOff, type LucideIcon,
 } from 'lucide-react'
 import { PageContainer } from '../../layout/PageContainer'
@@ -26,6 +26,7 @@ import { useProjectHub } from './useProjectHub'
 import { useUpdateProject } from '../../../hooks/useProjects'
 import { OneClickFlyModal } from './OneClickFlyModal'
 import { ProjectSettingsModal } from './ProjectSettingsModal'
+import { PublishModal } from './PublishModal'
 
 const CARD = 'rounded-xl bg-white shadow-[0_2px_18px_-8px_rgba(23,74,126,0.16)] ring-1 ring-sky-100/80'
 
@@ -48,6 +49,7 @@ export function ProjectHub() {
 
   const [flyOpen, setFlyOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [publishOpen, setPublishOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState('')
 
@@ -190,6 +192,7 @@ export function ProjectHub() {
               <Settings size={18} />
             </button>
           )}
+          <Button size="sm" variant="outline" leftIcon={<Send size={14} />} onClick={() => setPublishOpen(true)}>发布到社区</Button>
           <Button size="sm" variant="outline" leftIcon={<Share2 size={14} />} onClick={() => toast.push('info', '分享 / 嵌入即将开放（M5.5）')}>分享</Button>
           <button
             type="button"
@@ -301,6 +304,15 @@ export function ProjectHub() {
           onClose={() => setSettingsOpen(false)}
           projectId={id}
           name={hub.name}
+        />
+      )}
+
+      {publishOpen && (
+        <PublishModal
+          open
+          onClose={() => setPublishOpen(false)}
+          projectId={id}
+          defaultTitle={hub.name}
         />
       )}
     </PageContainer>
