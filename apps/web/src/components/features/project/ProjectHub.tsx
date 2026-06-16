@@ -191,7 +191,18 @@ export function ProjectHub() {
             </button>
           )}
           <Button size="sm" variant="outline" leftIcon={<Share2 size={14} />} onClick={() => toast.push('info', '分享 / 嵌入即将开放（M5.5）')}>分享</Button>
-          <Button size="sm" variant="outline" leftIcon={<Download size={14} />} onClick={() => toast.push('info', '建造导出即将开放（M8）')}>导出</Button>
+          <Button
+            size="sm"
+            variant="primary"
+            leftIcon={<Download size={14} />}
+            onClick={() => {
+              // 接现成的设计 CAD 导出（方案 A）：有设计就跳导出预览页，没有就提示先做设计
+              if (hub.design) nav(`/design/export-preview/${hub.design.id}`)
+              else toast.push('info', '先完成你的设计，才能导出 CAD 文件')
+            }}
+          >
+            导出
+          </Button>
         </div>
       </div>
 
