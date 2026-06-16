@@ -63,13 +63,13 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
               <div
                 key={part.id}
                 onClick={() => onPartClick(part)}
-                className="rounded-lg p-2 cursor-pointer hover:bg-white hover:border hover:border-gray-200 hover:shadow-sm transition-all"
+                className="group rounded-xl bg-white ring-1 ring-gray-100 p-2 cursor-pointer transition-all duration-200 hover:ring-sky-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               >
                 {part.thumbnailUrl ? (
                   <img
                     src={part.thumbnailUrl}
                     alt={part.name}
-                    className="w-full aspect-square object-contain bg-transparent rounded"
+                    className="w-full aspect-square object-contain bg-gray-50 rounded-lg"
                     loading="lazy"
                     draggable
                     onDragStart={(e) => {
@@ -93,7 +93,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                     3D
                   </div>
                 )}
-                <p className="text-xs text-gray-600 mt-1 truncate text-center">{part.name}</p>
+                <p className="text-xs text-gray-600 mt-1.5 truncate text-center group-hover:text-sky-700">{part.name}</p>
               </div>
             ))}
           </div>
