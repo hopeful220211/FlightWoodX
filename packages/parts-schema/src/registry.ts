@@ -165,3 +165,48 @@ export function getPartsForStep(step: BuildStep): PartEntry[] {
   const categories = STEP_CATEGORIES[step]
   return PART_REGISTRY.filter(p => categories.includes(p.category))
 }
+
+// === Category display (single source of truth for category names) ===
+
+/** 分类 → 展示名（中/英）。零件库页面、详情页、未来板块统一消费，禁止在 web/api 重写。 */
+export const CATEGORY_LABELS: Record<PartCategory, { zh: string; en: string }> = {
+  mainboard: { zh: '主板', en: 'Mainboard' },
+  landing: { zh: '起落架', en: 'Landing' },
+  guard: { zh: '保护板', en: 'Guard' },
+  joint: { zh: '装饰件', en: 'Joint' },
+  MOTOR: { zh: '电机', en: 'Motor' },
+  PROP: { zh: '螺旋桨', en: 'Propeller' },
+}
+
+export interface PartCategoryInfo {
+  category: PartCategory
+  /** 中文展示名 */
+  label: string
+  /** registry 中该类零件数量 */
+  count: number
+}
+
+export function getPartCategoryInfo(category: PartCategory): PartCategoryInfo {
+  return { category, label: CATEGORY_LABELS[category].zh, count: getPartsByCategory(category).length }
+}
+
+/** registry 中实际有零件的类别（保留首次出现顺序；当前为 4 类，MOTOR/PROP 暂空不返回）。 */
+export function getPopulatedCategories(): PartCategory[] {
+  const seen = new Set<PartCategory>()
+  const ordered: PartCategory[] = []
+  for (const p of PART_REGISTRY) {
+    if (!seen.has(p.category)) {
+      seen.add(p.category)
+      ordered.push(p.category)
+    }
+  }
+  return ordered
+}
+
+/** 某类别所属的搭建步骤（用于取 STEP_INFO 的说明文案）；无则返回 null。 */
+export function getCategoryStep(category: PartCategory): BuildStep | null {
+  for (const step of BUILD_STEPS) {
+    if (STEP_CATEGORIES[step].includes(category)) return step
+  }
+  return null
+}

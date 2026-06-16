@@ -30,6 +30,7 @@ import { LeaderboardPage } from './pages/Competitions/LeaderboardPage'
 import { CommunityPage } from './pages/Community/CommunityPage'
 import { CommunityPostPage } from './pages/Community/CommunityPostPage'
 import { PartsPage } from './pages/Parts/PartsPage'
+import { PartDetailPage } from './pages/Parts/PartDetailPage'
 
 /* ── Build / Fly (P2) ── */
 // TEMP(RFC-012-B): pages/Build/BuildPage 在所有分支均不存在，此悬空 import 会让整个前端构建失败。
@@ -111,6 +112,7 @@ export default function App() {
         <Route path="/community" element={<CommunityPage />} />
         <Route path="/community/:postId" element={<CommunityPostPage />} />
         <Route path="/parts" element={<PartsPage />} />
+        <Route path="/parts/:id" element={<PartDetailPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
 
         {/* Protected (guests allowed) */}
