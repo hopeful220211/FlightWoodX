@@ -191,18 +191,19 @@ export function ProjectHub() {
             </button>
           )}
           <Button size="sm" variant="outline" leftIcon={<Share2 size={14} />} onClick={() => toast.push('info', '分享 / 嵌入即将开放（M5.5）')}>分享</Button>
-          <Button
-            size="sm"
-            variant="primary"
-            leftIcon={<Download size={14} />}
+          <button
+            type="button"
             onClick={() => {
               // 接现成的设计 CAD 导出（方案 A）：有设计就跳导出预览页，没有就提示先做设计
               if (hub.design) nav(`/design/export-preview/${hub.design.id}`)
               else toast.push('info', '先完成你的设计，才能导出 CAD 文件')
             }}
+            // 配色与「一键试飞」一致（from-sky-600 to-sky-700），与「分享/设置」的描边区分
+            className="touch-target inline-flex min-h-[44px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-gradient-to-br from-sky-600 to-sky-700 px-3 text-sm font-semibold text-white shadow-sm transition hover:from-sky-700 hover:to-sky-800 active:translate-y-[1px] active:scale-95"
           >
+            <Download size={14} />
             导出
-          </Button>
+          </button>
         </div>
       </div>
 
