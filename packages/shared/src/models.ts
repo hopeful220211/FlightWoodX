@@ -137,11 +137,27 @@ export interface Competition {
 
 // ===== Submission（参赛提交） =====
 
+/**
+ * 提交 / 评分状态机（RFC-016 §2.6）：杜绝"提交即有分"。
+ * submitted → running → scored → reviewed → published；任意步可 → rejected。
+ */
+export type SubmissionStatus =
+  | 'submitted'
+  | 'running'
+  | 'scored'
+  | 'reviewed'
+  | 'published'
+  | 'rejected';
+
 export interface Submission {
   id: string;
   competitionId: string;
   userId: string;
   projectId: string;
+  /** 提交状态（RFC-016 §2.6 状态机）。 */
+  status: SubmissionStatus;
+  /** 关联的仿真运行 id（评分 / 回放数据源，RFC-015）。 */
+  runId?: string;
   submittedAt: IsoDateString;
   /** 仿真回放数据的 URL（大对象走对象存储，不入库）。 */
   simReplayUrl?: string;
