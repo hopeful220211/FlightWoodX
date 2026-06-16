@@ -21,11 +21,11 @@ export function CommunityPage() {
     <PageContainer className="py-8 space-y-6">
       <PageHeader
         title="社区作品库"
-        description="浏览、点赞、Fork 其他创作者的无人机作品"
       />
 
       {/* Search */}
-      <div className="max-w-md">
+      <div className="relative max-w-md">
+        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400" />
         <Input placeholder="搜索作品..." className="pl-10" />
       </div>
 

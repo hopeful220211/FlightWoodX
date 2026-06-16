@@ -29,8 +29,8 @@ export function StepGuide({ currentStep, canAdvance, advanceReason }: StepGuideP
         <p className="text-sm text-gray-600 mt-1">{info.description}</p>
       </div>
 
-      <div className="bg-tech-50 border border-tech-100 rounded-lg p-3">
-        <p className="text-xs text-tech-700">{help}</p>
+      <div className="bg-sky-50 border border-sky-100 rounded-lg p-3">
+        <p className="text-xs text-sky-700">{help}</p>
       </div>
 
       {!canAdvance && advanceReason && (

@@ -14,7 +14,7 @@ export function Badge({ variant, className, children }: BadgeProps) {
       ? 'bg-success/15 text-success ring-success/20'
       : variant === 'draft'
         ? 'bg-warning/15 text-warning ring-warning/20'
-        : 'bg-tech-500/15 text-tech-700 ring-tech-400/25 dark:text-tech-200'
+        : 'bg-sky-500/15 text-sky-700 ring-sky-400/25 dark:text-sky-200'
 
   return (
     <span

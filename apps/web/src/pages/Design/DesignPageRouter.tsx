@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDesignStore } from '../../stores/designStore'
+import { useDesignSync } from '../../hooks/useDesignSync'
 import { DesignPage } from './DesignPage'
 import { GuidedDesignPage } from './GuidedDesignPage'
 import { WelcomeEmptyState } from './components/WelcomeEmptyState'
@@ -19,8 +20,15 @@ export function DesignPageRouter() {
   const activeDesign = useDesignStore(s => s.getActiveDesign())
   const createDesign = useDesignStore(s => s.createDesign)
   const setActiveDesignId = useDesignStore(s => s.setActiveDesignId)
+  const { loadFromServer } = useDesignSync()
   const [showHistory, setShowHistory] = useState(false)
   const [autoResumed, setAutoResumed] = useState(false)
+
+  // 进入设计页：从账号拉回设计合并进本地（跨设备/新设备还原）。
+  // 仅认领数据，自动新建空设计要用户点击，不会和这里抢跑。
+  useEffect(() => {
+    loadFromServer()
+  }, [loadFromServer])
 
   // Auto-resume: if user has exactly 1 unfinished design and no active selection, resume it
   useEffect(() => {

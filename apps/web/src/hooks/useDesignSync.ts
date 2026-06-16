@@ -2,36 +2,19 @@
  * useDesignSync — 将 designStore (localStorage) 的设计同步到后端。
  *
  * 策略：localStorage 是主工作区（即时保存、离线可用），后端是持久备份。
- * - 保存时：debounced PATCH 到后端
- * - 首次加载：如果后端有设计但本地没有，拉到本地
+ * - 保存时：debounced PUT 幂等 upsert（按 localId=design.id），存整份 Design 快照
+ * - 进入设计页：loadFromServer 把账号里的设计拉回本地（跨设备/新设备还原）
  * - 游客模式不同步
  */
 import { useCallback, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { createDroneDesign, updateDroneDesign } from '../utils/api'
+import { getDroneDesigns, putDroneDesign } from '../utils/api'
 import { useAuthStore } from '../stores/authStore'
+import { useDesignStore } from '../stores/designStore'
 import type { Design } from '../types/design'
 
-/** Map from localId → serverId, persisted in sessionStorage */
-const ID_MAP_KEY = 'design-id-map'
-
-function getIdMap(): Record<string, string> {
-  try {
-    return JSON.parse(sessionStorage.getItem(ID_MAP_KEY) || '{}') as Record<string, string>
-  } catch {
-    return {}
-  }
-}
-
-function setIdMap(localId: string, serverId: string) {
-  const map = getIdMap()
-  map[localId] = serverId
-  sessionStorage.setItem(ID_MAP_KEY, JSON.stringify(map))
-}
-
 /**
- * Returns a `saveToServer` function you can call after the design store updates.
- * It will create or update the DroneDesign on the backend.
+ * Returns `saveToServer`（debounced 幂等保存）和 `loadFromServer`（跨设备回填）。
  */
 export function useDesignSync() {
   const token = useAuthStore(s => s.token)
@@ -39,33 +22,13 @@ export function useDesignSync() {
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
 
   const saveMutation = useMutation({
-    mutationFn: async (design: Design) => {
-      const serverId = getIdMap()[design.id]
-
-      const payload = {
+    mutationFn: async (design: Design) =>
+      putDroneDesign({
+        localId: design.id, // design.id 稳定，跨设备同一份设计始终命中同一条后端记录
         name: design.name,
-        parts: design.parts,
+        designData: design, // 整份快照，原样还原
         weightG: design.safetyCheck?.totalWeightG ?? 0,
-        params: {
-          hubType: 'default',
-          layer: 'single' as const,
-          armCount: design.parts.filter(p => p.category === 'landing').length,
-          armLengthMm: 100,
-        },
-      }
-
-      if (serverId) {
-        // Update existing
-        await updateDroneDesign(serverId, payload)
-      } else {
-        // Create new
-        const res = await createDroneDesign({ ...payload, localId: design.id })
-        if (res.success && res.data) {
-          const sid = res.data.id || (res.data as unknown as { _id: string })._id
-          if (sid) setIdMap(design.id, sid)
-        }
-      }
-    },
+      }),
   })
 
   /** Debounced save — call this whenever the design changes. */
@@ -82,5 +45,20 @@ export function useDesignSync() {
     [isGuest, token, saveMutation],
   )
 
-  return { saveToServer, isSaving: saveMutation.isPending }
+  /** 从账号拉回设计并合并进本地（进入设计页时调用一次）。 */
+  const loadFromServer = useCallback(async () => {
+    if (isGuest || !token) return
+    const res = await getDroneDesigns()
+    if (!res.success || !res.data) return
+    const designs = res.data
+      .map(r => r.designData)
+      .filter((d): d is Design =>
+        !!d && typeof d === 'object' && typeof (d as Design).id === 'string' && Array.isArray((d as Design).parts),
+      )
+    if (designs.length > 0) {
+      useDesignStore.getState().importServerDesigns(designs)
+    }
+  }, [isGuest, token])
+
+  return { saveToServer, loadFromServer, isSaving: saveMutation.isPending }
 }

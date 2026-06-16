@@ -1,3 +1,5 @@
+import type { CommandProgram } from '@fwx/shared'
+
 // API 基础配置
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -53,7 +55,7 @@ function getToken(): string | null {
 /**
  * 通用的 fetch 封装
  */
-async function apiFetch<T = any>(
+export async function apiFetch<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
@@ -403,9 +405,30 @@ export async function updateProject(
   projectId: string,
   data: Partial<{ name: string; designId: string; programId: string; coverUrl: string; visibility: string }>,
 ): Promise<ApiResponse<ProjectData>> {
-  return apiFetch<ProjectData>(`/projects/${projectId}`, {
+  const res = await apiFetch<{ project: ProjectData }>(`/projects/${projectId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
+  })
+  // 后端返回 { project }，与 getProject/createProject 一致地解包，否则上层拿到的是包裹层而非项目本体
+  if (res.success && res.data) {
+    const project = (res.data as unknown as { project?: ProjectData }).project ?? res.data
+    return { ...res, data: project as ProjectData }
+  }
+  return res as ApiResponse<ProjectData>
+}
+
+/**
+ * 上传项目封面（当前阶段无人机定格图）。
+ * 直接传图片二进制（canvas.toBlob 的 Blob 当 body），不用 FormData。
+ */
+export async function uploadProjectCover(
+  projectId: string,
+  blob: Blob,
+): Promise<ApiResponse<{ coverUrl: string }>> {
+  return apiFetch<{ coverUrl: string }>(`/projects/${projectId}/cover`, {
+    method: 'POST',
+    headers: { 'Content-Type': blob.type || 'image/webp' },
+    body: blob,
   })
 }
 
@@ -413,6 +436,43 @@ export async function updateProject(
 export async function deleteProject(projectId: string): Promise<ApiResponse> {
   return apiFetch(`/projects/${projectId}`, {
     method: 'DELETE',
+  })
+}
+
+// ============= 我的成就统计 / 活动 API =============
+
+export interface MeStats {
+  projectCount: number
+  studyMinutes: number
+  designMinutes: number
+  lessonsCompleted: number
+  totalLessons: number
+  flightCount: number
+}
+
+/** 我的成就统计（工作台顶部成就区） */
+export async function getMyStats(): Promise<ApiResponse<MeStats>> {
+  return apiFetch<MeStats>('/me/stats')
+}
+
+/** 上报学习/设计活跃时长（秒，后端累加；单次上限由后端限制为 3600） */
+export async function postActivity(
+  type: 'study' | 'design',
+  seconds: number,
+): Promise<ApiResponse<{ studyMinutes: number; designMinutes: number }>> {
+  return apiFetch('/me/activity', {
+    method: 'POST',
+    body: JSON.stringify({ type, seconds }),
+  })
+}
+
+/** 标记某课时完成（lessonId 去重累加，重复调不重复计） */
+export async function completeLesson(
+  lessonId: string,
+): Promise<ApiResponse<{ lessonsCompleted: number }>> {
+  return apiFetch('/me/lessons/complete', {
+    method: 'POST',
+    body: JSON.stringify({ lessonId }),
   })
 }
 
@@ -441,6 +501,8 @@ export interface DroneDesignData {
   glbUrl?: string
   thumbnailUrl?: string
   localId?: string
+  /** RFC-013 方案 B：前端 Design 完整快照（后端原样存取，用于跨设备还原） */
+  designData?: unknown
   createdAt: string
   updatedAt: string
 }
@@ -474,6 +536,29 @@ export async function createDroneDesign(data: {
   return res as ApiResponse<DroneDesignData>
 }
 
+/**
+ * Idempotent upsert by localId（RFC-013 正路）——同一 localId 只对应一条记录，
+ * 抗重复、抗弱网重试。存整份 designData 快照，支撑跨设备还原。
+ */
+export async function putDroneDesign(data: {
+  localId: string
+  name: string
+  designData: unknown
+  weightG?: number
+  thumbnailUrl?: string
+  status?: string
+}): Promise<ApiResponse<DroneDesignData>> {
+  const res = await apiFetch<{ design: DroneDesignData }>('/drone-designs', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  if (res.success && res.data) {
+    const design = (res.data as unknown as { design?: DroneDesignData }).design ?? res.data
+    return { ...res, data: design as DroneDesignData }
+  }
+  return res as ApiResponse<DroneDesignData>
+}
+
 /** Update a drone design */
 export async function updateDroneDesign(
   designId: string,
@@ -488,6 +573,82 @@ export async function updateDroneDesign(
 /** Delete a drone design */
 export async function deleteDroneDesign(designId: string): Promise<ApiResponse> {
   return apiFetch(`/drone-designs/${designId}`, { method: 'DELETE' })
+}
+
+// ============= 积木程序 (Program) API =============
+
+export interface ProgramRecord {
+  id: string
+  _id?: string
+  ownerId: string
+  name: string
+  blocklyXml: string
+  commandProgram: CommandProgram
+  createdAt: string
+  updatedAt: string
+}
+
+/** 规整后端 { program } / { programs } 包裹，统一返回 id（兼容 _id）。 */
+function normalizeProgram(p: ProgramRecord): ProgramRecord {
+  return { ...p, id: p.id || (p as unknown as { _id: string })._id }
+}
+
+/** List current user's programs（按 updatedAt 倒序） */
+export async function getPrograms(): Promise<ApiResponse<ProgramRecord[]>> {
+  const res = await apiFetch<{ programs: ProgramRecord[] }>('/programs')
+  if (res.success && res.data) {
+    const programs = (res.data as unknown as { programs?: ProgramRecord[] }).programs ?? res.data
+    return { ...res, data: (programs as ProgramRecord[]).map(normalizeProgram) }
+  }
+  return res as ApiResponse<ProgramRecord[]>
+}
+
+/** Get a single program by id */
+export async function getProgram(programId: string): Promise<ApiResponse<ProgramRecord>> {
+  const res = await apiFetch<{ program: ProgramRecord }>(`/programs/${programId}`)
+  if (res.success && res.data) {
+    const program = (res.data as unknown as { program?: ProgramRecord }).program ?? res.data
+    return { ...res, data: normalizeProgram(program as ProgramRecord) }
+  }
+  return res as ApiResponse<ProgramRecord>
+}
+
+/** Create (save) a program to backend */
+export async function createProgram(data: {
+  name: string
+  blocklyXml: string
+  commandProgram: CommandProgram
+}): Promise<ApiResponse<ProgramRecord>> {
+  const res = await apiFetch<{ program: ProgramRecord }>('/programs', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  if (res.success && res.data) {
+    const program = (res.data as unknown as { program?: ProgramRecord }).program ?? res.data
+    return { ...res, data: normalizeProgram(program as ProgramRecord) }
+  }
+  return res as ApiResponse<ProgramRecord>
+}
+
+/** Update a program */
+export async function updateProgram(
+  programId: string,
+  data: Partial<{ name: string; blocklyXml: string; commandProgram: CommandProgram }>,
+): Promise<ApiResponse<ProgramRecord>> {
+  const res = await apiFetch<{ program: ProgramRecord }>(`/programs/${programId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+  if (res.success && res.data) {
+    const program = (res.data as unknown as { program?: ProgramRecord }).program ?? res.data
+    return { ...res, data: normalizeProgram(program as ProgramRecord) }
+  }
+  return res as ApiResponse<ProgramRecord>
+}
+
+/** Delete a program */
+export async function deleteProgram(programId: string): Promise<ApiResponse> {
+  return apiFetch(`/programs/${programId}`, { method: 'DELETE' })
 }
 
 // ============= 学习课程相关 API =============

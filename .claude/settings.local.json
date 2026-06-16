@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude plugin *)",
+      "Bash(mkdir -p ~/.claude/skills)",
+      "Bash(touch ~/.claude/CLAUDE.md)",
+      "Bash(cmux --help)",
+      "Bash(cmux hooks *)"
+    ]
+  }
+}

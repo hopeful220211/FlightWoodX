@@ -40,7 +40,7 @@ export function DesignListModal({ designs, onSelect, onClose }: DesignListModalP
               <button
                 key={design.id}
                 onClick={() => onSelect(design.id)}
-                className="w-full text-left p-4 rounded-lg border border-gray-200 hover:border-tech-300 hover:bg-tech-50/50 transition-colors"
+                className="w-full text-left p-4 rounded-lg border border-gray-200 hover:border-sky-300 hover:bg-sky-50/50 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-gray-800 truncate">{design.name}</span>

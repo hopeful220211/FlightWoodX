@@ -34,7 +34,7 @@ export function ForWhoSection() {
           <SectionHeading
             eyebrow="适合谁"
             title="适合不同的你"
-            lead="无论你是学生、教师还是学校，都能找到合适的入口"
+            lead="学生、老师、学校，各走各的入口。"
           />
         </ScrollReveal>
 

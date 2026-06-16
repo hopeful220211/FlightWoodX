@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn'
 export interface ProgressBarProps {
   /** 0-100 */
   value: number
-  /** 颜色 class（如 bg-tech-600） */
+  /** 颜色 class（如 bg-sky-600） */
   barClassName?: string
   className?: string
   showLabel?: boolean
@@ -15,7 +15,7 @@ export function ProgressBar({ value, barClassName, className, showLabel = true }
     <div className={cn('w-full', className)}>
       <div className="h-3 w-full rounded-full bg-black/10 dark:bg-white/10">
         <div
-          className={cn('h-3 rounded-full bg-tech-600 transition-[width]', barClassName)}
+          className={cn('h-3 rounded-full bg-sky-600 transition-[width]', barClassName)}
           style={{ width: `${v}%` }}
         />
       </div>

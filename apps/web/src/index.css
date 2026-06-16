@@ -16,6 +16,11 @@
 @tailwind utilities;
 
 @layer base {
+  /* 始终预留滚动条宽度：消除"有滚动条页 / 无滚动条页"之间居中顶栏的水平跳动 */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   html,
   body {
     height: 100%;

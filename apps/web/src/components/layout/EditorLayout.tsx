@@ -21,14 +21,14 @@ export function EditorLayout() {
     <div className="flex h-screen flex-col bg-slate-50">
       {/* ── Top Bar ── */}
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-sky-100 bg-white px-4">
-        {/* Back to project / dashboard */}
+        {/* 返回项目枢纽（带 id）/ 工作台（无 id），把编辑器拴回 C1 引力枢纽 */}
         <button
           type="button"
           onClick={() => navigate(id ? `/projects/${id}` : '/dashboard')}
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-ink-600 hover:bg-sky-50 transition"
         >
           <ArrowLeft size={16} />
-          <span className="hidden sm:inline">返回</span>
+          <span className="hidden sm:inline">{id ? '返回项目' : '返回工作台'}</span>
         </button>
 
         {/* Step switcher */}

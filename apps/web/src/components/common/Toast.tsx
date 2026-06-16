@@ -51,7 +51,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   ? 'border-error/30'
                   : t.type === 'warning'
                     ? 'border-warning/30'
-                    : 'border-tech-400/30',
+                    : 'border-sky-400/30',
             )}
           >
             {t.message}

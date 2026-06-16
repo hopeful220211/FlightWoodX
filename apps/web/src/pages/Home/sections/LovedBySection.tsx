@@ -156,7 +156,7 @@ export function LovedBySection() {
           <SectionHeading
             eyebrow="真实反馈"
             title="来自孩子、家长和老师的声音"
-            lead="真实的反馈，来自最早接触 FlightWoodX 的家庭和教育者"
+            lead="最早一批用过的孩子、家长和老师，原话都在这儿。"
           />
         </ScrollReveal>
 

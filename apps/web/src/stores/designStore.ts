@@ -21,6 +21,8 @@ interface DesignState {
   setActiveDesignId: (id: string | null) => void
   getActiveDesign: () => Design | undefined
   clearAll: () => void
+  /** 从后端拉回的设计合并进本地（按 id upsert，本地较新则不覆盖）——跨设备还原 */
+  importServerDesigns: (incoming: Design[]) => void
   // --- Part CRUD ---
   addPartToActiveDesign: (part: Omit<PartInstance, 'instanceId'>) => void
   removePartFromActiveDesign: (instanceId: string) => void
@@ -72,6 +74,20 @@ export const useDesignStore = create<DesignState>()(
       },
       setActiveDesignId: (id) => set({ activeDesignId: id }),
       clearAll: () => set({ designs: [], activeDesignId: null, selectedInstanceId: null, ghostPart: null, highlightedSocket: null, draggingPartId: null }),
+      importServerDesigns: (incoming) => {
+        set((state) => {
+          const byId = new Map(state.designs.map((d) => [d.id, d]))
+          for (const remote of incoming) {
+            if (!remote?.id || !Array.isArray(remote.parts)) continue
+            const local = byId.get(remote.id)
+            // 本地不存在，或后端更新更晚 → 采用后端版本；否则保留本地（离线工作副本优先）
+            const remoteNewer =
+              !local || new Date(remote.updatedAt).getTime() > new Date(local.updatedAt).getTime()
+            if (remoteNewer) byId.set(remote.id, remote)
+          }
+          return { designs: Array.from(byId.values()) }
+        })
+      },
       getActiveDesign: () => {
         const activeId = get().activeDesignId
         if (!activeId) return undefined

@@ -6,19 +6,19 @@ const cards = [
     img: '/resource/picture/flight_png/untitled.160.png',
     title: '榫卯结构',
     subtitle: '传统工艺 × 现代科技',
-    desc: '从中国传统造物智慧出发，让学生在拼装中理解"结构即力学"。',
+    desc: '拼的是榫卯，不用一根钉子，全靠木头互相咬住。拼着拼着，孩子自己就摸清了结构怎么受力。',
   },
   {
     img: '/resource/picture/learning_kids/EX4A6148.png',
     title: '真实飞行',
     subtitle: '不是模拟器，是真会飞',
-    desc: '完成设计即可试飞。从零件到起飞，见证完整工程过程。',
+    desc: '设计完就能试飞。一堆木片怎么变成真能飞起来的东西，孩子从头到尾自己走一遍。',
   },
   {
     img: '/resource/picture/learning_kids/EX4A6264 1.png',
     title: '系统课程',
     subtitle: '12 课时完整教学包',
-    desc: '教案、学生手册、软件平台、硬件套件——学校拿到的是方案，不是零件盒。',
+    desc: '教案、学生手册、软件、硬件套件都配齐。学校拿到的是一整套课，不是一盒零件。',
   },
 ]
 
@@ -29,8 +29,8 @@ export function WhyUsSection() {
         <ScrollReveal className="mb-16">
           <SectionHeading
             eyebrow="为什么是我们"
-            title="不只是另一个 STEAM 玩具"
-            lead="我们重新定义了中国青少年 STEAM 教育的三件事"
+            title="不只是又一个 STEAM 玩具"
+            lead="有三件事，我们做得跟别人不太一样。"
           />
         </ScrollReveal>
 

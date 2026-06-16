@@ -258,7 +258,7 @@ export function DesignPage() {
   // 旧的“已使用零件”渲染函数已被新版浮动面板内联实现
 
   return (
-    <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-gradient-to-br from-wood-50 to-tech-50 dark:from-slate-950 dark:to-slate-900">
+    <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-gradient-to-br from-wood-50 to-sky-50 dark:from-slate-950 dark:to-slate-900">
       {/* 3D 画布区域：最大化，铺满父容器 */}
       <div
         ref={threeMountRef}
@@ -455,7 +455,7 @@ export function DesignPage() {
                           ? 'border-error/30 bg-error/5'
                           : c.level === 'warning'
                             ? 'border-warning/30 bg-warning/5'
-                            : 'border-tech-400/30 bg-tech-50/60 dark:bg-tech-900/20',
+                            : 'border-sky-400/30 bg-sky-50/60 dark:bg-sky-900/20',
                       )}
                     >
                       {c.text}

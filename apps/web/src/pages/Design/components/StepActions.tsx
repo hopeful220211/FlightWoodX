@@ -58,7 +58,7 @@ export function StepActions({
         <button
           onClick={onAdvance}
           disabled={!canAdvance}
-          className="px-5 py-2 text-sm font-medium text-white bg-tech-500 rounded-md hover:bg-tech-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-5 py-2 text-sm font-medium text-white bg-sky-500 rounded-md hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           下一步 →
         </button>

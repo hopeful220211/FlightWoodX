@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { register as apiRegister, login as apiLogin } from '../utils/api'
 import { clearDesignStore } from './designStore'
+import { clearProgramStore } from './programStore'
 import { createGuestSession, getGuestSession, clearGuestSession } from '../utils/guestSession'
 
 export interface User {
@@ -98,6 +99,7 @@ export const useAuthStore = create<AuthState>()(
         }
         set({ user: null, token: null, isAuthenticated: false })
         clearDesignStore()
+        clearProgramStore()
       },
 
       setUser: (user) => set((state) => ({ ...state, user })),
@@ -117,6 +119,7 @@ export const useAuthStore = create<AuthState>()(
         clearGuestSession()
         set({ user: null, token: null, isAuthenticated: false })
         clearDesignStore()
+        clearProgramStore()
       },
 
       restoreSession: () => {

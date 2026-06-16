@@ -5,7 +5,7 @@ const stages = [
   { num: '01', title: '认识榫卯', lessons: '3 课时', desc: '传统工艺入门，理解结构基础' },
   { num: '02', title: '设计基础', lessons: '3 课时', desc: '进入设计工作台，学习飞行原理' },
   { num: '03', title: '制作实战', lessons: '3 课时', desc: '亲手拼装零件，完成组装' },
-  { num: '04', title: '试飞调试', lessons: '3 课时', desc: '见证起飞，学会分析与迭代' },
+  { num: '04', title: '试飞调试', lessons: '3 课时', desc: '试飞，飞不好就自己找原因再改' },
 ]
 
 export function CurriculumSection() {
@@ -16,7 +16,7 @@ export function CurriculumSection() {
           <SectionHeading
             eyebrow="教学体系"
             title="12 课时 · 从想到做到飞"
-            lead="系统设计的完整学习路径"
+            lead="从认识榫卯，到亲手把它送上天。"
           />
         </ScrollReveal>
 

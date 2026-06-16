@@ -21,7 +21,7 @@ export function StepProgressBar({ currentStep, stepReached }: StepProgressBarPro
               <div
                 className={`
                   w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                  ${isCurrent ? 'bg-tech-500 text-white ring-2 ring-tech-200' : ''}
+                  ${isCurrent ? 'bg-sky-500 text-white ring-2 ring-sky-200' : ''}
                   ${isCompleted ? 'bg-green-500 text-white' : ''}
                   ${isLocked ? 'bg-gray-200 text-gray-400' : ''}
                 `}
@@ -30,7 +30,7 @@ export function StepProgressBar({ currentStep, stepReached }: StepProgressBarPro
               </div>
               <span
                 className={`text-xs truncate ${
-                  isCurrent ? 'text-tech-600 font-semibold' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                  isCurrent ? 'text-sky-600 font-semibold' : isCompleted ? 'text-green-600' : 'text-gray-400'
                 }`}
               >
                 {info.label}

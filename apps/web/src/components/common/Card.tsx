@@ -14,7 +14,7 @@ export function Card({ header, footer, hoverable = true, className, children, ..
   return (
     <div
       className={cn(
-        'bg-white/90 backdrop-blur-sm rounded-xl border border-sky-100/60 shadow-soft transition-all duration-300',
+        'bg-white/90 backdrop-blur-sm rounded-lg border border-sky-100/60 shadow-soft transition-all duration-300',
         'dark:bg-slate-900/70 dark:border-slate-800 dark:shadow-slate-950/40',
         hoverable ? 'hover:shadow-lift hover:border-sky-200 hover:-translate-y-1' : undefined,
         className,

@@ -43,7 +43,7 @@ function AwardBadge({ award, delay }: { award: typeof awards[number]; delay: num
             if (parent) {
               const fallback = document.createElement('div')
               fallback.className = 'flex flex-col items-center gap-2'
-              fallback.innerHTML = `<span class="text-accent-gold">${'★'}</span><span class="text-sky-900 font-semibold text-lg">${award.name}</span>`
+              fallback.innerHTML = `<span class="text-[#E8B530]">${'★'}</span><span class="text-sky-900 font-semibold text-lg">${award.name}</span>`
               parent.appendChild(fallback)
             }
           }}
@@ -62,9 +62,9 @@ export function AwardsSection() {
       <div className="mx-auto max-w-6xl px-4">
         <ScrollReveal className="mb-16">
           <SectionHeading
-            eyebrow="全球认可"
-            title="国际设计奖项 · 全球顶级认可"
-            lead="在设计界的殿堂中，我们与世界一流品牌同台获奖"
+            eyebrow="拿过的奖"
+            title="这几个国际设计奖，我们拿到了"
+            lead="红点、iF、IDEA、G-Mark，下面这四个都在手上。"
           />
         </ScrollReveal>
 
@@ -76,7 +76,7 @@ export function AwardsSection() {
 
         <ScrollReveal delay={600} className="mt-12 text-center">
           <p className="text-sm text-sky-500">
-            获奖率低于 1% · 全球最具影响力的设计奖项
+            其中红点 Best of the Best，是红点奖里最高的一档。
           </p>
         </ScrollReveal>
       </div>

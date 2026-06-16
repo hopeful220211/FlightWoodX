@@ -49,7 +49,7 @@ export function ProductDemoSection() {
                 align="left"
                 eyebrow="真实界面"
                 title={<>你看到的，<br />是孩子看到的</>}
-                lead="我们不做虚假宣传截图。这就是学生每天打开的界面。"
+                lead="没放修过的宣传图，这就是学生每天打开的那个界面。"
               />
 
               <ul className="space-y-3">

@@ -10,12 +10,14 @@ router.use(authenticate)
 
 /**
  * GET /api/projects
- * List current user's projects (newest first)
+ * List current user's projects in creation order (oldest first)。
+ * 用 createdAt 而非 updatedAt 排序：改名/编辑不应改变项目在列表中的位置
+ * （第 N 个创建的始终排第 N 位）。
  */
 router.get('/', async (req, res) => {
   try {
     const projects = await Project.find({ ownerId: req.userId })
-      .sort({ updatedAt: -1 })
+      .sort({ createdAt: 1 })
       .lean()
 
     res.json({ projects })

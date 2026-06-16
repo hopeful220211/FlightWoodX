@@ -110,7 +110,7 @@ export function ProfilePage() {
               ) : (
                 <div>
                   <div className="mb-4 flex items-center gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-tech-400 to-tech-600 text-2xl font-extrabold text-white">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-sky-600 text-2xl font-extrabold text-white">
                       {profile.nickname[0] || '设'}
                     </div>
                     <div className="flex-1">
@@ -143,7 +143,7 @@ export function ProfilePage() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg bg-wood-50 p-4 dark:bg-slate-800">
               <div className="mb-2 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-tech-600" />
+                <BookOpen className="h-5 w-5 text-sky-600" />
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">已完成课程</span>
               </div>
               <div className="text-2xl font-extrabold text-wood-900 dark:text-white">
@@ -152,7 +152,7 @@ export function ProfilePage() {
             </div>
             <div className="rounded-lg bg-wood-50 p-4 dark:bg-slate-800">
               <div className="mb-2 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-tech-600" />
+                <Calendar className="h-5 w-5 text-sky-600" />
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">总学习时长</span>
               </div>
               <div className="text-2xl font-extrabold text-wood-900 dark:text-white">
@@ -161,7 +161,7 @@ export function ProfilePage() {
             </div>
             <div className="rounded-lg bg-wood-50 p-4 dark:bg-slate-800">
               <div className="mb-2 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-tech-600" />
+                <Calendar className="h-5 w-5 text-sky-600" />
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">学习天数</span>
               </div>
               <div className="text-2xl font-extrabold text-wood-900 dark:text-white">{progress.studyDays.length} 天</div>
@@ -193,8 +193,8 @@ export function ProfilePage() {
             <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible lg:grid-cols-3">
               {myProjects.map((project) => (
                 <Card key={project.id} hoverable className="min-w-[260px] md:min-w-0">
-                  <div className="aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-tech-100 to-tech-200 dark:from-tech-900/30 dark:to-tech-800/30">
-                    <div className="flex h-full items-center justify-center text-sm font-extrabold text-tech-600 dark:text-tech-400">
+                  <div className="aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-sky-100 to-sky-200 dark:from-sky-900/30 dark:to-sky-800/30">
+                    <div className="flex h-full items-center justify-center text-sm font-extrabold text-sky-600 dark:text-sky-400">
                       {project.parts.length} 个零件
                     </div>
                   </div>

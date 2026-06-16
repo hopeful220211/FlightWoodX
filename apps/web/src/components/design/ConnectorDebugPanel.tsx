@@ -60,7 +60,7 @@ export function ConnectorDebugPanel() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-tech-500 text-white shadow-lg hover:bg-tech-600"
+        className="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg hover:bg-sky-600"
         title="打开连接点调试面板"
       >
         <Eye size={20} />

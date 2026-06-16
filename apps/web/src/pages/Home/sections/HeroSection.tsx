@@ -71,16 +71,16 @@ export function HeroSection() {
               {/* Chinese subtitle */}
               <AnimatedEntry delay={400}>
                 <p className="font-display text-[clamp(26px,3.5vw,38px)] font-medium text-sky-800">
-                  动手造，会飞的。
+                  动手造，会飞的
                 </p>
               </AnimatedEntry>
 
               {/* Description */}
               <AnimatedEntry delay={520}>
                 <p className="max-w-lg text-[17px] leading-relaxed text-sky-900/70">
-                  从传统榫卯工艺出发，抵达现代飞行器。
+                  不上一根钉子的榫卯木工，拼一架真能飞的无人机
                   <br />
-                  设计 → 积木编程 → 仿真试飞 → 参赛评分 → 社区分享。
+                  设计 ｜ 积木编程 ｜ 仿真试飞 ｜ 参赛评分 ｜ 社区分享
                 </p>
               </AnimatedEntry>
 
@@ -116,7 +116,7 @@ export function HeroSection() {
               <AnimatedEntry delay={800}>
                 <div className="grid grid-cols-3 gap-6 pt-4">
                   <div className="flex items-start gap-3">
-                    <Trophy size={20} className="mt-0.5 text-accent-gold shrink-0" />
+                    <Trophy size={20} className="mt-0.5 text-[#E8B530] shrink-0" />
                     <div>
                       <div className="font-display text-2xl font-semibold text-sky-900">10+ 项</div>
                       <div className="text-sm text-sky-600/70">全球设计大奖</div>

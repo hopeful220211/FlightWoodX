@@ -37,7 +37,6 @@ export function CompetitionsPage() {
     <PageContainer className="py-8 space-y-6">
       <PageHeader
         title="赛事中心"
-        description="仿真先行 — 孩子无需任何硬件，就能在浏览器里完成设计 + 编程 + 参赛"
       />
 
       {/* Competition list */}

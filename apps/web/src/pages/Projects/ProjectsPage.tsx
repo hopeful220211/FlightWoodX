@@ -38,7 +38,6 @@ export function ProjectsPage() {
     <PageContainer className="py-8 space-y-6">
       <PageHeader
         title="我的项目"
-        description="每个项目 = 一个设计 + 一份程序 + 一次试飞"
         actions={
           <Button onClick={handleCreate} loading={createMutation.isPending} leftIcon={<Plus size={16} />}>
             新建项目

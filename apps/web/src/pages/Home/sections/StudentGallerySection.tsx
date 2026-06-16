@@ -34,7 +34,7 @@ export function StudentGallerySection() {
             align="left"
             eyebrow="学生作品"
             title="学生设计的无人机"
-            lead="每架都是独一无二的作品"
+            lead="每架都不一样，都是学生自己设计的。"
           />
           <div className="hidden md:flex items-center gap-2 shrink-0">
             <button

@@ -17,9 +17,9 @@ export function FinalCTASection() {
         <ScrollReveal>
           <SectionHeading
             tone="light"
-            eyebrow="开始创造"
-            title={<>准备好开启你的<br />创造之旅了吗？</>}
-            lead="设计 → 编程 → 仿真 → 参赛 → 分享，全链路闭环"
+            eyebrow="开始动手"
+            title={<>想自己造一架<br />会飞的无人机吗？</>}
+            lead="设计、编程、仿真、参赛、分享，全在这一个平台里。"
           />
         </ScrollReveal>
 
