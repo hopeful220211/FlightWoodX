@@ -2,36 +2,54 @@
  * CodingPage — 积木编程器。
  *
  * 左侧：Blockly 工作区（自定义无人机积木）
- * 右侧：实时编译的 CommandProgram IR 预览
+ * 右侧：默认「飞行计划」大白话预览，可切「开发者视图」看原始 IR
  *
  * 积木 → 编译为 IR → 仿真器 / 真机适配器消费（硬件解耦红线）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import * as Blockly from 'blockly'
 import 'blockly/blocks'
-import { Play, Save, Undo2, Redo2, Code2, AlertCircle } from 'lucide-react'
+import { Play, Save, Undo2, Redo2, ListTree } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
+import { useProgramStore } from '../../stores/programStore'
 
 // Register custom blocks + get toolbox XML
 import { DRONE_TOOLBOX } from '../../blockly/blocks'
 import { compileWorkspace } from '../../blockly/compiler'
-import { serializeProgram, type CommandProgram } from '@fwx/shared'
+import { EXAMPLE_PROGRAM_XML } from '../../blockly/exampleProgram'
+import { FlightPlanPanel } from './components/FlightPlanPanel'
+import { EmptyCanvasGuide } from './components/EmptyCanvasGuide'
+import type { CommandProgram } from '@fwx/shared'
 
 export function CodingPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const toast = useToast()
   const user = useAuthStore(s => s.user)
+  const setProgram = useProgramStore(s => s.setProgram)
 
   const blocklyDiv = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const [ir, setIr] = useState<CommandProgram | null>(null)
   const [compileError, setCompileError] = useState<string | null>(null)
   const [blocklyXml, setBlocklyXml] = useState<string>('')
+  // 画布上真实的顶层积木数，决定是否显示空态引导（比"编译出的命令数"更准：
+  // 残块/缺条件时命令数可能为 0，但画布并不空）。
+  const [blockCount, setBlockCount] = useState(0)
 
-  // Initialize Blockly workspace
+  // 编译元数据（项目名/作者）放 ref，让它随 id/登录态更新，
+  // 但**不触发 Blockly 重新 inject**（否则会清空孩子拖好的积木）。
+  const metaRef = useRef({ id, username: user?.username })
+  useEffect(() => {
+    metaRef.current = { id, username: user?.username }
+  }, [id, user?.username])
+
+  const isEmpty = blockCount === 0
+
+  // Initialize Blockly workspace（只在挂载时 inject 一次）
   useEffect(() => {
     if (!blocklyDiv.current || workspaceRef.current) return
 
@@ -49,10 +67,12 @@ export function CodingPage() {
 
     // Live compile on workspace change
     const onWorkspaceChange = () => {
+      setBlockCount(ws.getTopBlocks(false).length)
       try {
+        const { id, username } = metaRef.current
         const program = compileWorkspace(ws, {
           name: id ? `项目 ${id.slice(0, 6)}` : '未命名程序',
-          author: user?.username || '设计师',
+          author: username || '设计师',
         })
         setIr(program)
         setCompileError(null)
@@ -72,7 +92,7 @@ export function CodingPage() {
       ws.dispose()
       workspaceRef.current = null
     }
-  }, [id, user?.username])
+  }, [])
 
   // Resize Blockly on window resize
   useEffect(() => {
@@ -98,66 +118,58 @@ export function CodingPage() {
     workspaceRef.current?.undo(true)
   }, [])
 
+  // 整理画布：把散乱的积木竖直对齐排好
+  const handleCleanup = useCallback(() => {
+    workspaceRef.current?.cleanUp()
+  }, [])
+
+  // 「从示例开始」：仅在空画布载入示例，避免和已有积木叠加
+  const handleLoadExample = useCallback(() => {
+    const ws = workspaceRef.current
+    if (!ws) return
+    if (ws.getTopBlocks(false).length > 0) return
+    const dom = Blockly.utils.xml.textToDom(EXAMPLE_PROGRAM_XML)
+    Blockly.Xml.domToWorkspace(dom, ws)
+  }, [])
+
   const handleSave = useCallback(() => {
     // TODO M3: save Program to backend (blocklyXml + ir)
     toast.push('success', '程序已保存')
   }, [toast])
 
   const handleRun = useCallback(() => {
-    if (!ir) {
+    if (!ir || ir.commands.length === 0) {
       toast.push('error', '请先拼出程序再运行')
       return
     }
-    // TODO M4: pass IR to SimAdapter
-    toast.push('info', `编译成功！${ir.commands.length} 条指令，等待仿真器接入（M4）`)
-  }, [ir, toast])
+    // 把 IR 交给仿真页（运行交接 store），再跳转到仿真入口
+    setProgram(ir, blocklyXml)
+    navigate(id ? `/simulator/${id}` : '/simulator')
+  }, [ir, blocklyXml, setProgram, navigate, id, toast])
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
       {/* Left: Blockly workspace */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-[280px]">
         {/* Toolbar */}
         <div className="flex items-center gap-2 border-b border-sky-100 bg-white px-4 py-2">
           <Button size="sm" variant="ghost" onClick={handleUndo} leftIcon={<Undo2 size={14} />}>撤销</Button>
           <Button size="sm" variant="ghost" onClick={handleRedo} leftIcon={<Redo2 size={14} />}>重做</Button>
+          <Button size="sm" variant="ghost" onClick={handleCleanup} leftIcon={<ListTree size={14} />}>整理</Button>
           <div className="flex-1" />
           <Button size="sm" variant="outline" onClick={handleSave} leftIcon={<Save size={14} />}>保存</Button>
           <Button size="sm" onClick={handleRun} leftIcon={<Play size={14} />}>运行</Button>
         </div>
 
-        {/* Blockly inject target */}
-        <div ref={blocklyDiv} className="flex-1 min-h-0" />
-      </div>
-
-      {/* Right: IR preview sidebar */}
-      <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-sky-100 bg-slate-50 flex flex-col min-h-0">
-        <div className="flex items-center gap-2 border-b border-sky-100 px-4 py-2.5">
-          <Code2 size={16} className="text-sky-500" />
-          <h3 className="text-sm font-semibold text-ink-700">指令协议 IR</h3>
-          {ir && (
-            <span className="ml-auto text-xs text-ink-400">{ir.commands.length} 条指令</span>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-auto p-4">
-          {compileError ? (
-            <div className="flex items-start gap-2 rounded-lg bg-error/10 p-3">
-              <AlertCircle size={16} className="text-error mt-0.5 shrink-0" />
-              <div className="text-sm text-error">{compileError}</div>
-            </div>
-          ) : ir ? (
-            <pre className="rounded-lg bg-white border border-sky-100 p-3 font-mono text-xs text-ink-600 whitespace-pre-wrap break-all">
-              {serializeProgram(ir)}
-            </pre>
-          ) : (
-            <div className="text-center py-8">
-              <Code2 size={32} className="mx-auto text-sky-200 mb-2" />
-              <p className="text-sm text-ink-400">拖拽左侧积木开始编程</p>
-              <p className="text-xs text-ink-400 mt-1">积木会实时编译为指令协议 IR</p>
-            </div>
-          )}
+        {/* Blockly inject target + empty-state guide overlay */}
+        <div className="relative flex-1 min-h-0">
+          <div ref={blocklyDiv} className="absolute inset-0" />
+          {isEmpty && <EmptyCanvasGuide onLoadExample={handleLoadExample} />}
         </div>
       </div>
+
+      {/* Right: flight-plan preview (default) / developer IR view */}
+      <FlightPlanPanel ir={ir} compileError={compileError} />
     </div>
   )
 }
