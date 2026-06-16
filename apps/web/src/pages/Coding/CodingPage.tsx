@@ -40,7 +40,6 @@ export function CodingPage() {
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const [ir, setIr] = useState<CommandProgram | null>(null)
   const [compileError, setCompileError] = useState<string | null>(null)
-  const [blocklyXml, setBlocklyXml] = useState<string>('')
   // 画布上真实的顶层积木数，决定是否显示空态引导（比"编译出的命令数"更准：
   // 残块/缺条件时命令数可能为 0，但画布并不空）。
   const [blockCount, setBlockCount] = useState(0)
@@ -92,7 +91,8 @@ export function CodingPage() {
 
     // Live compile on workspace change
     const onWorkspaceChange = () => {
-      setBlockCount(ws.getTopBlocks(false).length)
+      const topBlocks = ws.getTopBlocks(false).length
+      setBlockCount(topBlocks)
       try {
         const { id, username } = metaRef.current
         const program = compileWorkspace(ws, {
@@ -102,12 +102,11 @@ export function CodingPage() {
         setIr(program)
         setCompileError(null)
 
-        // Save XML state
         const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(ws))
-        setBlocklyXml(xml)
 
-        // 仅在积木内容真正变化时持久化（项目详情页据此预览 + 仿真页据此交接回放）
-        if (xml !== lastXmlRef.current) {
+        // 仅在「有真实积木」且内容变化时持久化：空画布的 XML 也是非空字符串，
+        // 若持久化它，会让登录回填把"本地已有程序"误判为真，吞掉账号里的程序。
+        if (topBlocks > 0 && xml !== lastXmlRef.current) {
           lastXmlRef.current = xml
           useProgramStore.getState().setProgram(xml, program)
         }
@@ -137,19 +136,22 @@ export function CodingPage() {
       const latest = res.data[0] // 后端按 updatedAt 倒序
       const ws = workspaceRef.current
       if (!ws) return
-      // 本地已有内容则不覆盖（本地是离线工作副本）；仅认领 serverId 让后续保存走 PATCH
-      const hasLocal = useProgramStore.getState().blocklyXml.trim() !== ''
+      // 本地是否已有「真实程序」（按编译后的命令数判断，避免空画布 XML 误判）
+      const local = useProgramStore.getState().commandProgram
+      const hasLocal = !!local && local.commands.length > 0
+      // 仅当本地为空才回填账号程序并认领其 serverId；本地有草稿时不动，
+      // 也不认领后端 id（否则下次保存会 PATCH 覆盖账号里那条已有程序）。
       if (!hasLocal) {
         try {
           ws.clear()
           Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(latest.blocklyXml), ws)
           lastXmlRef.current = latest.blocklyXml
           useProgramStore.getState().setProgram(latest.blocklyXml, latest.commandProgram)
+          useProgramStore.getState().setServerId(latest.id)
         } catch {
           // 损坏的 XML 忽略
         }
       }
-      useProgramStore.getState().setServerId(latest.id)
     })
     return () => {
       cancelled = true
@@ -232,14 +234,16 @@ export function CodingPage() {
   }, [ir, token, isGuest, toast])
 
   const handleRun = useCallback(() => {
-    if (!ir || ir.commands.length === 0) {
+    const ws = workspaceRef.current
+    if (!ir || ir.commands.length === 0 || !ws) {
       toast.push('error', '请先拼出程序再运行')
       return
     }
-    // 把最新程序落到本地缓存（仿真页读它回放），再跳转到仿真入口
-    useProgramStore.getState().setProgram(blocklyXml, ir)
+    // 运行前从工作区重新序列化，确保交接给仿真页的是最新积木（不依赖可能滞后的 state）
+    const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(ws))
+    useProgramStore.getState().setProgram(xml, ir)
     navigate(id ? `/simulator/${id}` : '/simulator')
-  }, [ir, blocklyXml, navigate, id, toast])
+  }, [ir, navigate, id, toast])
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
