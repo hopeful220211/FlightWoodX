@@ -1,5 +1,5 @@
-# FlightWoodX 后端镜像（RFC-012 §5.1 A7）
-# build context 必须是仓库根（因为依赖 pnpm workspace）：
+# FlightWoodX 后端镜像（RFC-012 A7 + RFC-014 W9）
+# build context 必须是仓库根（依赖 pnpm workspace）：
 #   docker build -f apps/api/Dockerfile -t fwx-api .
 #
 # 单阶段构建：不跨阶段 COPY node_modules，避免 pnpm 的 symlink 在拷贝时断链。
@@ -11,13 +11,18 @@ WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/parts-schema/package.json ./packages/parts-schema/
+COPY packages/shared/package.json ./packages/shared/
 
-# 2) 只装 api 及其 workspace 依赖的生产依赖
-RUN pnpm install --filter api... --prod --frozen-lockfile
+# 2) 装 api 及其 workspace 依赖（含 dev：@fwx/shared 的 tsup 用于构建 CJS）
+RUN pnpm install --filter api... --frozen-lockfile
 
-# 3) 拷源码（api 运行时不 require parts-schema，但 pnpm 需要它存在以满足 workspace 链接）
+# 3) 拷源码
 COPY packages/parts-schema ./packages/parts-schema
+COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
+
+# 4) 构建 @fwx/shared 的 CJS（api 运行时 require @fwx/shared/runtime-cjs 做 IR 校验）
+RUN pnpm --filter @fwx/shared build:cjs
 
 WORKDIR /app/apps/api
 ENV NODE_ENV=production

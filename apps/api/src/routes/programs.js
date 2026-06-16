@@ -1,6 +1,8 @@
 const express = require('express')
 const { authenticate } = require('../middleware/auth')
 const Program = require('../models/Program')
+// IR 后端校验（RFC-014 W9）：从 @fwx/shared 的 CJS 构建消费，单一事实来源，不重复定义
+const { CommandProgramSchema } = require('@fwx/shared/runtime-cjs')
 
 const router = express.Router()
 router.use(authenticate)
@@ -37,6 +39,10 @@ router.post('/', async (req, res) => {
     if (!name) return res.status(400).json({ error: '程序名称不能为空' })
     if (!blocklyXml) return res.status(400).json({ error: '缺少 blocklyXml' })
     if (!commandProgram) return res.status(400).json({ error: '缺少 commandProgram' })
+    const parsed = CommandProgramSchema.safeParse(commandProgram)
+    if (!parsed.success) {
+      return res.status(400).json({ error: '指令协议(IR)格式非法', details: parsed.error.issues.slice(0, 3) })
+    }
 
     const program = new Program({ ownerId: req.userId, name, blocklyXml, commandProgram })
     await program.save()
@@ -54,6 +60,12 @@ router.patch('/:id', async (req, res) => {
     const updates = {}
     for (const key of allowedFields) {
       if (req.body[key] !== undefined) updates[key] = req.body[key]
+    }
+    if (updates.commandProgram !== undefined) {
+      const parsed = CommandProgramSchema.safeParse(updates.commandProgram)
+      if (!parsed.success) {
+        return res.status(400).json({ error: '指令协议(IR)格式非法', details: parsed.error.issues.slice(0, 3) })
+      }
     }
 
     const program = await Program.findOneAndUpdate(
