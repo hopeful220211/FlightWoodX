@@ -71,7 +71,7 @@ export function ProjectSettingsModal({ open, onClose, projectId, name }: Project
             <AlertTriangle size={20} className="mt-0.5 shrink-0 text-error" />
             <div>
               <p className="text-sm font-bold text-error">删除「{name}」？</p>
-              <p className="mt-1 text-sm text-sky-600">删除后无法恢复，这个项目里的设计、程序记录都会一起消失。</p>
+              <p className="mt-1 text-sm text-error">删除后无法恢复，这个项目里的设计、程序记录都会一起消失。</p>
             </div>
           </div>
           <div className="flex justify-end gap-2">
@@ -130,7 +130,7 @@ export function ProjectSettingsModal({ open, onClose, projectId, name }: Project
           <div className="space-y-2 border-t border-error/15 pt-4">
             <p className="text-sm font-semibold text-error">危险操作</p>
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-sky-400">删除后无法恢复，请谨慎操作。</p>
+              <p className="text-xs text-error">删除后无法恢复，请谨慎操作。</p>
               <button
                 type="button"
                 onClick={() => setConfirming(true)}
