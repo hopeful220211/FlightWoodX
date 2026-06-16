@@ -180,7 +180,15 @@ export function ProjectHub() {
 
         <div className="flex shrink-0 flex-wrap gap-2">
           {hub.source === 'server' && (
-            <Button size="sm" variant="outline" leftIcon={<Settings size={14} />} onClick={() => setSettingsOpen(true)}>设置</Button>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="项目设置"
+              title="项目设置"
+              className="touch-target inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-sky-200 bg-white text-ink-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-50 active:scale-95"
+            >
+              <Settings size={18} />
+            </button>
           )}
           <Button size="sm" variant="outline" leftIcon={<Share2 size={14} />} onClick={() => toast.push('info', '分享 / 嵌入即将开放（M5.5）')}>分享</Button>
           <Button size="sm" variant="outline" leftIcon={<Download size={14} />} onClick={() => toast.push('info', '建造导出即将开放（M8）')}>导出</Button>
