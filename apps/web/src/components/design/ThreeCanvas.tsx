@@ -7,7 +7,6 @@ import { useDesignStore } from '../../stores/designStore'
 import { ActionMenu } from './ActionMenu'
 import { SocketHighlights } from './SocketHighlights'
 import { CameraController, type CameraView } from './CameraController'
-import { AutoFitCamera } from './AutoFitCamera'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
 import { computePerpendicularSnap, quaternionToEuler } from './snap'
@@ -104,7 +103,6 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
         <SceneContent />
         <DragHandler />
         <SocketHighlights />
-        <AutoFitCamera />
         <CameraController view={cameraView} onViewChanged={onCameraViewChanged} />
         {/* ActionMenu 需要在 Canvas 内部以访问 useThree */}
         <ActionMenu />
