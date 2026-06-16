@@ -12,7 +12,7 @@ import { useCallback, useRef, useState, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, Pencil, Code2, Play, Rocket, Share2, Download, GitBranch, Trophy,
+  ArrowLeft, Pencil, Code2, Play, Rocket, Share2, Download, Settings, GitBranch, Trophy,
   Check, X, Loader2, AlertCircle, WifiOff, type LucideIcon,
 } from 'lucide-react'
 import { PageContainer } from '../../layout/PageContainer'
@@ -25,6 +25,7 @@ import { FlightPreview3D } from '../../simulator/FlightPreview3D'
 import { useProjectHub } from './useProjectHub'
 import { useUpdateProject } from '../../../hooks/useProjects'
 import { OneClickFlyModal } from './OneClickFlyModal'
+import { ProjectSettingsModal } from './ProjectSettingsModal'
 
 const CARD = 'rounded-xl bg-white shadow-[0_2px_18px_-8px_rgba(23,74,126,0.16)] ring-1 ring-sky-100/80'
 
@@ -46,6 +47,7 @@ export function ProjectHub() {
   const hub = useProjectHub(id)
 
   const [flyOpen, setFlyOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState('')
 
@@ -177,6 +179,9 @@ export function ProjectHub() {
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2">
+          {hub.source === 'server' && (
+            <Button size="sm" variant="outline" leftIcon={<Settings size={14} />} onClick={() => setSettingsOpen(true)}>设置</Button>
+          )}
           <Button size="sm" variant="outline" leftIcon={<Share2 size={14} />} onClick={() => toast.push('info', '分享 / 嵌入即将开放（M5.5）')}>分享</Button>
           <Button size="sm" variant="outline" leftIcon={<Download size={14} />} onClick={() => toast.push('info', '建造导出即将开放（M8）')}>导出</Button>
         </div>
@@ -269,6 +274,15 @@ export function ProjectHub() {
         program={hub.program?.commandProgram ?? null}
         programName={hub.program?.name}
       />
+
+      {settingsOpen && (
+        <ProjectSettingsModal
+          open
+          onClose={() => setSettingsOpen(false)}
+          projectId={id}
+          name={hub.name}
+        />
+      )}
     </PageContainer>
   )
 }
