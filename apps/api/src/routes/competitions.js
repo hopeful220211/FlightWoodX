@@ -165,6 +165,12 @@ router.post('/:id/submit', authenticate, async (req, res) => {
       return res.status(409).json({ error: '该赛事当前不接受提交' })
     }
 
+    // 必须先报名再提交（报名→提交 语义）
+    const registered = await Registration.exists({ competitionId: comp._id, userId: req.userId })
+    if (!registered) {
+      return res.status(403).json({ error: '请先报名再提交' })
+    }
+
     // 作品必须属于当前用户
     const project = await Project.findOne({ _id: projectId, ownerId: req.userId }).lean()
     if (!project) {
@@ -210,6 +216,11 @@ router.post('/:id/submit', authenticate, async (req, res) => {
 router.get('/:id/leaderboard', async (req, res) => {
   try {
     const { page, pageSize } = parsePage(req.query)
+
+    const comp = await Competition.findById(req.params.id).lean()
+    if (!comp || comp.status === 'draft') {
+      return res.status(404).json({ error: '赛事不存在' })
+    }
 
     const subs = await Submission.find({ competitionId: req.params.id })
       .populate('userId', 'username nickname')

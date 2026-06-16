@@ -8,6 +8,7 @@ import { Card } from '../../components/common/Card'
 import { useToast } from '../../components/common/Toast'
 import { useProjects } from '../../hooks/useProjects'
 import { useSubmit } from '../../hooks/useCompetitions'
+import { useAuthStore } from '../../stores/authStore'
 import type { ProjectData } from '../../utils/api'
 
 const pidOf = (p: ProjectData): string =>
@@ -17,9 +18,11 @@ export function CompetitionSubmitPage() {
   const { id } = useParams()
   const nav = useNavigate()
   const toast = useToast()
-  const { data: projects, isLoading } = useProjects()
+  const { data: projects, isLoading, isError } = useProjects()
   const submit = useSubmit(id)
   const [selected, setSelected] = useState<string>('')
+  const hasToken = useAuthStore((s) => !!s.token)
+  const isGuest = useAuthStore((s) => s.user?.isGuest === true)
 
   const handleSubmit = () => {
     if (!selected) {
@@ -51,11 +54,24 @@ export function CompetitionSubmitPage() {
       </p>
 
       <Card hoverable={false}>
-        {isLoading ? (
+        {!hasToken || isGuest ? (
+          <div className="flex flex-col items-center py-12 text-center">
+            <FolderOpen size={40} className="text-sky-300 mb-3" />
+            <p className="text-sm text-ink-600">登录后才能提交参赛作品</p>
+            <Button variant="outline" className="mt-4" onClick={() => nav('/login')}>
+              去登录
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="space-y-2 py-4">
             {[0, 1].map((i) => (
               <div key={i} className="h-12 animate-pulse rounded-lg bg-sky-50" />
             ))}
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center py-12 text-center">
+            <FolderOpen size={40} className="text-sky-300 mb-3" />
+            <p className="text-sm text-ink-600">作品加载失败，请稍后重试</p>
           </div>
         ) : !projects || projects.length === 0 ? (
           <div className="flex flex-col items-center py-12 text-center">

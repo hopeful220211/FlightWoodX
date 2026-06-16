@@ -82,6 +82,7 @@ export function useRegister(id?: string) {
 }
 
 export function useSubmit(id?: string) {
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: async (projectId: string) => {
       const res = await apiFetch<{ submission: unknown; reused?: boolean }>(
@@ -90,6 +91,10 @@ export function useSubmit(id?: string) {
       )
       if (!res.success) throw new Error(res.error)
       return res.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['competition', id] })
+      qc.invalidateQueries({ queryKey: ['leaderboard', id] })
     },
   })
 }
