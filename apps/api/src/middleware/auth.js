@@ -38,3 +38,25 @@ exports.authenticate = (req, res, next) => {
     })
   }
 }
+
+// 可选鉴权（RFC-016 / RFC-017 社区公域）：
+// 无 Authorization → 直接放行（游客可浏览）；有 token → 校验，
+// 校验失败返回 401（不静默当游客，避免过期登录态显示错误的 likedByMe）。
+exports.optionalAuthenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization
+  if (!authHeader) return next()
+
+  const token = authHeader.split(' ')[1]
+  if (!token) return next()
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    req.userId = decoded.userId
+    next()
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: '令牌已过期，请重新登录' })
+    }
+    return res.status(401).json({ error: '无效的令牌' })
+  }
+}
