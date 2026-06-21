@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bookmark, Check, Loader2, Plus } from 'lucide-react'
+import { Bookmark, Check, Images, Loader2, Lock, Plus } from 'lucide-react'
 import { Button } from '../../common/Button'
 import { Input } from '../../common/Input'
 import { Modal } from '../../common/Modal'
@@ -12,14 +12,17 @@ import {
   useCreateCollection,
   useMyCollections,
   useRemoveFromCollection,
+  type CollectionDTO,
 } from '../../../hooks/useCollections'
+
+const EASE = 'duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'
 
 export interface SaveToCollectionButtonProps {
   postId: string
 }
 
 /**
- * 「收藏」按钮：点击后（登录态）弹出我的合集清单，每个合集一个复选框；
+ * 「收藏」按钮：点击后（登录态）弹出我的合集清单，每个合集一行带勾选；
  * 勾选 = 该合集已含此作品，切换即加入 / 移出（幂等）。底部内联「＋ 新建合集」（建完即加入）。
  */
 export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) {
@@ -100,6 +103,7 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
 
   const loading = loadingCollections || loadingMembers
   const isSaved = savedCount > 0
+  const boards = collections ?? []
 
   return (
     <>
@@ -116,36 +120,56 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
       <Modal open={open} title="收藏到合集" onClose={closeModal}>
         <div className="space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center py-8 text-ink-400">
+            <div className="flex items-center justify-center gap-2 py-10 text-ink-400">
               <Loader2 size={18} className="animate-spin motion-reduce:animate-none" />
+              <span className="text-sm">正在加载你的合集…</span>
             </div>
           ) : (
             <>
-              {(collections ?? []).length === 0 ? (
-                <p className="py-2 text-sm text-ink-400">你还没有合集，新建一个开始收藏吧。</p>
+              {boards.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-8 text-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+                    <Bookmark size={20} className="text-sky-300" />
+                  </div>
+                  <p className="text-sm text-ink-500">还没有合集，新建一个开始收藏吧</p>
+                </div>
               ) : (
-                <ul className="max-h-72 space-y-1 overflow-y-auto">
-                  {(collections ?? []).map((c) => {
+                <ul className="-mx-1 max-h-80 space-y-1 overflow-y-auto px-1">
+                  {boards.map((c: CollectionDTO) => {
                     const contained = memberSet.has(c.id)
                     return (
                       <li key={c.id}>
                         <button
                           type="button"
                           onClick={() => toggle(c.id, contained)}
-                          className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
                           aria-pressed={contained}
+                          className={`flex w-full items-center gap-3 rounded-xl border p-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${EASE} ${
+                            contained
+                              ? 'border-sky-200 bg-sky-50/70'
+                              : 'border-transparent hover:border-sky-100 hover:bg-sky-50/60'
+                          }`}
                         >
-                          <span className="min-w-0">
-                            <span className="block truncate text-sm font-medium text-ink-900">{c.name}</span>
-                            <span className="block text-xs text-ink-400">{c.itemCount} 个作品</span>
+                          <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-sky-100 to-sky-50">
+                            {c.coverUrl ? (
+                              <img src={c.coverUrl} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <Images size={18} className="text-sky-300/80" />
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-1.5">
+                              <span className="truncate text-sm font-semibold text-ink-900">{c.name}</span>
+                              {!c.isPublic && <Lock size={11} className="shrink-0 text-ink-400" aria-label="私密合集" />}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-ink-400">{c.itemCount} 件作品</span>
                           </span>
                           <span
-                            className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                            className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${EASE} ${
                               contained ? 'border-sky-500 bg-sky-500 text-white' : 'border-sky-200 text-transparent'
                             }`}
                             aria-hidden="true"
                           >
-                            <Check size={13} />
+                            <Check size={14} />
                           </span>
                         </button>
                       </li>
@@ -173,21 +197,23 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
                 <button
                   type="button"
                   onClick={() => setCreating(true)}
-                  className="flex w-full items-center gap-2 border-t border-sky-100 px-3 pt-3 text-sm font-medium text-sky-600 transition-colors hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                  className={`flex w-full items-center gap-2 rounded-xl border border-dashed border-sky-200 bg-sky-50/40 px-3 py-2.5 text-sm font-semibold text-sky-600 transition-all hover:border-sky-300 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${EASE}`}
                 >
                   <Plus size={16} /> 新建合集
                 </button>
               )}
 
-              <div className="flex justify-between border-t border-sky-100 pt-3">
+              <div className="flex items-center justify-between border-t border-sky-100 pt-3">
                 <button
                   type="button"
                   onClick={() => nav('/collections')}
-                  className="text-sm text-ink-400 transition-colors hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded"
+                  className="rounded text-sm text-ink-400 transition-colors hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
                 >
                   管理我的合集
                 </button>
-                <Button size="sm" variant="outline" onClick={closeModal}>完成</Button>
+                <Button size="sm" variant="outline" onClick={closeModal}>
+                  完成
+                </Button>
               </div>
             </>
           )}

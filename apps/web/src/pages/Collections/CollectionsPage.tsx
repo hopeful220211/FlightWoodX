@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FolderPlus, ImageOff, Lock, Plus } from 'lucide-react'
+import { Bookmark, FolderHeart, Images, Lock, Plus, Sparkles } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
-import { PageHeader } from '../../components/common/PageHeader'
-import { Card } from '../../components/common/Card'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
 import { Modal } from '../../components/common/Modal'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
 import { useCreateCollection, useMyCollections, type CollectionDTO } from '../../hooks/useCollections'
+
+const EASE = 'duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'
 
 export function CollectionsPage() {
   const nav = useNavigate()
@@ -30,6 +30,11 @@ export function CollectionsPage() {
     setIsPublic(true)
   }
 
+  const closeModal = () => {
+    setModalOpen(false)
+    resetForm()
+  }
+
   const submit = () => {
     const trimmed = name.trim()
     if (!trimmed) {
@@ -41,8 +46,7 @@ export function CollectionsPage() {
       {
         onSuccess: (created) => {
           toast.push('success', '合集已创建')
-          setModalOpen(false)
-          resetForm()
+          closeModal()
           nav(`/collections/${created.id}`)
         },
         onError: (err) => toast.push('error', err instanceof Error ? err.message : '创建合集失败'),
@@ -53,81 +57,99 @@ export function CollectionsPage() {
   // 未登录：友好引导
   if (!isLoggedIn) {
     return (
-      <PageContainer className="py-8 space-y-6">
-        <PageHeader title="我的收藏" description="把喜欢的作品收进合集，随时回来看" />
-        <div className="py-20 text-center">
-          <FolderPlus size={40} className="mx-auto text-sky-300" />
-          <p className="mt-4 text-ink-500">登录后即可创建合集、收藏喜欢的作品</p>
-          <Button className="mt-4" onClick={() => nav('/login')}>去登录</Button>
+      <PageContainer className="py-10 lg:py-14">
+        <Hero />
+        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+            <FolderHeart size={24} className="text-sky-400" />
+          </div>
+          <p className="text-ink-500">登录后即可创建合集、收藏喜欢的作品</p>
+          <button
+            onClick={() => nav('/login')}
+            className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
+          >
+            去登录
+          </button>
         </div>
       </PageContainer>
     )
   }
 
   return (
-    <PageContainer className="py-8 space-y-6">
-      <PageHeader
-        title="我的收藏"
-        description="把喜欢的作品收进合集，像收藏夹一样整理"
-        actions={
-          <Button leftIcon={<Plus size={16} />} onClick={() => setModalOpen(true)}>
-            新建合集
-          </Button>
+    <PageContainer className="py-10 lg:py-14">
+      <Hero
+        action={
+          !!collections && collections.length > 0 ? (
+            <button
+              onClick={() => setModalOpen(true)}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
+            >
+              <Plus size={16} /> 新建合集
+            </button>
+          ) : undefined
         }
       />
 
       {isLoading ? (
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="rounded-lg bg-white ring-1 ring-sky-100 overflow-hidden">
-              <div className="aspect-[4/3] bg-sky-50 animate-pulse" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 w-2/3 bg-sky-50 rounded animate-pulse" />
-                <div className="h-3 w-1/3 bg-sky-50 rounded animate-pulse" />
+            <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-sky-100">
+              <div className="aspect-[4/3] animate-pulse bg-sky-50" />
+              <div className="space-y-2 p-4">
+                <div className="h-4 w-2/3 animate-pulse rounded bg-sky-50" />
+                <div className="h-3 w-1/3 animate-pulse rounded bg-sky-50" />
               </div>
             </div>
           ))}
         </div>
       ) : isError ? (
-        <div className="py-16 text-center">
-          <p className="text-ink-400">加载合集失败</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>重试</Button>
+        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
+          <p className="text-ink-500">收藏夹加载失败了</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
+          >
+            重试
+          </button>
         </div>
       ) : !collections || collections.length === 0 ? (
-        <div className="py-16 text-center">
-          <FolderPlus size={40} className="mx-auto text-sky-300" />
-          <p className="mt-4 text-ink-500">你还没有合集，新建一个开始收藏吧</p>
-          <Button className="mt-4" leftIcon={<Plus size={16} />} onClick={() => setModalOpen(true)}>
-            新建合集
-          </Button>
+        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+            <FolderHeart size={24} className="text-sky-300" />
+          </div>
+          <p className="text-ink-500">还没有合集，去社区收藏喜欢的作品吧</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+            <button
+              onClick={() => setModalOpen(true)}
+              className={`inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
+            >
+              <Plus size={16} /> 新建合集
+            </button>
+            <button
+              onClick={() => nav('/community')}
+              className="inline-flex items-center rounded-full border border-sky-200 bg-white px-5 py-2.5 text-sm font-semibold text-ink-700 shadow-soft transition hover:border-sky-300 hover:bg-sky-50"
+            >
+              逛逛作品广场
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
           {collections.map((c: CollectionDTO) => (
-            <Card
-              key={c.id}
-              className="group cursor-pointer overflow-hidden"
-              onClick={() => nav(`/collections/${c.id}`)}
-            >
-              <div className="aspect-[4/3] overflow-hidden rounded-t-lg bg-sky-50 -mx-4 -mt-4 mb-4 flex items-center justify-center">
-                {c.coverUrl ? (
-                  <img
-                    src={c.coverUrl}
-                    alt={c.name}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
-                    loading="lazy"
-                  />
-                ) : (
-                  <ImageOff size={28} className="text-sky-200" />
-                )}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-semibold text-ink-900 truncate">{c.name}</h3>
-                {!c.isPublic && <Lock size={13} className="shrink-0 text-ink-400" aria-label="私密合集" />}
-              </div>
-              <p className="text-sm text-ink-400 mt-0.5">{c.itemCount} 个作品</p>
-            </Card>
+            <BoardCard key={c.id} collection={c} onOpen={() => nav(`/collections/${c.id}`)} />
           ))}
+
+          {/* 新建合集占位卡 */}
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className={`group flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 p-4 text-center transition-all hover:-translate-y-1.5 hover:border-sky-300 hover:bg-sky-50 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:hover:translate-y-0 ${EASE}`}
+          >
+            <span className={`flex h-12 w-12 items-center justify-center rounded-full bg-white text-sky-500 shadow-soft ring-1 ring-sky-100 transition-transform group-hover:scale-110 motion-reduce:transition-none ${EASE}`}>
+              <Plus size={22} />
+            </span>
+            <span className="text-sm font-semibold text-ink-700">新建合集</span>
+          </button>
         </div>
       )}
 
@@ -135,20 +157,10 @@ export function CollectionsPage() {
       <Modal
         open={modalOpen}
         title="新建合集"
-        onClose={() => {
-          setModalOpen(false)
-          resetForm()
-        }}
+        onClose={closeModal}
         footer={
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setModalOpen(false)
-                resetForm()
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={closeModal}>
               取消
             </Button>
             <Button size="sm" loading={createCollection.isPending} onClick={submit}>
@@ -165,6 +177,7 @@ export function CollectionsPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
+            autoFocus
           />
           <Input
             label="描述（可选）"
@@ -184,5 +197,67 @@ export function CollectionsPage() {
         </div>
       </Modal>
     </PageContainer>
+  )
+}
+
+/** 页面 hero：eyebrow + 标题 + 副标题，可选右侧操作（与社区广场风格一致）。 */
+function Hero({ action }: { action?: React.ReactNode }) {
+  return (
+    <header className="mb-8 flex flex-wrap items-start justify-between gap-4 lg:mb-10">
+      <div className="min-w-0">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500 ring-1 ring-sky-100">
+          <Sparkles size={12} /> 我的收藏夹
+        </span>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">我的收藏</h1>
+        <p className="mt-2 max-w-xl text-ink-500">
+          把喜欢的木质飞行器收进合集，像收藏夹一样分门别类，随时回来看，或者复用它们的设计。
+        </p>
+      </div>
+      {action}
+    </header>
+  )
+}
+
+/** 单个合集封面卡：封面图或柔和天蓝渐变占位，hover 上浮。 */
+function BoardCard({ collection, onOpen }: { collection: CollectionDTO; onOpen: () => void }) {
+  return (
+    <article
+      onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onOpen()
+        }
+      }}
+      className={`group relative cursor-pointer overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-sky-100 transition-all hover:-translate-y-1.5 hover:shadow-lift hover:ring-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:hover:translate-y-0 ${EASE}`}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-sky-100 to-sky-50">
+        {collection.coverUrl ? (
+          <img
+            src={collection.coverUrl}
+            alt={collection.name}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:transition-none"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <Images size={26} className="text-sky-300/80" />
+          </div>
+        )}
+        {!collection.isPublic && (
+          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/85 px-2 py-0.5 text-[11px] font-medium text-ink-500 shadow-soft backdrop-blur-md">
+            <Lock size={11} /> 私密
+          </span>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="truncate font-semibold text-ink-900">{collection.name}</h3>
+        <p className="mt-1 inline-flex items-center gap-1 text-sm text-ink-400">
+          <Bookmark size={12} /> {collection.itemCount} 件作品
+        </p>
+      </div>
+    </article>
   )
 }

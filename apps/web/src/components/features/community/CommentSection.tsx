@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MessageCircle, MoreHorizontal, Trash2, Flag, UserCircle2 } from 'lucide-react'
-import { Button } from '../../common/Button'
+import { MessageCircle, MoreHorizontal, Trash2, Flag, UserCircle2, Send } from 'lucide-react'
 import { useToast } from '../../common/Toast'
 import { cn } from '../../../utils/cn'
 import { useAuthStore } from '../../../stores/authStore'
@@ -40,7 +39,11 @@ function Avatar({ comment }: { comment: CommentDTO }) {
       />
     )
   }
-  return <UserCircle2 size={36} className="shrink-0 text-sky-200" aria-hidden />
+  return (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-100 to-sky-200/60 ring-1 ring-sky-100">
+      <UserCircle2 size={20} className="text-sky-500" aria-hidden />
+    </span>
+  )
 }
 
 /** 单条评论：头像 + 用户名 + 时间 + 正文 + 操作（举报 / 作者删除）。 */
@@ -91,16 +94,18 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
   }
 
   return (
-    <li className="flex gap-3 py-3">
+    <li className="group flex gap-3 rounded-xl px-3 py-3 transition-colors duration-300 hover:bg-sky-50/60">
       <Avatar comment={comment} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold text-ink-800">
+          <span className="truncate text-sm font-semibold text-ink-900">
             {comment.author?.username || '匿名'}
           </span>
           <span className="shrink-0 text-xs text-ink-400">{relativeTime(comment.createdAt)}</span>
         </div>
-        <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-ink-700">{comment.body}</p>
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-700">
+          {comment.body}
+        </p>
       </div>
 
       {/* 操作菜单：举报（所有人）/ 删除（仅作者本人） */}
@@ -108,7 +113,11 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          className="rounded-md p-1.5 text-ink-400 transition-colors hover:bg-sky-50 hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+          className={cn(
+            'rounded-full p-1.5 text-ink-400 transition-all duration-300 hover:bg-white hover:text-sky-600 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40',
+            'opacity-0 group-hover:opacity-100 motion-reduce:opacity-100',
+            menuOpen && 'opacity-100 bg-white text-sky-600 shadow-soft',
+          )}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           aria-label="更多操作"
@@ -118,7 +127,7 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
         {menuOpen && (
           <div
             role="menu"
-            className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border border-sky-100 bg-white py-1 shadow-lift"
+            className="absolute right-0 top-full z-20 mt-1.5 w-36 overflow-hidden rounded-xl bg-white py-1 shadow-lift ring-1 ring-sky-100"
           >
             {isMine ? (
               <button
@@ -131,7 +140,7 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
               </button>
             ) : (
               <>
-                <div className="flex items-center gap-1.5 px-3 pb-1 pt-0.5 text-xs font-medium text-ink-400">
+                <div className="flex items-center gap-1.5 px-3 pb-1 pt-1 text-xs font-medium text-ink-400">
                   <Flag size={12} /> 举报理由
                 </div>
                 {REASONS.map((reason) => (
@@ -164,6 +173,7 @@ export function CommentSection({ postId }: { postId: string }) {
 
   const [draft, setDraft] = useState('')
   const trimmed = draft.trim()
+  const nearLimit = draft.length >= MAX_LEN - 30
 
   const submit = () => {
     if (!trimmed || add.isPending) return
@@ -179,15 +189,20 @@ export function CommentSection({ postId }: { postId: string }) {
   const count = data?.total ?? 0
 
   return (
-    <section className="space-y-4" aria-label="评论区">
+    <section className="space-y-5" aria-label="评论区">
       <h2 className="flex items-center gap-2 text-base font-semibold text-ink-900">
         <MessageCircle size={18} className="text-sky-500" />
-        评论 {count > 0 && <span className="text-ink-400">({count})</span>}
+        评论
+        {count > 0 && (
+          <span className="inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-600 ring-1 ring-sky-100">
+            {count}
+          </span>
+        )}
       </h2>
 
       {/* 发表框：登录后可用，游客提示登录 */}
       {isLoggedIn ? (
-        <div className="space-y-2">
+        <div className="rounded-2xl bg-sky-50/50 p-3 ring-1 ring-sky-100 transition focus-within:ring-sky-200">
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, MAX_LEN))}
@@ -195,47 +210,64 @@ export function CommentSection({ postId }: { postId: string }) {
             rows={3}
             maxLength={MAX_LEN}
             className={cn(
-              'w-full resize-none rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-sm text-ink-900 transition placeholder:text-ink-400',
-              'focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/20',
+              'w-full resize-none rounded-xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-ink-900 shadow-soft transition placeholder:text-ink-400',
+              'focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100',
             )}
           />
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-ink-400">{draft.length}/{MAX_LEN}</span>
-            <Button size="sm" onClick={submit} loading={add.isPending} disabled={!trimmed}>
-              发布
-            </Button>
+          <div className="mt-2.5 flex items-center justify-between pl-1">
+            <span className={cn('text-xs tabular-nums transition-colors', nearLimit ? 'text-rose-500' : 'text-ink-400')}>
+              {draft.length}/{MAX_LEN}
+            </span>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={!trimmed || add.isPending}
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-sky-500 px-5 text-sm font-semibold text-white shadow-soft transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-sky-300 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+            >
+              <Send size={14} className={add.isPending ? 'animate-pulse motion-reduce:animate-none' : ''} />
+              {add.isPending ? '发布中…' : '发布'}
+            </button>
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed border-sky-200 bg-sky-50/50 px-4 py-3 text-center text-sm text-ink-500">
-          登录后才能评论
+        <div className="flex flex-col items-center gap-1 rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 px-4 py-6 text-center">
+          <MessageCircle size={22} className="text-sky-300" />
+          <p className="text-sm text-ink-500">登录后就能在这里留言啦</p>
         </div>
       )}
 
       {/* 列表三态 */}
       {isLoading ? (
-        <ul className="divide-y divide-sky-50">
+        <ul className="space-y-1">
           {Array.from({ length: 3 }).map((_, i) => (
-            <li key={i} className="flex gap-3 py-3">
-              <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-sky-100" />
+            <li key={i} className="flex gap-3 px-3 py-3">
+              <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-sky-50" />
               <div className="flex-1 space-y-2 py-1">
-                <div className="h-3 w-24 animate-pulse rounded bg-sky-100" />
-                <div className="h-3 w-3/4 animate-pulse rounded bg-sky-100" />
+                <div className="h-3 w-24 animate-pulse rounded bg-sky-50" />
+                <div className="h-3 w-3/4 animate-pulse rounded bg-sky-50" />
               </div>
             </li>
           ))}
         </ul>
       ) : isError ? (
-        <div className="py-8 text-center">
-          <p className="text-sm text-ink-400">评论加载失败</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
+        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-10 text-center">
+          <p className="text-sm text-ink-500">评论加载失败了</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          >
             重试
-          </Button>
+          </button>
         </div>
       ) : !data || data.items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-ink-400">还没有评论，来说两句吧</p>
+        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-12 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+            <MessageCircle size={20} className="text-sky-300" />
+          </div>
+          <p className="text-sm text-ink-500">还没有评论，来说两句吧</p>
+        </div>
       ) : (
-        <ul className="divide-y divide-sky-50">
+        <ul className="-mx-3 divide-y divide-sky-50">
           {data.items.map((c) => (
             <CommentRow key={c.id} comment={c} postId={postId} />
           ))}

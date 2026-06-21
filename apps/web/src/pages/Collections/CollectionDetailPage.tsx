@@ -1,32 +1,40 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Heart, ImageOff, Lock, Pencil, Trash2, X } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { ImageOff, Images, Lock, Pencil, Settings2, Trash2, X } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
 import { Breadcrumb } from '../../components/common/Breadcrumb'
-import { Card } from '../../components/common/Card'
 import { Button } from '../../components/common/Button'
 import { Input } from '../../components/common/Input'
 import { Modal } from '../../components/common/Modal'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
+import { useToggleLike } from '../../hooks/useCommunity'
+import { MasonryGrid } from '../../components/features/community/MasonryGrid'
 import {
   useCollection,
   useDeleteCollection,
   useRemoveFromCollection,
   useUpdateCollection,
+  type CollectionDetail,
   type PostCard,
 } from '../../hooks/useCollections'
+
+const EASE = 'duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'
 
 export function CollectionDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
   const toast = useToast()
+  const qc = useQueryClient()
   const myUserId = useAuthStore((s) => s.user?.id)
+  const isLoggedIn = useAuthStore((s) => !!s.token && !s.user?.isGuest)
 
   const { data: collection, isLoading, isError, refetch } = useCollection(id)
   const updateCollection = useUpdateCollection()
   const deleteCollection = useDeleteCollection()
   const removeItem = useRemoveFromCollection()
+  const toggleLike = useToggleLike()
 
   const isOwner = !!collection && !!myUserId && collection.ownerId === myUserId
 
@@ -35,6 +43,8 @@ export function CollectionDetailPage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isPublic, setIsPublic] = useState(true)
+  // 管理模式：开启后每张卡片露出「移除」控件
+  const [manage, setManage] = useState(false)
 
   // 打开编辑弹窗时用当前合集数据回填（在事件处理里同步赋值，避免 effect 内 setState 的级联渲染）
   const openEdit = () => {
@@ -87,8 +97,49 @@ export function CollectionDetailPage() {
     )
   }
 
+  // 点赞：登录拦截 + 就地翻转本合集缓存（useToggleLike 只动社区缓存，合集详情靠 invalidate 兜底刷新）。
+  const onLike = (post: PostCard) => {
+    if (!isLoggedIn) {
+      toast.push('info', '登录后才能点赞哦')
+      return
+    }
+    if (!collection) return
+    const key = ['collection', collection.id]
+    const next = !post.likedByMe
+    qc.setQueryData<CollectionDetail>(key, (cur) =>
+      cur
+        ? {
+            ...cur,
+            items: cur.items.map((it) =>
+              it.id === post.id
+                ? { ...it, likedByMe: next, likeCount: Math.max(0, it.likeCount + (next ? 1 : -1)) }
+                : it,
+            ),
+          }
+        : cur,
+    )
+    toggleLike.mutate(
+      { id: post.id, liked: post.likedByMe },
+      {
+        onError: () =>
+          qc.setQueryData<CollectionDetail>(key, (cur) =>
+            cur
+              ? {
+                  ...cur,
+                  items: cur.items.map((it) =>
+                    it.id === post.id
+                      ? { ...it, likedByMe: post.likedByMe, likeCount: post.likeCount }
+                      : it,
+                  ),
+                }
+              : cur,
+          ),
+      },
+    )
+  }
+
   return (
-    <PageContainer className="py-8 space-y-6">
+    <PageContainer className="py-8 lg:py-10">
       <Breadcrumb
         items={[
           { label: '我的收藏', to: '/collections' },
@@ -97,109 +148,116 @@ export function CollectionDetailPage() {
       />
 
       {isLoading ? (
-        <div className="space-y-6">
-          <div className="h-8 w-1/3 rounded bg-sky-50 animate-pulse" />
-          <div className="columns-1 gap-5 sm:columns-2 lg:columns-3 xl:columns-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="mb-5 break-inside-avoid rounded-lg bg-white ring-1 ring-sky-100 overflow-hidden">
-                <div className="aspect-[4/3] bg-sky-50 animate-pulse" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 w-2/3 bg-sky-50 rounded animate-pulse" />
-                </div>
+        <div className="mt-6 space-y-8">
+          <div className="space-y-3">
+            <div className="h-9 w-1/3 animate-pulse rounded bg-sky-50" />
+            <div className="h-4 w-2/5 animate-pulse rounded bg-sky-50" />
+          </div>
+          <div className="flex gap-5">
+            {Array.from({ length: 4 }).map((_, c) => (
+              <div key={c} className="flex flex-1 flex-col gap-5">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-sky-100">
+                    <div className="aspect-[4/3] animate-pulse bg-sky-50" />
+                    <div className="space-y-2 p-4">
+                      <div className="h-4 w-2/3 animate-pulse rounded bg-sky-50" />
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-sky-50" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
         </div>
       ) : isError || !collection ? (
-        <div className="py-16 text-center">
-          <p className="text-ink-400">合集不存在或加载失败</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>重试</Button>
+        <div className="mt-6 rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
+          <p className="text-ink-500">合集不存在或加载失败</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
+          >
+            重试
+          </button>
         </div>
       ) : (
         <>
           {/* 头部 */}
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <header className="mt-6 flex flex-wrap items-end justify-between gap-4 lg:mt-8">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-ink-900 truncate">{collection.name}</h1>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="truncate text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">
+                  {collection.name}
+                </h1>
                 {!collection.isPublic && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs text-ink-500">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-ink-500 ring-1 ring-sky-100">
                     <Lock size={12} /> 私密
                   </span>
                 )}
               </div>
               {collection.description && (
-                <p className="mt-1 text-ink-600">{collection.description}</p>
+                <p className="mt-2.5 max-w-2xl text-ink-500">{collection.description}</p>
               )}
-              <p className="mt-1 text-sm text-ink-400">{collection.items.length} 个作品</p>
+              <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-ink-400">
+                <Images size={14} /> {collection.items.length} 件作品
+              </p>
             </div>
             {isOwner && (
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" leftIcon={<Pencil size={14} />} onClick={openEdit}>
-                  编辑
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  leftIcon={<Trash2 size={14} />}
-                  loading={deleteCollection.isPending}
-                  onClick={onDelete}
+              <div className="flex shrink-0 flex-wrap gap-2">
+                {collection.items.length > 0 && (
+                  <button
+                    onClick={() => setManage((m) => !m)}
+                    aria-pressed={manage}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold shadow-soft transition-all ${EASE} ${
+                      manage
+                        ? 'bg-sky-500 text-white shadow-sky-glow hover:bg-sky-600'
+                        : 'border border-sky-200 bg-white text-ink-700 hover:border-sky-300 hover:bg-sky-50'
+                    }`}
+                  >
+                    <Settings2 size={15} /> {manage ? '完成' : '管理'}
+                  </button>
+                )}
+                <button
+                  onClick={openEdit}
+                  className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-sky-300 hover:bg-sky-50 ${EASE}`}
                 >
-                  删除
-                </Button>
+                  <Pencil size={14} /> 编辑
+                </button>
+                <button
+                  onClick={onDelete}
+                  disabled={deleteCollection.isPending}
+                  className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 ${EASE}`}
+                >
+                  <Trash2 size={14} /> {deleteCollection.isPending ? '删除中…' : '删除'}
+                </button>
               </div>
             )}
-          </div>
+          </header>
 
-          {/* 条目瀑布流 */}
-          {collection.items.length === 0 ? (
-            <div className="py-16 text-center text-ink-400">这个合集还没有作品</div>
-          ) : (
-            <div className="columns-1 gap-5 sm:columns-2 lg:columns-3 xl:columns-4">
-              {collection.items.map((post) => (
-                <Card
-                  key={post.id}
-                  className="group relative mb-5 break-inside-avoid cursor-pointer overflow-hidden"
-                  onClick={() => nav(`/community/${post.id}`)}
+          {/* 条目区 */}
+          <div className="mt-8">
+            {collection.items.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+                  <ImageOff size={24} className="text-sky-300" />
+                </div>
+                <p className="text-ink-500">这个合集还没有作品</p>
+                <button
+                  onClick={() => nav('/community')}
+                  className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
                 >
-                  {isOwner && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onRemoveItem(post)
-                      }}
-                      className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-ink-500 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 hover:text-rose-500"
-                      aria-label="从合集移除"
-                      title="从合集移除"
-                    >
-                      <X size={15} />
-                    </button>
-                  )}
-                  <div className="aspect-[4/3] overflow-hidden rounded-t-lg bg-sky-50 -mx-4 -mt-4 mb-4 flex items-center justify-center">
-                    {post.coverUrl ? (
-                      <img
-                        src={post.coverUrl}
-                        alt={post.title}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <ImageOff size={28} className="text-sky-200" />
-                    )}
-                  </div>
-                  <h3 className="font-semibold text-ink-900 truncate">{post.title}</h3>
-                  <div className="mt-1 flex items-center justify-between">
-                    <p className="text-sm text-ink-400 truncate">{post.author?.username || '匿名'}</p>
-                    <span className="inline-flex items-center gap-1 text-xs text-ink-400">
-                      <Heart size={12} fill={post.likedByMe ? 'currentColor' : 'none'} className={post.likedByMe ? 'text-rose-500' : ''} />
-                      {post.likeCount}
-                    </span>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
+                  去社区收藏
+                </button>
+              </div>
+            ) : manage && isOwner ? (
+              <ManageGrid
+                items={collection.items}
+                pendingId={removeItem.isPending ? removeItem.variables?.postId : undefined}
+                onRemove={onRemoveItem}
+              />
+            ) : (
+              <MasonryGrid posts={collection.items} onLike={onLike} animateKey={collection.id} />
+            )}
+          </div>
         </>
       )}
 
@@ -210,8 +268,12 @@ export function CollectionDetailPage() {
         onClose={() => setEditOpen(false)}
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(false)}>取消</Button>
-            <Button size="sm" loading={updateCollection.isPending} onClick={submitEdit}>保存</Button>
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(false)}>
+              取消
+            </Button>
+            <Button size="sm" loading={updateCollection.isPending} onClick={submitEdit}>
+              保存
+            </Button>
           </div>
         }
       >
@@ -240,5 +302,67 @@ export function CollectionDetailPage() {
         </div>
       </Modal>
     </PageContainer>
+  )
+}
+
+/**
+ * 管理模式网格：与瀑布流卡片同源的天蓝风格，但每张卡突出「移除」控件。
+ * WorkCard 不承载移除按钮，故管理态用本网格替换，保持浏览态干净、管理态明确。
+ */
+function ManageGrid({
+  items,
+  pendingId,
+  onRemove,
+}: {
+  items: PostCard[]
+  pendingId?: string
+  onRemove: (post: PostCard) => void
+}) {
+  return (
+    <>
+      <p className="mb-4 text-sm text-ink-400">管理模式：点右上角 ✕ 把作品移出合集，完成后点「完成」。</p>
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+        {items.map((post) => {
+          const pending = pendingId === post.id
+          return (
+            <article
+              key={post.id}
+              className={`group relative overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-sky-100 transition-all ${EASE} ${
+                pending ? 'opacity-50' : ''
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => onRemove(post)}
+                disabled={pending}
+                aria-label="从合集移除"
+                title="从合集移除"
+                className="absolute right-2.5 top-2.5 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-ink-500 shadow-soft backdrop-blur-md transition-all hover:bg-rose-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed"
+              >
+                <X size={15} />
+              </button>
+              <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-sky-50 to-sky-100/40">
+                {post.coverUrl ? (
+                  <img
+                    src={post.coverUrl}
+                    alt={post.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <ImageOff size={24} className="text-sky-200" />
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="truncate font-semibold text-ink-900">{post.title}</h3>
+                <p className="mt-1 truncate text-sm text-ink-400">{post.author?.username || '匿名'}</p>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </>
   )
 }
