@@ -40,7 +40,8 @@ export function PublishModal({ open, onClose, projectId, defaultTitle }: Publish
       projectId,
       title: title.trim() || undefined,
       description: description.trim() || undefined,
-      reusable,
+      // 只在勾选时发送 reusable=true：重复发布一个「已开放复用」的作品时不会把它悄悄关掉
+      ...(reusable ? { reusable: true } : {}),
       forkFromPostId,
     })
     if (res.success && res.data) {

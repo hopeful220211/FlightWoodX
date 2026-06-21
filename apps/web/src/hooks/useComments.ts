@@ -67,8 +67,9 @@ export function useDeleteComment(postId: string) {
   })
 }
 
-/** 举报评论。 */
+/** 举报评论。成功后刷新评论列表——后端首条举报即把该评论隐藏（moderation→pending），需让它从列表消失。 */
 export function useReportComment() {
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ commentId, reason }: { commentId: string; reason: ReportReason }): Promise<void> => {
       const res = await apiFetch('/community/reports', {
@@ -76,6 +77,9 @@ export function useReportComment() {
         body: JSON.stringify({ targetType: 'comment', targetId: commentId, reason }),
       })
       if (!res.success) throw new Error(res.error || '举报失败')
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['community', 'comments'] })
     },
   })
 }

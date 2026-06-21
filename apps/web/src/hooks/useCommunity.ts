@@ -84,9 +84,12 @@ export function useToggleLike() {
       if (ctx.prevDetail) qc.setQueryData(postKey(ctx.id), ctx.prevDetail)
       ctx.prevLists?.forEach(([key, data]) => qc.setQueryData(key, data))
     },
-    onSettled: (_data, _err, { id }) => {
-      qc.invalidateQueries({ queryKey: postKey(id) })
-      qc.invalidateQueries({ queryKey: POSTS_KEY })
+    onSettled: () => {
+      // 详情点赞要同步到所有展示点赞数的缓存：社区列表/无限瀑布流/详情/关注流（均在 ['community'] 前缀下），
+      // 以及作者页与合集详情（各自前缀）。统一失效，避免跨页点赞数不一致。
+      qc.invalidateQueries({ queryKey: ['community'] })
+      qc.invalidateQueries({ queryKey: ['author'] })
+      qc.invalidateQueries({ queryKey: ['collection'] })
     },
   })
 }

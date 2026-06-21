@@ -689,11 +689,13 @@ export interface CommunityPostCard {
   id: string
   title: string
   description: string
+  authorId: string
   author: CommunityAuthor | null
   projectId: string
   coverUrl?: string
   forkFromId?: string
   likeCount: number
+  favoriteCount: number
   likedByMe: boolean
   createdAt: string
 }

@@ -15,6 +15,14 @@ const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/
 const PHONE_RE = /(?<!\d)1[3-9]\d{9}(?!\d)/ // 中国大陆手机号
 // QQ / 微信 / vx 等社交账号引流（关键词后跟一串数字/字母）
 const SOCIAL_RE = /(qq|扣扣|企鹅|微信|威信|vx|v信|薇信|weixin|wechat|加我)\s*[:：]?\s*[a-z0-9_-]{5,}/i
+// 域名兜底（example.com / .cn 之类，URL_RE 之外的裸域名）
+const DOMAIN_RE = /[a-z0-9-]+\.(com|cn|net|org|cc|top|xyz|vip|shop|me|io)\b/i
+const ZERO_WIDTH_RE = /[\u200B-\u200D\u2060\uFEFF]/g
+
+// 规范化：全角→半角(NFKC) + 去零宽字符，破解全角/零宽绕过
+function normalizeForSafety(s) {
+  return s.normalize('NFKC').replace(ZERO_WIDTH_RE, '')
+}
 
 // 轻量脏话/辱骂黑名单（命中即拒，给孩子一个干净的社区）。保持简短、显见即可。
 const PROFANITY = [
@@ -53,11 +61,14 @@ function commentDTO(row) {
 function validateBody(body) {
   if (!body) return '评论不能为空哦'
   if (body.length > 300) return '评论太长啦，最多 300 个字'
-  if (URL_RE.test(body) || EMAIL_RE.test(body)) return '评论里不能放网址或邮箱哦'
-  if (PHONE_RE.test(body)) return '为了安全，评论里不能留手机号哦'
-  if (SOCIAL_RE.test(body)) return '为了安全，评论里不能留 QQ / 微信哦'
-  const lower = body.toLowerCase()
-  if (PROFANITY.some((w) => lower.includes(w))) return '请友善发言，换个说法再试试吧'
+  // 规范形（全角→半角、去零宽）+ 紧凑形（去空格/常见分隔符），
+  // 双形检测破解 "138 0013 8000" / "微 信：xxx" / 全角/零宽 等拆分混淆。
+  const lower = normalizeForSafety(body).toLowerCase()
+  const compact = lower.replace(/[\s\-_~·.，。、|/\\]+/g, '')
+  if (URL_RE.test(lower) || EMAIL_RE.test(lower) || DOMAIN_RE.test(lower)) return '评论里不能放网址或邮箱哦'
+  if (PHONE_RE.test(lower) || PHONE_RE.test(compact)) return '为了安全，评论里不能留手机号哦'
+  if (SOCIAL_RE.test(lower) || SOCIAL_RE.test(compact)) return '为了安全，评论里不能留 QQ / 微信哦'
+  if (PROFANITY.some((w) => lower.includes(w) || compact.includes(w))) return '请友善发言，换个说法再试试吧'
   return null
 }
 

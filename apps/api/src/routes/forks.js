@@ -37,37 +37,49 @@ function isTransactionUnsupported(err) {
  * 在给定 session 下克隆出「新设计 + 新程序 + 新项目」三件套，归属当前用户。
  * session 传 null 时不开事务（降级路径）。返回新建的 Project 文档。
  */
-async function cloneProjectBundle({ sourcePost, sourceProject, sourceDesign, sourceProgram, ownerId, session }) {
+async function cloneProjectBundle({ sourceProject, sourceDesign, sourceProgram, ownerId, session }) {
   const opts = session ? { session } : {}
+  const created = []
+  try {
+    // 新设计：白名单拷贝 + 归属本人 + 重置为草稿；绝不带 localId（避免与他人/本人既有设计的唯一索引冲突）。
+    const newDesign = new DroneDesign({
+      ...pickDefined(sourceDesign, DESIGN_CLONE_FIELDS),
+      ownerId,
+      status: 'draft',
+    })
+    await newDesign.save(opts)
+    created.push(newDesign)
 
-  // 新设计：白名单拷贝 + 归属本人 + 重置为草稿；绝不带 localId（避免与他人/本人既有设计的唯一索引冲突）。
-  const newDesign = new DroneDesign({
-    ...pickDefined(sourceDesign, DESIGN_CLONE_FIELDS),
-    ownerId,
-    status: 'draft',
-  })
-  await newDesign.save(opts)
+    // 新程序：白名单拷贝 + 归属本人。
+    const newProgram = new Program({
+      ...pickDefined(sourceProgram, PROGRAM_CLONE_FIELDS),
+      ownerId,
+    })
+    await newProgram.save(opts)
+    created.push(newProgram)
 
-  // 新程序：白名单拷贝 + 归属本人。
-  const newProgram = new Program({
-    ...pickDefined(sourceProgram, PROGRAM_CLONE_FIELDS),
-    ownerId,
-  })
-  await newProgram.save(opts)
+    // 新项目：私密、不可复用，引用上面两个新产物；名字加「（复用）」后缀。
+    const newProject = new Project({
+      ownerId,
+      name: `${sourceProject.name}（复用）`,
+      visibility: 'private',
+      reusable: false,
+      coverUrl: sourceProject.coverUrl,
+      designId: newDesign._id,
+      programId: newProgram._id,
+    })
+    await newProject.save(opts)
 
-  // 新项目：私密、不可复用，引用上面两个新产物；名字加「（复用）」后缀。
-  const newProject = new Project({
-    ownerId,
-    name: `${sourceProject.name}（复用）`,
-    visibility: 'private',
-    reusable: false,
-    coverUrl: sourceProject.coverUrl,
-    designId: newDesign._id,
-    programId: newProgram._id,
-  })
-  await newProject.save(opts)
-
-  return newProject
+    return newProject
+  } catch (e) {
+    // 事务路径由 withTransaction 自动回滚；非事务降级路径手动补偿删除已建文档，避免残留孤儿设计/程序。
+    if (!session) {
+      for (const doc of created.reverse()) {
+        try { await doc.deleteOne() } catch (_) { /* 补偿删除尽力而为 */ }
+      }
+    }
+    throw e
+  }
 }
 
 /**
@@ -108,6 +120,18 @@ router.post('/posts/:id/fork', authenticate, async (req, res) => {
       Program.findById(sourceProject.programId).lean(),
     ])
     if (!sourceDesign || !sourceProgram) {
+      return res.status(409).json({ error: '该作品未开放复用或缺少可复用内容' })
+    }
+
+    // 资产归属一致性：项目引用的设计/程序若明确属于「别人」，拒绝复用。
+    // 防止有人把他人资产绑到自己项目、标记 reusable，再借 fork 套出非自有内容。
+    // （缺 ownerId 的历史数据不误伤；只在「确属他人」时拦截。）
+    const authorId = String(sourceProject.ownerId)
+    const referencesOthersAsset =
+      (sourcePost.authorId && String(sourcePost.authorId) !== authorId) ||
+      (sourceDesign.ownerId && String(sourceDesign.ownerId) !== authorId) ||
+      (sourceProgram.ownerId && String(sourceProgram.ownerId) !== authorId)
+    if (referencesOthersAsset) {
       return res.status(409).json({ error: '该作品未开放复用或缺少可复用内容' })
     }
 
