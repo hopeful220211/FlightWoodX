@@ -19,7 +19,7 @@ router.get('/public', async (req, res) => {
     const filter = { visibility: 'public' }
     const total = await Project.countDocuments(filter)
     const docs = await Project.find(filter)
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: 1, _id: 1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean()
@@ -70,7 +70,7 @@ router.get('/', async (req, res) => {
     const filter = { ownerId: req.userId }
     const total = await Project.countDocuments(filter)
     const items = await Project.find(filter)
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: 1, _id: 1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean()

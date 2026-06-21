@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
     const filter = { ownerId: req.userId }
     const total = await Program.countDocuments(filter)
     const items = await Program.find(filter)
-      .sort({ updatedAt: -1 })
+      .sort({ updatedAt: -1, _id: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean()

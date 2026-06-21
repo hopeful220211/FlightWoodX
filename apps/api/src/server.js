@@ -13,7 +13,8 @@ app.set('trust proxy', 1)
 
 // ===== 请求日志（RFC-014 W10）=====
 // 极简内联实现，零额外依赖。只记录方法/路径/状态码/耗时，
-// 绝不记录请求体、Header、token 或任何 PII，避免日志泄露敏感信息。
+// 只记录方法/路径/状态码/耗时；不记请求体、Header、token、密码。
+// 注意 path 含资源 id（如 /api/projects/:id），但不含明文 PII。
 app.use((req, res, next) => {
   const start = Date.now()
   res.on('finish', () => {

@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
     const filter = { ownerId: req.userId }
     const total = await DroneDesign.countDocuments(filter)
     const items = await DroneDesign.find(filter)
-      .sort({ updatedAt: -1 })
+      .sort({ updatedAt: -1, _id: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .lean()

@@ -185,7 +185,11 @@ exports.changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body
 
-    if (!oldPassword || !newPassword) {
+    // 必须是非空字符串：否则数字 newPassword 无 .length、与字符串严格比较不等，
+    // Mongoose 又会把它强转回字符串，导致能把密码"改"成原密码；非字符串 oldPassword
+    // 还会让 bcrypt 抛错返回 500。统一在此拦成 400。
+    if (!oldPassword || !newPassword
+      || typeof oldPassword !== 'string' || typeof newPassword !== 'string') {
       return res.status(400).json({
         error: '请提供原密码和新密码'
       })
