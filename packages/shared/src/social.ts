@@ -13,6 +13,7 @@
  * 本文件只补"社交原语 / 分享回放 / 统一审核 / fork 溯源"。纯类型，无运行时副作用（A3 红线）。
  */
 import type { IsoDateString } from './models';
+import type { Paginated } from './api';
 
 // ===== 通用：可被社交动作指向的目标 =====
 export type SocialTarget = 'project' | 'communityPost' | 'part' | 'comment';
@@ -91,3 +92,48 @@ export interface ForkProvenance {
   fromProjectId: string;
   fromAuthorId: string;
 }
+
+// ===== 灵感合集 / 收藏夹（RFC-017 社区扩展）=====
+// 像 Pinterest 的 board：用户把喜欢的作品归到自建合集里。
+export interface Collection {
+  id: string;
+  ownerId: string;
+  name: string;
+  description?: string;
+  /** 合集封面用哪条作品的图（可空，前端可回退到首项）。 */
+  coverPostId?: string;
+  isPublic: boolean;
+  createdAt: IsoDateString;
+}
+
+export interface CollectionItem {
+  id: string;
+  collectionId: string;
+  postId: string;
+  addedAt: IsoDateString;
+}
+
+// ===== 热门榜（RFC-017 社区扩展）=====
+// 社区作品列表项：带社交计数，供热门榜 / 列表卡片展示。
+// 计数来自 Reaction 聚合，不直接读 CommunityPost.likes（见上方社交原语说明）。
+export interface CommunityPostListItem {
+  id: string;
+  authorId: string;
+  projectId: string;
+  title: string;
+  /** 卡片封面图（取自作品封面，可空）。 */
+  coverUrl?: string;
+  likeCount: number;
+  favoriteCount: number;
+  createdAt: IsoDateString;
+}
+
+// 热门榜查询：按时间窗口取榜，复用通用分页（page/pageSize 可选）。
+export interface TrendingQuery {
+  window: 'day' | 'week' | 'all';
+  page?: number;
+  pageSize?: number;
+}
+
+/** 热门榜返回：复用通用 Paginated<T>，列表项带社交计数。 */
+export type TrendingResult = Paginated<CommunityPostListItem>;

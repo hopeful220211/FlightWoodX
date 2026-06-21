@@ -87,6 +87,8 @@ export interface Project {
   name: string;
   coverUrl?: string;
   visibility: Visibility;
+  /** 作者是否允许他人复用本作品（开源可复用标记）。后端默认 false。 */
+  reusable: boolean;
   createdAt: IsoDateString;
   updatedAt: IsoDateString;
 }
