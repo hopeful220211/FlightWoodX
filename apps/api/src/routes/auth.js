@@ -9,6 +9,7 @@ router.post('/login', authController.login)
 // 需要认证的路由（需要登录）
 router.get('/me', authenticate, authController.getMe)
 router.patch('/profile', authenticate, authController.updateProfile)
+router.post('/change-password', authenticate, authController.changePassword)
 
 // NOTE: GET /users moved to /api/admin/users (see routes/admin.js)
 
