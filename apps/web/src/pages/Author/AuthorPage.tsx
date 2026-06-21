@@ -1,62 +1,23 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { UserRound, ImageOff, Loader2, Users } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
-import { useToast } from '../../components/common/Toast'
-import { useAuthStore } from '../../stores/authStore'
-import { useToggleLike } from '../../hooks/useCommunity'
+import { CommunityShell } from '../../components/features/community/CommunityShell'
 import { FollowButton } from '../../components/features/community/FollowButton'
 import { MasonryGrid } from '../../components/features/community/MasonryGrid'
-import { useAuthor, type AuthorResponse } from '../../hooks/useFollow'
-import type { PostCard } from '../../hooks/useCommunityFeed'
+import { useAuthor } from '../../hooks/useFollow'
 
 /** 创作者主页 /u/:userId：高端信息头卡 + 其作品瀑布流（MasonryGrid，无限滚动）。 */
 export function AuthorPage() {
   const { userId } = useParams<{ userId: string }>()
   const nav = useNavigate()
-  const toast = useToast()
-  const qc = useQueryClient()
-  const isLoggedIn = useAuthStore((s) => !!s.token && !s.user?.isGuest)
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useAuthor(userId)
-  const toggleLike = useToggleLike()
 
   // 作者信息取第一页（每页都带回最新计数，取首页即可）；作品 flatMap 所有页。
   const author = data?.pages[0]?.author
   const posts = useMemo(() => (data ? data.pages.flatMap((p) => p.posts.items) : []), [data])
-
-  // 本地乐观点赞：useToggleLike 只更新 ['community','posts']，作者页走 ['author', userId]，
-  // 故在此就地翻转当前作者无限缓存里对应作品；服务端写入交给 mutate，失败回滚。
-  const onLike = (post: PostCard) => {
-    if (!isLoggedIn) {
-      toast.push('info', '登录后才能点赞哦')
-      return
-    }
-    const key = ['author', userId ?? ''] as const
-    const patch = (liked: boolean) =>
-      qc.setQueryData<InfiniteData<AuthorResponse>>(key, (cur) =>
-        cur
-          ? {
-              ...cur,
-              pages: cur.pages.map((pg) => ({
-                ...pg,
-                posts: {
-                  ...pg.posts,
-                  items: pg.posts.items.map((it) =>
-                    it.id === post.id
-                      ? { ...it, likedByMe: liked, likeCount: Math.max(0, it.likeCount + (liked ? 1 : -1)) }
-                      : it,
-                  ),
-                },
-              })),
-            }
-          : cur,
-      )
-    patch(!post.likedByMe)
-    toggleLike.mutate({ id: post.id, liked: post.likedByMe }, { onError: () => patch(post.likedByMe) })
-  }
 
   // 无限滚动：底部哨兵进入视口即加载下一页。
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -76,135 +37,141 @@ export function AuthorPage() {
   // 首屏加载（还没有作者数据）：头卡骨架 + 瀑布流骨架。
   if (isLoading && !author) {
     return (
-      <PageContainer className="py-10 lg:py-14">
-        <div className="mb-10 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
-          <div className="h-28 animate-pulse bg-gradient-to-br from-sky-100 to-sky-50 sm:h-32" />
-          <div className="flex flex-col gap-4 px-6 pb-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex items-end gap-4">
-              <div className="-mt-12 h-24 w-24 animate-pulse rounded-full bg-sky-100 ring-4 ring-white" />
-              <div className="space-y-2 pb-1">
-                <div className="h-6 w-40 animate-pulse rounded bg-sky-50" />
-                <div className="h-4 w-52 animate-pulse rounded bg-sky-50" />
-              </div>
-            </div>
-            <div className="h-11 w-28 animate-pulse rounded-full bg-sky-50" />
-          </div>
-        </div>
-        <div className="flex gap-5">
-          {Array.from({ length: 4 }).map((_, c) => (
-            <div key={c} className="flex flex-1 flex-col gap-5">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-sky-100">
-                  <div className="aspect-[4/3] animate-pulse bg-sky-50" />
-                  <div className="space-y-2 p-4">
-                    <div className="h-4 w-2/3 animate-pulse rounded bg-sky-50" />
-                    <div className="h-3 w-1/3 animate-pulse rounded bg-sky-50" />
-                  </div>
+      <CommunityShell>
+        <PageContainer className="py-10 lg:py-14">
+          <div className="mb-10 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+            <div className="h-28 animate-pulse bg-gradient-to-br from-sky-100 to-sky-50 sm:h-32" />
+            <div className="flex flex-col gap-4 px-6 pb-6 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex items-end gap-4">
+                <div className="-mt-12 h-24 w-24 animate-pulse rounded-full bg-sky-100 ring-4 ring-white" />
+                <div className="space-y-2 pb-1">
+                  <div className="h-6 w-40 animate-pulse rounded bg-sky-50" />
+                  <div className="h-4 w-52 animate-pulse rounded bg-sky-50" />
                 </div>
-              ))}
+              </div>
+              <div className="h-11 w-28 animate-pulse rounded-full bg-sky-50" />
             </div>
-          ))}
-        </div>
-      </PageContainer>
+          </div>
+          <div className="flex gap-5">
+            {Array.from({ length: 4 }).map((_, c) => (
+              <div key={c} className="flex flex-1 flex-col gap-5">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.04]">
+                    <div className="aspect-[4/5] animate-pulse bg-paper-100" />
+                    <div className="space-y-2 p-4">
+                      <div className="h-4 w-2/3 animate-pulse rounded bg-paper-100" />
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-paper-100" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </PageContainer>
+      </CommunityShell>
     )
   }
 
   if (isError || !author) {
     return (
-      <PageContainer className="py-20">
-        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
-            <UserRound size={24} className="text-sky-300" />
+      <CommunityShell>
+        <PageContainer className="py-20">
+          <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+              <UserRound size={24} className="text-sky-300" />
+            </div>
+            <p className="text-ink-600">没有找到这位创作者</p>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <button
+                onClick={() => refetch()}
+                className="rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
+              >
+                重试
+              </button>
+              <button
+                onClick={() => nav('/community')}
+                className="rounded-full px-5 py-2 text-sm font-medium text-ink-400 transition hover:text-ink-600"
+              >
+                返回社区
+              </button>
+            </div>
           </div>
-          <p className="text-ink-600">没有找到这位创作者</p>
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <button
-              onClick={() => refetch()}
-              className="rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
-            >
-              重试
-            </button>
-            <button
-              onClick={() => nav('/community')}
-              className="rounded-full px-5 py-2 text-sm font-medium text-ink-400 transition hover:text-ink-600"
-            >
-              返回社区
-            </button>
-          </div>
-        </div>
-      </PageContainer>
+        </PageContainer>
+      </CommunityShell>
     )
   }
 
   return (
-    <PageContainer className="py-10 lg:py-14">
-      {/* ── 创作者头卡：天蓝封面带 + 大头像（渐变环）+ 用户名 + 统计 + 关注按钮 ── */}
-      <header className="mb-10 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
-        <div className="relative h-28 bg-sky-hero sm:h-32">
-          <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent" />
-        </div>
-        <div className="flex flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            {/* 渐变环大头像，压在封面带上 */}
-            <div className="-mt-14 rounded-full bg-gradient-to-br from-sky-300 to-sky-500 p-[3px] shadow-sky-glow">
-              <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-white ring-4 ring-white">
-                {author.avatar ? (
-                  <img src={author.avatar} alt={author.username} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-sky-50">
-                    <UserRound size={40} className="text-sky-300" />
-                  </div>
-                )}
+    <CommunityShell>
+      <PageContainer className="py-10 lg:py-14">
+        {/* ── 创作者头卡：天蓝封面带 + 大头像（渐变环）+ 用户名 + 统计 + 关注按钮 ── */}
+        <header className="mb-10 overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+          <div className="relative h-28 bg-sky-hero sm:h-32">
+            <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent" />
+          </div>
+          <div className="flex flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              {/* 渐变环大头像，压在封面带上 */}
+              <div className="-mt-14 rounded-full bg-gradient-to-br from-sky-300 to-sky-500 p-[3px] shadow-sky-glow">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-white ring-4 ring-white">
+                  {author.avatar ? (
+                    <img src={author.avatar} alt={author.username} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-sky-50">
+                      <UserRound size={40} className="text-sky-300" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="pb-1">
+                <h1 className="text-2xl font-bold tracking-tight text-ink-900 lg:text-3xl">{author.username}</h1>
+                <div className="mt-2 flex items-center gap-4 text-sm text-ink-400">
+                  <span className="inline-flex items-baseline gap-1">
+                    <span className="text-base font-bold text-ink-900">{author.followerCount}</span> 关注者
+                  </span>
+                  <span className="h-3 w-px bg-sky-100" aria-hidden="true" />
+                  <span className="inline-flex items-baseline gap-1">
+                    <span className="text-base font-bold text-ink-900">{author.followingCount}</span> 关注
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="pb-1">
-              <h1 className="text-2xl font-bold tracking-tight text-ink-900 lg:text-3xl">{author.username}</h1>
-              <div className="mt-2 flex items-center gap-4 text-sm text-ink-400">
-                <span className="inline-flex items-baseline gap-1">
-                  <span className="text-base font-bold text-ink-900">{author.followerCount}</span> 关注者
-                </span>
-                <span className="h-3 w-px bg-sky-100" aria-hidden="true" />
-                <span className="inline-flex items-baseline gap-1">
-                  <span className="text-base font-bold text-ink-900">{author.followingCount}</span> 关注
-                </span>
-              </div>
+            <div className="shrink-0 sm:pb-1">
+              <FollowButton userId={author.id} initialFollowed={author.isFollowedByMe} />
             </div>
           </div>
-          <div className="shrink-0 sm:pb-1">
-            <FollowButton userId={author.id} initialFollowed={author.isFollowedByMe} />
-          </div>
-        </div>
-      </header>
+        </header>
 
-      {/* ── 作品墙：标题条 + 瀑布流 / 空态 ── */}
-      <div className="mb-6 flex items-baseline justify-between">
-        <h2 className="text-lg font-bold text-ink-900">TA 的作品</h2>
-        {posts.length > 0 && <span className="text-sm text-ink-400">共 {posts.length} 件</span>}
-      </div>
-
-      {posts.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
-            <ImageOff size={24} className="text-sky-300" />
-          </div>
-          <p className="text-ink-400">这位创作者还没有发布作品</p>
+        {/* ── 作品墙：标题条 + 瀑布流 / 空态 ── */}
+        <div className="mb-6 flex items-baseline justify-between">
+          <h2 className="text-lg font-bold text-ink-900">TA 的作品</h2>
+          {posts.length > 0 && <span className="text-sm text-ink-400">共 {posts.length} 件</span>}
         </div>
-      ) : (
-        <>
-          <MasonryGrid posts={posts} onLike={onLike} animateKey={userId} />
-          <div ref={sentinelRef} className="h-8" aria-hidden="true" />
-          {isFetchingNextPage && (
-            <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-ink-400">
-              <Loader2 size={15} className="animate-spin" /> 加载更多…
-            </p>
-          )}
-          {!hasNextPage && (
-            <p className="flex items-center justify-center gap-1.5 pb-2 pt-8 text-center text-sm text-ink-200">
-              <Users size={13} /> 已经到底啦
-            </p>
-          )}
-        </>
-      )}
-    </PageContainer>
+
+        {posts.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+              <ImageOff size={24} className="text-sky-300" />
+            </div>
+            <p className="text-ink-400">这位创作者还没有发布作品</p>
+          </div>
+        ) : (
+          <>
+            <MasonryGrid posts={posts} animateKey={userId} />
+            <div ref={sentinelRef} className="h-8" aria-hidden="true" />
+            {isFetchingNextPage && (
+              <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-ink-400">
+                <Loader2 size={15} className="animate-spin" /> 加载更多…
+              </p>
+            )}
+            {!hasNextPage && (
+              <p className="flex items-center justify-center gap-1.5 pb-2 pt-8 text-center text-sm text-ink-300">
+                <Users size={13} /> 已经到底啦
+              </p>
+            )}
+          </>
+        )}
+      </PageContainer>
+    </CommunityShell>
   )
 }

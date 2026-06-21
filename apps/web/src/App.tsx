@@ -31,6 +31,7 @@ import { CommunityPage } from './pages/Community/CommunityPage'
 import { CommunityPostPage } from './pages/Community/CommunityPostPage'
 import { CollectionsPage } from './pages/Collections/CollectionsPage'
 import { CollectionDetailPage } from './pages/Collections/CollectionDetailPage'
+import { LeaderboardPage as CommunityLeaderboardPage } from './pages/Leaderboard/LeaderboardPage'
 import { AuthorPage } from './pages/Author/AuthorPage'
 import { FollowingFeedPage } from './pages/Feed/FollowingFeedPage'
 import { PartsPage } from './pages/Parts/PartsPage'
@@ -114,6 +115,7 @@ export default function App() {
         <Route path="/competitions/:id" element={<CompetitionDetailPage />} />
         <Route path="/competitions/:id/leaderboard" element={<LeaderboardPage />} />
         <Route path="/community" element={<CommunityPage />} />
+        <Route path="/community/leaderboard" element={<CommunityLeaderboardPage />} />
         <Route path="/community/:postId" element={<CommunityPostPage />} />
         <Route path="/u/:userId" element={<AuthorPage />} />
         <Route path="/collections/:id" element={<CollectionDetailPage />} />

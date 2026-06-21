@@ -7,6 +7,7 @@ import { Input } from '../../components/common/Input'
 import { Modal } from '../../components/common/Modal'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
+import { CommunityShell } from '../../components/features/community/CommunityShell'
 import { useCreateCollection, useMyCollections, type CollectionDTO } from '../../hooks/useCollections'
 
 const EASE = 'duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]'
@@ -57,26 +58,29 @@ export function CollectionsPage() {
   // 未登录：友好引导
   if (!isLoggedIn) {
     return (
-      <PageContainer className="py-10 lg:py-14">
-        <Hero />
-        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
-            <FolderHeart size={24} className="text-sky-400" />
+      <CommunityShell>
+        <PageContainer className="py-10 lg:py-14">
+          <Hero />
+          <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+              <FolderHeart size={24} className="text-sky-400" />
+            </div>
+            <p className="text-ink-500">登录后即可创建合集、收藏喜欢的作品</p>
+            <button
+              onClick={() => nav('/login')}
+              className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
+            >
+              去登录
+            </button>
           </div>
-          <p className="text-ink-500">登录后即可创建合集、收藏喜欢的作品</p>
-          <button
-            onClick={() => nav('/login')}
-            className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
-          >
-            去登录
-          </button>
-        </div>
-      </PageContainer>
+        </PageContainer>
+      </CommunityShell>
     )
   }
 
   return (
-    <PageContainer className="py-10 lg:py-14">
+    <CommunityShell>
+      <PageContainer className="py-10 lg:py-14">
       <Hero
         action={
           !!collections && collections.length > 0 ? (
@@ -103,7 +107,7 @@ export function CollectionsPage() {
           ))}
         </div>
       ) : isError ? (
-        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
+        <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
           <p className="text-ink-500">收藏夹加载失败了</p>
           <button
             onClick={() => refetch()}
@@ -113,7 +117,7 @@ export function CollectionsPage() {
           </button>
         </div>
       ) : !collections || collections.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
+        <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
             <FolderHeart size={24} className="text-sky-300" />
           </div>
@@ -196,7 +200,8 @@ export function CollectionsPage() {
           </label>
         </div>
       </Modal>
-    </PageContainer>
+      </PageContainer>
+    </CommunityShell>
   )
 }
 
@@ -205,7 +210,7 @@ function Hero({ action }: { action?: React.ReactNode }) {
   return (
     <header className="mb-8 flex flex-wrap items-start justify-between gap-4 lg:mb-10">
       <div className="min-w-0">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500 ring-1 ring-sky-100">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500 ring-1 ring-sky-100 backdrop-blur">
           <Sparkles size={12} /> 我的收藏夹
         </span>
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">我的收藏</h1>

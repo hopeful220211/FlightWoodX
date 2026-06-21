@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { ImageOff, Images, Lock, Pencil, Settings2, Trash2, X } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
 import { Breadcrumb } from '../../components/common/Breadcrumb'
@@ -9,14 +8,13 @@ import { Input } from '../../components/common/Input'
 import { Modal } from '../../components/common/Modal'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
-import { useToggleLike } from '../../hooks/useCommunity'
+import { CommunityShell } from '../../components/features/community/CommunityShell'
 import { MasonryGrid } from '../../components/features/community/MasonryGrid'
 import {
   useCollection,
   useDeleteCollection,
   useRemoveFromCollection,
   useUpdateCollection,
-  type CollectionDetail,
   type PostCard,
 } from '../../hooks/useCollections'
 
@@ -26,15 +24,12 @@ export function CollectionDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
   const toast = useToast()
-  const qc = useQueryClient()
   const myUserId = useAuthStore((s) => s.user?.id)
-  const isLoggedIn = useAuthStore((s) => !!s.token && !s.user?.isGuest)
 
   const { data: collection, isLoading, isError, refetch } = useCollection(id)
   const updateCollection = useUpdateCollection()
   const deleteCollection = useDeleteCollection()
   const removeItem = useRemoveFromCollection()
-  const toggleLike = useToggleLike()
 
   const isOwner = !!collection && !!myUserId && collection.ownerId === myUserId
 
@@ -97,211 +92,172 @@ export function CollectionDetailPage() {
     )
   }
 
-  // 点赞：登录拦截 + 就地翻转本合集缓存（useToggleLike 只动社区缓存，合集详情靠 invalidate 兜底刷新）。
-  const onLike = (post: PostCard) => {
-    if (!isLoggedIn) {
-      toast.push('info', '登录后才能点赞哦')
-      return
-    }
-    if (!collection) return
-    const key = ['collection', collection.id]
-    const next = !post.likedByMe
-    qc.setQueryData<CollectionDetail>(key, (cur) =>
-      cur
-        ? {
-            ...cur,
-            items: cur.items.map((it) =>
-              it.id === post.id
-                ? { ...it, likedByMe: next, likeCount: Math.max(0, it.likeCount + (next ? 1 : -1)) }
-                : it,
-            ),
-          }
-        : cur,
-    )
-    toggleLike.mutate(
-      { id: post.id, liked: post.likedByMe },
-      {
-        onError: () =>
-          qc.setQueryData<CollectionDetail>(key, (cur) =>
-            cur
-              ? {
-                  ...cur,
-                  items: cur.items.map((it) =>
-                    it.id === post.id
-                      ? { ...it, likedByMe: post.likedByMe, likeCount: post.likeCount }
-                      : it,
-                  ),
-                }
-              : cur,
-          ),
-      },
-    )
-  }
-
   return (
-    <PageContainer className="py-8 lg:py-10">
-      <Breadcrumb
-        items={[
-          { label: '我的收藏', to: '/collections' },
-          { label: collection ? collection.name : '合集' },
-        ]}
-      />
+    <CommunityShell>
+      <PageContainer className="py-8 lg:py-10">
+        <Breadcrumb
+          items={[
+            { label: '我的收藏', to: '/collections' },
+            { label: collection ? collection.name : '合集' },
+          ]}
+        />
 
-      {isLoading ? (
-        <div className="mt-6 space-y-8">
-          <div className="space-y-3">
-            <div className="h-9 w-1/3 animate-pulse rounded bg-sky-50" />
-            <div className="h-4 w-2/5 animate-pulse rounded bg-sky-50" />
-          </div>
-          <div className="flex gap-5">
-            {Array.from({ length: 4 }).map((_, c) => (
-              <div key={c} className="flex flex-1 flex-col gap-5">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-sky-100">
-                    <div className="aspect-[4/3] animate-pulse bg-sky-50" />
-                    <div className="space-y-2 p-4">
-                      <div className="h-4 w-2/3 animate-pulse rounded bg-sky-50" />
-                      <div className="h-3 w-1/3 animate-pulse rounded bg-sky-50" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : isError || !collection ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
-          <p className="text-ink-500">合集不存在或加载失败</p>
-          <button
-            onClick={() => refetch()}
-            className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
-          >
-            重试
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* 头部 */}
-          <header className="mt-6 flex flex-wrap items-end justify-between gap-4 lg:mt-8">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="truncate text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">
-                  {collection.name}
-                </h1>
-                {!collection.isPublic && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-ink-500 ring-1 ring-sky-100">
-                    <Lock size={12} /> 私密
-                  </span>
-                )}
-              </div>
-              {collection.description && (
-                <p className="mt-2.5 max-w-2xl text-ink-500">{collection.description}</p>
-              )}
-              <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-ink-400">
-                <Images size={14} /> {collection.items.length} 件作品
-              </p>
+        {isLoading ? (
+          <div className="mt-6 space-y-8">
+            <div className="space-y-3">
+              <div className="h-9 w-1/3 animate-pulse rounded bg-sky-50" />
+              <div className="h-4 w-2/5 animate-pulse rounded bg-sky-50" />
             </div>
-            {isOwner && (
-              <div className="flex shrink-0 flex-wrap gap-2">
-                {collection.items.length > 0 && (
-                  <button
-                    onClick={() => setManage((m) => !m)}
-                    aria-pressed={manage}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold shadow-soft transition-all ${EASE} ${
-                      manage
-                        ? 'bg-sky-500 text-white shadow-sky-glow hover:bg-sky-600'
-                        : 'border border-sky-200 bg-white text-ink-700 hover:border-sky-300 hover:bg-sky-50'
-                    }`}
-                  >
-                    <Settings2 size={15} /> {manage ? '完成' : '管理'}
-                  </button>
-                )}
-                <button
-                  onClick={openEdit}
-                  className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-sky-300 hover:bg-sky-50 ${EASE}`}
-                >
-                  <Pencil size={14} /> 编辑
-                </button>
-                <button
-                  onClick={onDelete}
-                  disabled={deleteCollection.isPending}
-                  className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 ${EASE}`}
-                >
-                  <Trash2 size={14} /> {deleteCollection.isPending ? '删除中…' : '删除'}
-                </button>
-              </div>
-            )}
-          </header>
-
-          {/* 条目区 */}
-          <div className="mt-8">
-            {collection.items.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-20 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
-                  <ImageOff size={24} className="text-sky-300" />
+            <div className="flex gap-5">
+              {Array.from({ length: 4 }).map((_, c) => (
+                <div key={c} className="flex flex-1 flex-col gap-5">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.04]">
+                      <div className="aspect-[4/5] animate-pulse bg-paper-100" />
+                      <div className="space-y-2 p-4">
+                        <div className="h-4 w-2/3 animate-pulse rounded bg-paper-100" />
+                        <div className="h-3 w-1/3 animate-pulse rounded bg-paper-100" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-ink-500">这个合集还没有作品</p>
-                <button
-                  onClick={() => nav('/community')}
-                  className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
-                >
-                  去社区收藏
-                </button>
+              ))}
+            </div>
+          </div>
+        ) : isError || !collection ? (
+          <div className="mt-6 rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
+            <p className="text-ink-500">合集不存在或加载失败</p>
+            <button
+              onClick={() => refetch()}
+              className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
+            >
+              重试
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* 头部 */}
+            <header className="mt-6 flex flex-wrap items-end justify-between gap-4 lg:mt-8">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="truncate text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">
+                    {collection.name}
+                  </h1>
+                  {!collection.isPublic && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-medium text-ink-500 ring-1 ring-sky-100 backdrop-blur">
+                      <Lock size={12} /> 私密
+                    </span>
+                  )}
+                </div>
+                {collection.description && (
+                  <p className="mt-2.5 max-w-2xl text-ink-500">{collection.description}</p>
+                )}
+                <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-ink-400">
+                  <Images size={14} /> {collection.items.length} 件作品
+                </p>
               </div>
-            ) : manage && isOwner ? (
-              <ManageGrid
-                items={collection.items}
-                pendingId={removeItem.isPending ? removeItem.variables?.postId : undefined}
-                onRemove={onRemoveItem}
-              />
-            ) : (
-              <MasonryGrid posts={collection.items} onLike={onLike} animateKey={collection.id} />
-            )}
-          </div>
-        </>
-      )}
+              {isOwner && (
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {collection.items.length > 0 && (
+                    <button
+                      onClick={() => setManage((m) => !m)}
+                      aria-pressed={manage}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold shadow-soft transition-all ${EASE} ${
+                        manage
+                          ? 'bg-sky-500 text-white shadow-sky-glow hover:bg-sky-600'
+                          : 'border border-sky-200 bg-white text-ink-700 hover:border-sky-300 hover:bg-sky-50'
+                      }`}
+                    >
+                      <Settings2 size={15} /> {manage ? '完成' : '管理'}
+                    </button>
+                  )}
+                  <button
+                    onClick={openEdit}
+                    className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-sky-300 hover:bg-sky-50 ${EASE}`}
+                  >
+                    <Pencil size={14} /> 编辑
+                  </button>
+                  <button
+                    onClick={onDelete}
+                    disabled={deleteCollection.isPending}
+                    className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 ${EASE}`}
+                  >
+                    <Trash2 size={14} /> {deleteCollection.isPending ? '删除中…' : '删除'}
+                  </button>
+                </div>
+              )}
+            </header>
 
-      {/* 编辑合集弹窗 */}
-      <Modal
-        open={editOpen}
-        title="编辑合集"
-        onClose={() => setEditOpen(false)}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(false)}>
-              取消
-            </Button>
-            <Button size="sm" loading={updateCollection.isPending} onClick={submitEdit}>
-              保存
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="合集名称"
-            maxLength={40}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && submitEdit()}
-          />
-          <Input
-            label="描述（可选）"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <label className="flex items-center gap-2 text-sm text-ink-700 select-none">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-sky-300 text-sky-500 focus:ring-sky-400"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
+            {/* 条目区 */}
+            <div className="mt-8">
+              {collection.items.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
+                    <ImageOff size={24} className="text-sky-300" />
+                  </div>
+                  <p className="text-ink-500">这个合集还没有作品</p>
+                  <button
+                    onClick={() => nav('/community')}
+                    className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
+                  >
+                    去社区收藏
+                  </button>
+                </div>
+              ) : manage && isOwner ? (
+                <ManageGrid
+                  items={collection.items}
+                  pendingId={removeItem.isPending ? removeItem.variables?.postId : undefined}
+                  onRemove={onRemoveItem}
+                />
+              ) : (
+                <MasonryGrid posts={collection.items} animateKey={collection.id} />
+              )}
+            </div>
+          </>
+        )}
+
+        {/* 编辑合集弹窗 */}
+        <Modal
+          open={editOpen}
+          title="编辑合集"
+          onClose={() => setEditOpen(false)}
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setEditOpen(false)}>
+                取消
+              </Button>
+              <Button size="sm" loading={updateCollection.isPending} onClick={submitEdit}>
+                保存
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <Input
+              label="合集名称"
+              maxLength={40}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && submitEdit()}
             />
-            公开这个合集（其他人也能看到）
-          </label>
-        </div>
-      </Modal>
-    </PageContainer>
+            <Input
+              label="描述（可选）"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <label className="flex items-center gap-2 text-sm text-ink-700 select-none">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-sky-300 text-sky-500 focus:ring-sky-400"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+              />
+              公开这个合集（其他人也能看到）
+            </label>
+          </div>
+        </Modal>
+      </PageContainer>
+    </CommunityShell>
   )
 }
 

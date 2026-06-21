@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, User, LogOut, LayoutDashboard, Trophy, Users2, ChevronDown, Sparkles } from 'lucide-react'
+import { Menu, X, User, LogOut, LayoutDashboard, Trophy, Award, Users2, ChevronDown, Sparkles } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '../common/Button'
 import { useAuthStore } from '../../stores/authStore'
@@ -8,6 +8,7 @@ import { useAuthStore } from '../../stores/authStore'
 const publicItems = [
   { to: '/', label: '首页', exact: true },
   { to: '/community', label: '社区' },
+  { to: '/community/leaderboard', label: '排行榜' },
   { to: '/competitions', label: '赛事' },
   { to: '/parts', label: '零件库' },
 ] as const
@@ -16,7 +17,8 @@ const publicItems = [
 const authedItems = [
   { to: '/dashboard', label: '工作台', icon: LayoutDashboard },
   { to: '/community', label: '社区', icon: Users2 },
-  { to: '/competitions', label: '赛事', icon: Trophy },
+  { to: '/community/leaderboard', label: '排行榜', icon: Trophy },
+  { to: '/competitions', label: '赛事', icon: Award },
   { to: '/me/growth', label: '成长', icon: Sparkles },
 ] as const
 

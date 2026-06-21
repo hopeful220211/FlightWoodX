@@ -1,4 +1,5 @@
 import type { CommandProgram } from '@fwx/shared'
+import type { PartInstance } from '../types/design'
 
 // API 基础配置
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
@@ -706,6 +707,8 @@ export interface CommunityPostDetail {
   description: string
   author: CommunityAuthor | null
   project: { id: string; name: string; coverUrl?: string; designId?: string; programId?: string; reusable: boolean } | null
+  /** 完整作品页用：设计零件（含 3D 摆放），供复用 AssembledDrone / PartsList 渲染。无设计的示例作品为 null。 */
+  design: { parts: PartInstance[] } | null
   forkFrom: { postId: string; title: string; authorName?: string } | null
   likeCount: number
   favoriteCount: number

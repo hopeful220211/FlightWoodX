@@ -4,6 +4,7 @@ const { authenticate, optionalAuthenticate } = require('../middleware/auth')
 const CommunityPost = require('../models/CommunityPost')
 const Project = require('../models/Project')
 const Reaction = require('../models/Reaction')
+const DroneDesign = require('../models/DroneDesign')
 
 const router = express.Router()
 
@@ -166,6 +167,22 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
       }))
     }
 
+    // 设计零件（供完整作品页 3D 预览 + 零件清单 BOM 复用现有组件渲染）。
+    // 仅 public 作品、且有设计时取；存量/示例作品无设计则为 null，前端回退封面图。
+    let design = null
+    if (post.projectId && post.projectId.designId && post.projectId.visibility === 'public') {
+      const dd = await DroneDesign.findById(post.projectId.designId).lean()
+      if (dd) {
+        const parts =
+          dd.designData && Array.isArray(dd.designData.parts)
+            ? dd.designData.parts
+            : Array.isArray(dd.parts)
+              ? dd.parts
+              : []
+        design = { parts }
+      }
+    }
+
     // fork 血缘（只读展示；fork 写入口属 P1）
     let forkFrom = null
     if (post.forkFromId) {
@@ -198,6 +215,7 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
               reusable: post.projectId.reusable === true,
             }
           : null,
+        design,
         forkFrom,
         likeCount,
         favoriteCount,
