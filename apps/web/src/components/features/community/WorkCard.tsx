@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { ImageOff } from 'lucide-react'
+import { ImageOff, Heart, Bookmark } from 'lucide-react'
 import type { PostCard } from '../../../hooks/useCommunityFeed'
 
 function initials(name?: string) {
@@ -53,6 +53,17 @@ export function WorkCard({
         <span className="pointer-events-none absolute bottom-2.5 left-2.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink-700 opacity-0 shadow-soft backdrop-blur-sm transition-all duration-300 group-hover:opacity-100">
           查看作品
         </span>
+        {/* 右下角小角标：点赞量 + 收藏量（常显、轻量） */}
+        <div className="pointer-events-none absolute bottom-2.5 right-2.5 inline-flex items-center gap-2 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-medium text-ink-600 shadow-soft ring-1 ring-black/5 backdrop-blur-sm">
+          <span className="inline-flex items-center gap-0.5">
+            <Heart size={11} className={post.likedByMe ? 'text-rose-500' : 'text-rose-400'} fill={post.likedByMe ? 'currentColor' : 'none'} />
+            {post.likeCount}
+          </span>
+          <span className="inline-flex items-center gap-0.5">
+            <Bookmark size={11} className="text-sky-500" />
+            {post.favoriteCount}
+          </span>
+        </div>
       </div>
       <div className="p-3.5">
         <h3 className="truncate text-sm font-semibold text-ink-900">{post.title}</h3>
