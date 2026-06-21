@@ -4,6 +4,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from '../utils/api'
+import { useAuthStore } from '../stores/authStore'
 import type { Competition, Paginated, ScoreDimensions, ScoreSource } from '@fwx/shared'
 
 /** 列表/详情视图：赛事 + 报名数（+ 详情带是否已报名） */
@@ -38,8 +39,10 @@ export function useCompetitions(page = 1, pageSize = 20) {
 }
 
 export function useCompetition(id?: string) {
+  // 详情含用户专属 isRegistered，缓存须按账号隔离，否则切号会串报名状态。
+  const authScope = useAuthStore((s) => s.user?.id ?? 'anon')
   return useQuery({
-    queryKey: ['competition', id],
+    queryKey: ['competition', id, authScope],
     enabled: !!id,
     queryFn: async () => {
       const res = await apiFetch<{ competition: CompetitionView }>(`/competitions/${id}`)

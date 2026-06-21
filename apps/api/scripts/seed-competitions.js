@@ -1,17 +1,27 @@
 #!/usr/bin/env node
 
 /**
- * Seed 真实赛事数据（替代前端 hardcoded demo）。幂等可重复跑。
+ * Seed 真实赛事数据（RFC-018 P2）。幂等可重复跑。
  *
  *   node scripts/seed-competitions.js
  *
- * 造：2 个真实赛事（一个 open 可报名 / 一个 closed 已结束）+ 一名 seed 学员 +
- * 一个作品 + 一条报名 + 一条提交 + 一条「人工」评分 → 排行榜有真实条目。
- * 评分是人工/seed（source='human'），不经任何自动评分闭环（RFC-018 §8）。
+ * 造两个真实赛事：
+ *   ① 2026 翼创未来 · 年度创意赛（open，富详情页）— 挂 3 名学员的报名 + 提交 + 人工评分，
+ *      让排行榜前三名可验。
+ *   ② 2026 翼创未来 · 秋季区域实飞赛（closed，已结束）— 挂 2 名学员成绩，作"获奖公示"。
+ *
+ * 真幂等（Codex 评审①采纳）：连跑两次赛事数 / 评分状态不变；并清理旧 demo 赛事
+ * （「暑期线上海选 / 春季体验赛」），避免残留多余赛事。
+ * 评分均为人工 seed（source='human'），不经任何自动评分闭环（RFC-018 §8，自动评分等 RFC-015）。
  */
 
 require('dotenv').config()
 const mongoose = require('mongoose')
+
+const ANNUAL_NAME = '2026 翼创未来 · 年度创意赛'
+const REGIONAL_NAME = '2026 翼创未来 · 秋季区域实飞赛'
+// 旧 demo 赛事名（历史 seed 残留），连同其报名/提交/评分一并清理。
+const LEGACY_NAMES = ['2026 翼创未来 · 暑期线上海选', '2026 翼创未来 · 春季体验赛']
 
 async function main() {
   const uri = process.env.MONGODB_URI
@@ -29,98 +39,119 @@ async function main() {
   const Submission = require('../src/models/Submission')
   const Score = require('../src/models/Score')
 
-  // 1) seed 学员（复用已有则不重建）
-  const email = 'seed-student@flightwoodx.com'
-  let user = await User.findOne({ email })
-  if (!user) {
-    // 明文密码交给 User 模型的 pre-save 钩子自动 hash
-    user = await User.create({
-      username: '示例学员',
-      email,
-      password: 'seed-password-001',
-      role: 'student',
-    })
-    console.log('  + 创建 seed 学员')
+  // 0) 清理旧 demo 赛事及其挂载数据（真幂等）
+  for (const legacy of LEGACY_NAMES) {
+    const old = await Competition.findOne({ name: legacy })
+    if (old) {
+      const subs = await Submission.find({ competitionId: old._id }, '_id')
+      await Score.deleteMany({ submissionId: { $in: subs.map((s) => s._id) } })
+      await Submission.deleteMany({ competitionId: old._id })
+      await Registration.deleteMany({ competitionId: old._id })
+      await Competition.deleteOne({ _id: old._id })
+      console.log(`  - 清理旧赛事：${legacy}`)
+    }
   }
 
-  // 2) seed 作品
-  let project = await Project.findOne({ ownerId: user._id, name: '示例参赛作品' })
-  if (!project) {
-    project = await Project.create({
-      ownerId: user._id,
-      name: '示例参赛作品',
-      visibility: 'public',
-    })
-    console.log('  + 创建 seed 作品')
-  }
-
-  // 3) 两个真实赛事（按名字幂等）
-  const now = Date.now()
-  const day = 24 * 60 * 60 * 1000
-  const compDefs = [
-    {
-      name: '2026 翼创未来 · 暑期线上海选',
-      rulesDescription: '仿真先行，无需硬件。设计 → 编程 → 仿真，按设计/编程/创意/任务完成四维评分。',
-      trackConfig: { name: '标准避障赛道 A', description: '起飞 → 穿越障碍 → 精准降落', obstacles: [] },
-      scoringRules: { design: 25, programming: 25, creativity: 25, taskCompletion: 25 },
-      startTime: new Date(now - 2 * day),
-      endTime: new Date(now + 20 * day),
-      status: 'open',
-    },
-    {
-      name: '2026 翼创未来 · 春季体验赛',
-      rulesDescription: '入门体验赛，已结束，可查看排行与回放（回放 P1）。',
-      trackConfig: { name: '入门赛道', description: '起飞 → 直线飞行 → 降落', obstacles: [] },
-      scoringRules: { design: 25, programming: 25, creativity: 25, taskCompletion: 25 },
-      startTime: new Date(now - 60 * day),
-      endTime: new Date(now - 30 * day),
-      status: 'closed',
-    },
-  ]
-
-  const comps = []
-  for (const def of compDefs) {
+  // 工具：按名字幂等取/建赛事
+  async function upsertCompetition(def) {
     let c = await Competition.findOne({ name: def.name })
     if (!c) {
       c = await Competition.create(def)
       console.log(`  + 创建赛事：${def.name}`)
     }
-    comps.push(c)
+    return c
   }
 
-  // 4) 报名 + 提交 + 人工评分（挂在第一个 open 赛事上），全部幂等
-  const openComp = comps[0]
+  // 工具：按 email 幂等取/建学员（明文密码交 User pre-save 钩子 hash）
+  async function upsertStudent(username, email) {
+    let u = await User.findOne({ email })
+    if (!u) {
+      u = await User.create({ username, email, password: 'seed-password-001', role: 'student' })
+    }
+    return u
+  }
 
-  await Registration.updateOne(
-    { competitionId: openComp._id, userId: user._id },
-    { $setOnInsert: { competitionId: openComp._id, userId: user._id } },
-    { upsert: true },
-  )
-
-  let submission = await Submission.findOne({
-    competitionId: openComp._id,
-    userId: user._id,
-    projectId: project._id,
-  })
-  if (!submission) {
-    submission = await Submission.create({
-      competitionId: openComp._id,
+  // 工具：给某赛事挂一条 报名 + 提交(scored) + 人工评分；全部幂等
+  async function seedEntry(comp, user, projectName, dims) {
+    let project = await Project.findOne({ ownerId: user._id, name: projectName })
+    if (!project) {
+      project = await Project.create({ ownerId: user._id, name: projectName, visibility: 'public' })
+    }
+    await Registration.updateOne(
+      { competitionId: comp._id, userId: user._id },
+      { $setOnInsert: { competitionId: comp._id, userId: user._id } },
+      { upsert: true },
+    )
+    let submission = await Submission.findOne({
+      competitionId: comp._id,
       userId: user._id,
       projectId: project._id,
-      status: 'scored', // 人工已评分 → 进榜
     })
-    console.log('  + 创建 seed 提交（已评分）')
+    if (!submission) {
+      submission = await Submission.create({
+        competitionId: comp._id,
+        userId: user._id,
+        projectId: project._id,
+        status: 'scored',
+      })
+    }
+    const total = dims.design + dims.programming + dims.creativity + dims.taskCompletion
+    const existing = await Score.findOne({ submissionId: submission._id })
+    if (!existing) {
+      await Score.create({ submissionId: submission._id, dimensions: dims, total, source: 'human' })
+    }
+    return total
   }
 
-  const dimensions = { design: 22, programming: 20, creativity: 23, taskCompletion: 21 }
-  const total = dimensions.design + dimensions.programming + dimensions.creativity + dimensions.taskCompletion
-  const existingScore = await Score.findOne({ submissionId: submission._id })
-  if (!existingScore) {
-    await Score.create({ submissionId: submission._id, dimensions, total, source: 'human' })
-    console.log(`  + 创建 seed 人工评分（total=${total}）`)
+  const now = Date.now()
+  const day = 24 * 60 * 60 * 1000
+
+  // 1) 两个真实赛事
+  const annual = await upsertCompetition({
+    name: ANNUAL_NAME,
+    rulesDescription:
+      '仿真先行，无需硬件。设计 → 编程 → 仿真试飞，按设计 / 编程逻辑 / 创意 / 任务完成四维评分，不评纯竞速。',
+    trackConfig: { name: '标准避障赛道 A', description: '起飞 → 穿越障碍 → 精准降落', obstacles: [] },
+    scoringRules: { design: 25, programming: 25, creativity: 25, taskCompletion: 25 },
+    startTime: new Date(now - 5 * day),
+    endTime: new Date(now + 25 * day),
+    status: 'open',
+  })
+
+  const regional = await upsertCompetition({
+    name: REGIONAL_NAME,
+    rulesDescription: '区域线下体验赛，从仿真到实飞。本届已结束，可查看最终成绩与获奖公示。',
+    trackConfig: { name: '区域实飞赛道', description: '起飞 → 绕标 → 定点降落', obstacles: [] },
+    scoringRules: { design: 25, programming: 25, creativity: 25, taskCompletion: 25 },
+    startTime: new Date(now - 60 * day),
+    endTime: new Date(now - 30 * day),
+    status: 'closed',
+  })
+
+  // 2) 年度赛：3 名学员成绩（前三名可验，分差明显）
+  const annualEntries = [
+    { username: '林知遥', email: 'seed-annual-1@flightwoodx.com', project: '云隼一号', dims: { design: 24, programming: 23, creativity: 24, taskCompletion: 23 } }, // 94
+    { username: '陈思齐', email: 'seed-annual-2@flightwoodx.com', project: '木鸢改进型', dims: { design: 22, programming: 20, creativity: 23, taskCompletion: 21 } }, // 86
+    { username: '赵小满', email: 'seed-annual-3@flightwoodx.com', project: '榫卯飞手', dims: { design: 19, programming: 21, creativity: 18, taskCompletion: 20 } }, // 78
+  ]
+  for (const e of annualEntries) {
+    const u = await upsertStudent(e.username, e.email)
+    const total = await seedEntry(annual, u, e.project, e.dims)
+    console.log(`  + 年度赛成绩：${e.username} = ${total}`)
   }
 
-  console.log('[DONE] 赛事 seed 完成。排行榜应能看到 1 条人工评分条目。')
+  // 3) 区域赛：2 名学员成绩（获奖公示）
+  const regionalEntries = [
+    { username: '周屹松', email: 'seed-regional-1@flightwoodx.com', project: '秋叶号', dims: { design: 23, programming: 22, creativity: 22, taskCompletion: 24 } }, // 91
+    { username: '吴小帆', email: 'seed-regional-2@flightwoodx.com', project: '风信子', dims: { design: 20, programming: 21, creativity: 20, taskCompletion: 22 } }, // 83
+  ]
+  for (const e of regionalEntries) {
+    const u = await upsertStudent(e.username, e.email)
+    const total = await seedEntry(regional, u, e.project, e.dims)
+    console.log(`  + 区域赛成绩：${e.username} = ${total}`)
+  }
+
+  console.log('[DONE] 赛事 seed 完成：年度赛 3 条、区域赛 2 条人工评分进榜。')
   await mongoose.disconnect()
 }
 

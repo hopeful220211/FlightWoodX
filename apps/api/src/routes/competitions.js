@@ -235,16 +235,34 @@ router.get('/:id/leaderboard', async (req, res) => {
     const scoreBySub = {}
     for (const sc of scores) scoreBySub[String(sc.submissionId)] = sc
 
-    // 只有已评分的提交进榜
+    // 只有已评分的提交进榜。按 total 降序；并列时用稳定次级排序（评分时间早者靠前，
+    // 再按 submissionId）保证名次确定、可重现，不随查询顺序漂移。
     const ranked = subs
       .map((s) => ({ sub: s, score: scoreBySub[String(s._id)] }))
       .filter((x) => x.score)
-      .sort((a, b) => b.score.total - a.score.total)
+      .sort((a, b) => {
+        if (b.score.total !== a.score.total) return b.score.total - a.score.total
+        const at = new Date(a.score.createdAt || 0).getTime()
+        const bt = new Date(b.score.createdAt || 0).getTime()
+        if (at !== bt) return at - bt
+        return String(a.sub._id).localeCompare(String(b.sub._id))
+      })
+
+    // 全局名次（先于分页计算）：标准竞赛式并列，同分同名次（如 1,1,3）。
+    let lastTotal = null
+    let lastRank = 0
+    ranked.forEach((x, idx) => {
+      if (x.score.total !== lastTotal) {
+        lastRank = idx + 1
+        lastTotal = x.score.total
+      }
+      x.rank = lastRank
+    })
 
     const total = ranked.length
     const pageItems = ranked.slice((page - 1) * pageSize, page * pageSize)
-    const items = pageItems.map((x, i) => ({
-      rank: (page - 1) * pageSize + i + 1,
+    const items = pageItems.map((x) => ({
+      rank: x.rank,
       submissionId: String(x.sub._id),
       userId: String(x.sub.userId?._id || x.sub.userId),
       userName: x.sub.userId?.nickname || x.sub.userId?.username || '匿名',

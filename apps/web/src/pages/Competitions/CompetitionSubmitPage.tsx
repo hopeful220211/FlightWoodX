@@ -7,7 +7,7 @@ import { Button } from '../../components/common/Button'
 import { Card } from '../../components/common/Card'
 import { useToast } from '../../components/common/Toast'
 import { useProjects } from '../../hooks/useProjects'
-import { useSubmit } from '../../hooks/useCompetitions'
+import { useSubmit, useCompetition } from '../../hooks/useCompetitions'
 import { useAuthStore } from '../../stores/authStore'
 import type { ProjectData } from '../../utils/api'
 
@@ -19,10 +19,15 @@ export function CompetitionSubmitPage() {
   const nav = useNavigate()
   const toast = useToast()
   const { data: projects, isLoading, isError } = useProjects()
+  const { data: comp } = useCompetition(id)
   const submit = useSubmit(id)
   const [selected, setSelected] = useState<string>('')
   const hasToken = useAuthStore((s) => !!s.token)
   const isGuest = useAuthStore((s) => s.user?.isGuest === true)
+  const isLoggedIn = hasToken && !isGuest
+  const compClosed = comp ? comp.status === 'closed' || comp.status === 'draft' : false
+  // 登录但未报名 / 赛事已结束：不让裸提交，前置阻断（后端仍有 403/409 兜底）。
+  const blockNotRegistered = isLoggedIn && comp != null && !compClosed && !comp.isRegistered
 
   const handleSubmit = () => {
     if (!selected) {
@@ -48,18 +53,38 @@ export function CompetitionSubmitPage() {
         ]}
       />
 
-      <h1 className="text-2xl font-bold text-ink-900">提交参赛作品</h1>
-      <p className="text-sm text-ink-500">
-        选择你的一个作品提交参赛。提交后状态为「已提交」，等待评审录入成绩（自动评分为后续阶段）。
-      </p>
+      <div>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink-900 lg:text-3xl">
+          提交参赛作品
+        </h1>
+        <p className="mt-1 text-sm text-ink-500">
+          选择你的一个作品提交参赛。提交后状态为「已提交」，等待评审录入成绩（自动评分为后续阶段）。
+        </p>
+      </div>
 
       <Card hoverable={false}>
-        {!hasToken || isGuest ? (
+        {!isLoggedIn ? (
           <div className="flex flex-col items-center py-12 text-center">
             <FolderOpen size={40} className="text-sky-300 mb-3" />
             <p className="text-sm text-ink-600">登录后才能提交参赛作品</p>
-            <Button variant="outline" className="mt-4" onClick={() => nav('/login')}>
+            <Button variant="outline" className="mt-4" onClick={() => nav('/auth')}>
               去登录
+            </Button>
+          </div>
+        ) : compClosed ? (
+          <div className="flex flex-col items-center py-12 text-center">
+            <FolderOpen size={40} className="text-sky-300 mb-3" />
+            <p className="text-sm text-ink-600">该赛事已结束，无法提交作品</p>
+            <Button variant="outline" className="mt-4" onClick={() => nav(`/competitions/${id}`)}>
+              返回赛事详情
+            </Button>
+          </div>
+        ) : blockNotRegistered ? (
+          <div className="flex flex-col items-center py-12 text-center">
+            <FolderOpen size={40} className="text-sky-300 mb-3" />
+            <p className="text-sm text-ink-600">请先报名本赛事，再来提交作品</p>
+            <Button variant="outline" className="mt-4" onClick={() => nav(`/competitions/${id}`)}>
+              去报名
             </Button>
           </div>
         ) : isLoading ? (
