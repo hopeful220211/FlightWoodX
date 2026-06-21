@@ -20,16 +20,19 @@ function authorDTO(u) {
 }
 
 // 列表卡片 DTO（关联 Project 只取封面/引用，不复制内容）
+// 形状对齐集成清单 §8 PostCard：含 authorId + favoriteCount，供 A 瀑布流 / 合集 / 作者页统一消费。
 function postCardDTO(row, likedSet) {
   return {
     id: String(row._id),
     title: row.title,
     description: row.description || '',
+    authorId: String(row.authorId),
     author: authorDTO(row.author),
     projectId: String(row.projectId),
     coverUrl: row.project?.coverUrl || undefined,
     forkFromId: row.forkFromId ? String(row.forkFromId) : undefined,
     likeCount: row.likeCount || 0,
+    favoriteCount: row.favoriteCount || 0,
     likedByMe: likedSet ? likedSet.has(String(row._id)) : false,
     createdAt: row.createdAt,
   }
@@ -95,9 +98,33 @@ router.get('/posts', optionalAuthenticate, async (req, res) => {
       { $addFields: { author: { $arrayElemAt: ['$author', 0] } } },
       { $lookup: { from: 'projects', localField: 'projectId', foreignField: '_id', as: 'project' } },
       { $addFields: { project: { $arrayElemAt: ['$project', 0] } } },
+      // 收藏数（favorite Reaction 聚合，与点赞同口径；供卡片展示）
+      {
+        $lookup: {
+          from: 'reactions',
+          let: { pid: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$targetType', TARGET] },
+                    { $eq: ['$targetId', '$$pid'] },
+                    { $eq: ['$type', 'favorite'] },
+                  ],
+                },
+              },
+            },
+            { $count: 'c' },
+          ],
+          as: '_fa',
+        },
+      },
+      { $addFields: { favoriteCount: { $ifNull: [{ $arrayElemAt: ['$_fa.c', 0] }, 0] } } },
       {
         $project: {
-          title: 1, description: 1, projectId: 1, forkFromId: 1, createdAt: 1, likeCount: 1,
+          title: 1, description: 1, authorId: 1, projectId: 1, forkFromId: 1, createdAt: 1,
+          likeCount: 1, favoriteCount: 1,
           'author._id': 1, 'author.username': 1, 'author.avatar': 1, 'author.profile.avatar': 1,
           'project.coverUrl': 1,
         },
@@ -126,11 +153,12 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
 
     const post = await CommunityPost.findById(id)
       .populate('authorId', 'username avatar profile.avatar')
-      .populate('projectId', 'name coverUrl designId programId visibility')
+      .populate('projectId', 'name coverUrl designId programId visibility reusable')
       .lean()
     if (!post) return res.status(404).json({ error: '作品不存在' })
 
     const likeCount = await Reaction.countDocuments({ targetType: TARGET, targetId: id, type: 'like' })
+    const favoriteCount = await Reaction.countDocuments({ targetType: TARGET, targetId: id, type: 'favorite' })
     let likedByMe = false
     if (req.userId) {
       likedByMe = !!(await Reaction.exists({
@@ -166,10 +194,13 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
               coverUrl: post.projectId.coverUrl,
               designId: post.projectId.designId ? String(post.projectId.designId) : undefined,
               programId: post.projectId.programId ? String(post.projectId.programId) : undefined,
+              // 归一化：存量项目缺字段时按不可复用处理（Codex 评审）
+              reusable: post.projectId.reusable === true,
             }
           : null,
         forkFrom,
         likeCount,
+        favoriteCount,
         likedByMe,
         createdAt: post.createdAt,
       },
@@ -188,7 +219,7 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
  */
 router.post('/posts', authenticate, async (req, res) => {
   try {
-    const { projectId, title, description } = req.body
+    const { projectId, title, description, reusable, forkFromPostId } = req.body
     if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
       return res.status(400).json({ error: '缺少有效的 projectId' })
     }
@@ -197,6 +228,20 @@ router.post('/posts', authenticate, async (req, res) => {
     if (!project) return res.status(404).json({ error: '项目不存在或不属于你' })
     if (project.visibility !== 'public') {
       return res.status(400).json({ error: '请先将项目设为公开，再发布到社区' })
+    }
+
+    // 开源复用开关（E）：随发布写入项目的 reusable
+    if (typeof reusable === 'boolean' && project.reusable !== reusable) {
+      project.reusable = reusable
+      await project.save()
+    }
+
+    // fork 血缘（E）：发布一个 fork 出来的项目时，带上源作品 id → 落到既有 forkFromId
+    // （不改契约；只接受指向真实存在作品的 id，校验失败则忽略而非报错，避免挡住正常发布）
+    let forkFromId
+    if (forkFromPostId && mongoose.Types.ObjectId.isValid(forkFromPostId)) {
+      const src = await CommunityPost.exists({ _id: forkFromPostId })
+      if (src) forkFromId = forkFromPostId
     }
 
     let post = await CommunityPost.findOne({ authorId: req.userId, projectId })
@@ -208,6 +253,7 @@ router.post('/posts', authenticate, async (req, res) => {
           projectId,
           title: (title && title.trim()) || project.name,
           description: (description && description.trim()) || '',
+          ...(forkFromId ? { forkFromId } : {}),
         })
         created = true
       } catch (e) {

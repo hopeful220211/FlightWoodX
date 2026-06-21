@@ -7,7 +7,7 @@
  * 发布幂等：同一项目重复发布返回既有作品。
  */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Modal } from '../../common/Modal'
 import { Button } from '../../common/Button'
 import { Input } from '../../common/Input'
@@ -24,13 +24,25 @@ interface PublishModalProps {
 export function PublishModal({ open, onClose, projectId, defaultTitle }: PublishModalProps) {
   const nav = useNavigate()
   const toast = useToast()
+  const [searchParams] = useSearchParams()
+  // 若本项目是「复用」别人作品后改造而来，URL 上会带 ?forkedFrom=源作品id；
+  // 发布时透传给后端，落地为作品血缘（forkFromId），让详情页显示「基于 …… 再创作」。
+  const forkFromPostId = searchParams.get('forkedFrom') || undefined
   const [title, setTitle] = useState(defaultTitle || '')
   const [description, setDescription] = useState('')
+  // 开源复用开关：作者勾选后，别的同学才能在社区「复用这个设计」（默认关）。
+  const [reusable, setReusable] = useState(false)
   const [needPublic, setNeedPublic] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const doPublish = async () => {
-    const res = await createCommunityPost({ projectId, title: title.trim() || undefined, description: description.trim() || undefined })
+    const res = await createCommunityPost({
+      projectId,
+      title: title.trim() || undefined,
+      description: description.trim() || undefined,
+      reusable,
+      forkFromPostId,
+    })
     if (res.success && res.data) {
       toast.push('success', res.data.alreadyPublished ? '该作品已在社区，已为你打开' : '已发布到社区！')
       onClose()
@@ -86,6 +98,19 @@ export function PublishModal({ open, onClose, projectId, defaultTitle }: Publish
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-ink-900 outline-none focus:border-sky-400"
           />
         </div>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-sky-50 p-3 ring-1 ring-sky-100">
+          <input
+            type="checkbox"
+            checked={reusable}
+            onChange={(e) => setReusable(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-sky-500"
+          />
+          <span className="text-sm">
+            <span className="font-medium text-ink-800">允许其他同学复用我的设计</span>
+            <span className="mt-0.5 block text-xs text-ink-400">开启后，别的同学可以「复用这个设计」，在你的作品基础上继续改造。</span>
+          </span>
+        </label>
 
         {needPublic ? (
           <div className="rounded-lg bg-amber-50 p-3 ring-1 ring-amber-200">

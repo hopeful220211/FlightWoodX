@@ -139,6 +139,12 @@ export function Navbar() {
                         <NavLink to="/me" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
                           个人中心
                         </NavLink>
+                        <NavLink to="/feed" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
+                          我的关注
+                        </NavLink>
+                        <NavLink to="/collections" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
+                          我的收藏
+                        </NavLink>
                         <NavLink to="/design" className="block px-4 py-2.5 text-sm text-ink-700 hover:bg-sky-50 transition" onClick={() => setUserMenuOpen(false)}>
                           设计工作台
                         </NavLink>

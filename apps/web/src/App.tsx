@@ -29,6 +29,10 @@ import { LeaderboardPage } from './pages/Competitions/LeaderboardPage'
 /* ── Community & Parts ── */
 import { CommunityPage } from './pages/Community/CommunityPage'
 import { CommunityPostPage } from './pages/Community/CommunityPostPage'
+import { CollectionsPage } from './pages/Collections/CollectionsPage'
+import { CollectionDetailPage } from './pages/Collections/CollectionDetailPage'
+import { AuthorPage } from './pages/Author/AuthorPage'
+import { FollowingFeedPage } from './pages/Feed/FollowingFeedPage'
 import { PartsPage } from './pages/Parts/PartsPage'
 import { PartDetailPage } from './pages/Parts/PartDetailPage'
 
@@ -111,6 +115,8 @@ export default function App() {
         <Route path="/competitions/:id/leaderboard" element={<LeaderboardPage />} />
         <Route path="/community" element={<CommunityPage />} />
         <Route path="/community/:postId" element={<CommunityPostPage />} />
+        <Route path="/u/:userId" element={<AuthorPage />} />
+        <Route path="/collections/:id" element={<CollectionDetailPage />} />
         <Route path="/parts" element={<PartsPage />} />
         <Route path="/parts/:id" element={<PartDetailPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
@@ -120,6 +126,8 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
+          <Route path="/feed" element={<FollowingFeedPage />} />
           <Route path="/competitions/:id/submit" element={<CompetitionSubmitPage />} />
           {/* TEMP(RFC-012-B): 同上，BuildPage 缺失，临时停用 /build 路由，待负责人补齐后还原 */}
           {/* <Route path="/build/:id" element={<BuildPage />} /> */}

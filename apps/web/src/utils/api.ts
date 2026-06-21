@@ -703,9 +703,10 @@ export interface CommunityPostDetail {
   title: string
   description: string
   author: CommunityAuthor | null
-  project: { id: string; name: string; coverUrl?: string; designId?: string; programId?: string } | null
+  project: { id: string; name: string; coverUrl?: string; designId?: string; programId?: string; reusable: boolean } | null
   forkFrom: { postId: string; title: string; authorName?: string } | null
   likeCount: number
+  favoriteCount: number
   likedByMe: boolean
   createdAt: string
 }
@@ -750,6 +751,8 @@ export async function createCommunityPost(data: {
   projectId: string
   title?: string
   description?: string
+  reusable?: boolean
+  forkFromPostId?: string
 }): Promise<ApiResponse<{ post: { id: string; projectId: string; title: string }; alreadyPublished?: boolean }>> {
   return apiFetch(`/community/posts`, { method: 'POST', body: JSON.stringify(data) })
 }

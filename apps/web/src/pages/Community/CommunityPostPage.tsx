@@ -1,5 +1,5 @@
-import { useParams } from 'react-router-dom'
-import { Heart, GitFork, Share2, ImageOff, User } from 'lucide-react'
+import { useParams, Link } from 'react-router-dom'
+import { Heart, Share2, ImageOff, User } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
 import { Breadcrumb } from '../../components/common/Breadcrumb'
 import { Button } from '../../components/common/Button'
@@ -7,6 +7,9 @@ import { Card } from '../../components/common/Card'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
 import { useCommunityPost, useToggleLike } from '../../hooks/useCommunity'
+import { CommentSection } from '../../components/features/community/CommentSection'
+import { SaveToCollectionButton } from '../../components/features/community/SaveToCollectionButton'
+import { ReuseButton } from '../../components/features/community/ReuseButton'
 
 export function CommunityPostPage() {
   const { postId } = useParams()
@@ -64,9 +67,10 @@ export function CommunityPostPage() {
               >
                 {post.likeCount}
               </Button>
-              <Button size="sm" variant="outline" leftIcon={<GitFork size={14} />} disabled title="Fork 即将上线（P1）">
-                Fork
-              </Button>
+              <SaveToCollectionButton postId={post.id} />
+              {post.project && (
+                <ReuseButton postId={post.id} projectId={post.project.id} reusable={post.project.reusable} />
+              )}
               <Button size="sm" variant="outline" leftIcon={<Share2 size={14} />} onClick={onShare}>分享</Button>
             </div>
           </div>
@@ -105,7 +109,16 @@ export function CommunityPostPage() {
                       <User size={18} className="text-sky-400" />
                     )}
                   </div>
-                  <span className="text-ink-900 font-medium">{post.author?.username || '匿名创作者'}</span>
+                  {post.author ? (
+                    <Link
+                      to={`/u/${post.author.id}`}
+                      className="text-ink-900 font-medium hover:text-sky-600 transition-colors"
+                    >
+                      {post.author.username}
+                    </Link>
+                  ) : (
+                    <span className="text-ink-900 font-medium">匿名创作者</span>
+                  )}
                 </div>
               </Card>
               <Card hoverable={false}>
@@ -121,6 +134,9 @@ export function CommunityPostPage() {
               </Card>
             </div>
           </div>
+
+          {/* 评论区（RFC-017 P1 · 评论 + 举报） */}
+          <CommentSection postId={post.id} />
         </>
       )}
     </PageContainer>

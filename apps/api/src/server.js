@@ -73,6 +73,15 @@ app.use('/api/projects', projectRoutes)
 const communityRoutes = require('./routes/community')
 app.use('/api/community', communityRoutes)
 
+// 社区 P1（RFC-017 — 热门榜 / 评论+举报 / 收藏合集 / 关注作者 / 开源复用 fork）
+// 同一 /api/community 基址下挂多路由器，路径在各自路由器内命名空间，互不遮蔽。
+app.use('/api/community/trending', require('./routes/communityTrending')) // A 热门榜
+app.use('/api/community', require('./routes/comments'))                    // B 评论
+app.use('/api/community', require('./routes/reports'))                     // B 举报
+app.use('/api/community/collections', require('./routes/collections'))     // C 收藏合集
+app.use('/api/community', require('./routes/follows'))                     // D 关注/作者页/动态流
+app.use('/api/community', require('./routes/forks'))                       // E 开源复用 fork
+
 // 无人机设计路由（2.0 — 设计器产物持久化）
 const droneDesignRoutes = require('./routes/droneDesigns')
 app.use('/api/drone-designs', droneDesignRoutes)

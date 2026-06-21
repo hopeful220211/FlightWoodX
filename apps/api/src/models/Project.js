@@ -9,6 +9,9 @@ const ProjectSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     coverUrl: { type: String },
     visibility: { type: String, enum: ['private', 'public'], default: 'private' },
+    // 开源复用开关（对齐已冻结契约 @fwx/shared models.ts Project.reusable）：
+    // 作者允许他人「复用这个设计」时为 true（RFC-017 P1 / 开源复用闭环）。
+    reusable: { type: Boolean, default: false },
   },
   { timestamps: true },
 )
