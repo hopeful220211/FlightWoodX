@@ -24,7 +24,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
   const nav = useNavigate()
   const toast = useToast()
   const isLoggedIn = useAuthStore((s) => !!s.token && !s.user?.isGuest)
-  const { data: post, isLoading } = useCommunityPost(postId)
+  const { data: post, isLoading, isError, refetch } = useCommunityPost(postId)
   const toggleLike = useToggleLike()
 
   // 内联灯箱（放大查看大图）。开着时 ESC 先关灯箱，不关弹窗。
@@ -33,12 +33,14 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
   // 键盘：ESC / ← 关闭（灯箱优先）；并锁定背景滚动。
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'ArrowLeft') {
-        if (zoomed) {
-          setZoomed(false)
-          return
-        }
-        onClose()
+      // ArrowLeft 只用于关闭灯箱（不关弹窗）——否则在评论框里按左方向键会误关弹窗。
+      if (e.key === 'ArrowLeft') {
+        if (zoomed) setZoomed(false)
+        return
+      }
+      if (e.key === 'Escape') {
+        if (zoomed) setZoomed(false)
+        else onClose()
       }
     }
     window.addEventListener('keydown', onKey)
@@ -116,7 +118,28 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
           <Maximize2 size={15} /> 展开
         </button>
 
-        {isLoading || !post ? (
+        {isError ? (
+          /* ── 加载失败：给重试 / 关闭，不无限转圈（Codex） ── */
+          <div className="flex w-full flex-col items-center justify-center gap-4 p-12 py-20 text-center">
+            <p className="text-ink-500">作品加载失败了</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
+              >
+                重试
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full border border-sky-200 bg-white px-5 py-2 text-sm font-medium text-ink-600 transition hover:bg-sky-50"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        ) : isLoading || !post ? (
           /* ── 加载骨架 ── */
           <>
             <div className="aspect-[4/3] w-full shrink-0 animate-pulse bg-gradient-to-br from-paper-100 to-sky-50/60 lg:aspect-auto lg:h-auto lg:w-1/2 motion-reduce:animate-none" />

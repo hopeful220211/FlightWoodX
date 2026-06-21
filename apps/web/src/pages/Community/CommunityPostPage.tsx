@@ -56,9 +56,9 @@ export function CommunityPostPage() {
   const toggleLike = useToggleLike()
 
   const onBack = () => {
-    // 优先回到来路（多由 quick-view 的「展开」进入）；无历史时回社区广场。
-    if (window.history.length > 1) navigate(-1)
-    else navigate('/community')
+    // 按钮语义就是「返回作品广场」：直达 /community，稳妥可预期（history.length 不保证上一页是社区，
+    // 直链/外链进来时 navigate(-1) 可能把人带出站，Codex 评审）。
+    navigate('/community')
   }
 
   const onLike = () => {
@@ -79,7 +79,11 @@ export function CommunityPostPage() {
     }
   }
 
-  const hasModel = !!post?.design && post.design.parts.length > 0
+  // 客户端兜底过滤（Codex）：即使后端清洗过，也再挡一层脏零件，避免 [null]/缺字段让 3D 组件崩溃。
+  const safeParts = (post?.design?.parts ?? []).filter(
+    (p) => p && typeof p === 'object' && Array.isArray(p.position) && p.position.length === 3,
+  )
+  const hasModel = safeParts.length > 0
   const riseClass = reducedMotion
     ? ''
     : 'motion-safe:animate-[fwxPostRise_0.55s_cubic-bezier(0.22,1,0.36,1)_both]'
@@ -135,7 +139,7 @@ export function CommunityPostPage() {
                         <directionalLight position={[5, 5, 5]} intensity={2.2} />
                         <directionalLight position={[-4, 2, -3]} intensity={0.6} />
                         <Suspense fallback={null}>
-                          <AssembledDrone parts={post.design!.parts} autoRotate={!reducedMotion} />
+                          <AssembledDrone parts={safeParts} autoRotate={!reducedMotion} />
                         </Suspense>
                         <OrbitControls
                           makeDefault
@@ -288,7 +292,7 @@ export function CommunityPostPage() {
             {/* ── 零件清单 / 兜底说明（整宽，承接 PartsList 自身的版式） ── */}
             {hasModel ? (
               <section className="overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/5">
-                <PartsList parts={post.design!.parts} />
+                <PartsList parts={safeParts} />
               </section>
             ) : (
               <section className="rounded-2xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5 sm:p-10">

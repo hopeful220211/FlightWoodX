@@ -154,7 +154,7 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
 
     const post = await CommunityPost.findById(id)
       .populate('authorId', 'username avatar profile.avatar')
-      .populate('projectId', 'name coverUrl designId programId visibility reusable')
+      .populate('projectId', 'name coverUrl designId programId visibility reusable ownerId')
       .lean()
     if (!post) return res.status(404).json({ error: '作品不存在' })
 
@@ -171,14 +171,22 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
     // 仅 public 作品、且有设计时取；存量/示例作品无设计则为 null，前端回退封面图。
     let design = null
     if (post.projectId && post.projectId.designId && post.projectId.visibility === 'public') {
-      const dd = await DroneDesign.findById(post.projectId.designId).lean()
+      // 属主校验（Codex）：设计必须确属作品作者本人，避免有人把他人 designId 绑到自己公开作品、借此套出非自有零件。
+      const dd = await DroneDesign.findOne({
+        _id: post.projectId.designId,
+        ownerId: post.projectId.ownerId,
+      }).lean()
       if (dd) {
-        const parts =
+        const raw =
           dd.designData && Array.isArray(dd.designData.parts)
             ? dd.designData.parts
             : Array.isArray(dd.parts)
               ? dd.parts
               : []
+        // 只返回结构合法的零件（Codex）：挡住 [null] / 脏数据导致前端 3D 组件崩溃（会触发全局边界 localStorage.clear）。
+        const parts = raw.filter(
+          (p) => p && typeof p === 'object' && typeof p.partId === 'string' && Array.isArray(p.position) && p.position.length === 3,
+        )
         design = { parts }
       }
     }
