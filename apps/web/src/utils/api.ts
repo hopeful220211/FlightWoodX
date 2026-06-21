@@ -363,10 +363,10 @@ export interface ProjectData {
 
 /** 获取当前用户的所有项目 */
 export async function getProjects(): Promise<ApiResponse<ProjectData[]>> {
-  const res = await apiFetch<{ projects: ProjectData[] }>('/projects')
-  // Backend returns { projects: [...] }
+  const res = await apiFetch<{ items: ProjectData[] }>('/projects')
+  // Backend returns paginated envelope { items, total, page, pageSize } (RFC-014 W3)
   if (res.success && res.data) {
-    const projects = (res.data as unknown as { projects?: ProjectData[] }).projects ?? res.data
+    const projects = (res.data as unknown as { items?: ProjectData[] }).items ?? res.data
     return { ...res, data: projects as ProjectData[] }
   }
   return res as ApiResponse<ProjectData[]>
@@ -509,9 +509,10 @@ export interface DroneDesignData {
 
 /** List current user's drone designs */
 export async function getDroneDesigns(): Promise<ApiResponse<DroneDesignData[]>> {
-  const res = await apiFetch<{ designs: DroneDesignData[] }>('/drone-designs')
+  const res = await apiFetch<{ items: DroneDesignData[] }>('/drone-designs')
+  // Backend returns paginated envelope { items, total, page, pageSize } (RFC-014 W3)
   if (res.success && res.data) {
-    const designs = (res.data as unknown as { designs?: DroneDesignData[] }).designs ?? res.data
+    const designs = (res.data as unknown as { items?: DroneDesignData[] }).items ?? res.data
     return { ...res, data: designs as DroneDesignData[] }
   }
   return res as ApiResponse<DroneDesignData[]>
@@ -595,9 +596,10 @@ function normalizeProgram(p: ProgramRecord): ProgramRecord {
 
 /** List current user's programs（按 updatedAt 倒序） */
 export async function getPrograms(): Promise<ApiResponse<ProgramRecord[]>> {
-  const res = await apiFetch<{ programs: ProgramRecord[] }>('/programs')
+  const res = await apiFetch<{ items: ProgramRecord[] }>('/programs')
+  // Backend returns paginated envelope { items, total, page, pageSize } (RFC-014 W3)
   if (res.success && res.data) {
-    const programs = (res.data as unknown as { programs?: ProgramRecord[] }).programs ?? res.data
+    const programs = (res.data as unknown as { items?: ProgramRecord[] }).items ?? res.data
     return { ...res, data: (programs as ProgramRecord[]).map(normalizeProgram) }
   }
   return res as ApiResponse<ProgramRecord[]>
