@@ -80,7 +80,7 @@ export function AuthorPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <UserRound size={24} className="text-sky-300" />
             </div>
-            <p className="text-ink-600">没有找到这位创作者</p>
+            <p className="text-black/70">没有找到这位创作者</p>
             <div className="mt-4 flex items-center justify-center gap-3">
               <button
                 onClick={() => refetch()}
@@ -90,7 +90,7 @@ export function AuthorPage() {
               </button>
               <button
                 onClick={() => nav('/community')}
-                className="rounded-full px-5 py-2 text-sm font-medium text-ink-400 transition hover:text-ink-600"
+                className="rounded-full px-5 py-2 text-sm font-medium text-black/45 transition hover:text-black/70"
               >
                 返回社区
               </button>
@@ -124,14 +124,14 @@ export function AuthorPage() {
                 </div>
               </div>
               <div className="pb-1">
-                <h1 className="text-2xl font-bold tracking-tight text-ink-900 lg:text-3xl">{author.username}</h1>
-                <div className="mt-2 flex items-center gap-4 text-sm text-ink-400">
+                <h1 className="fwx-display text-3xl font-semibold tracking-tight text-black/90 lg:text-4xl">{author.username}</h1>
+                <div className="mt-2 flex items-center gap-4 text-sm text-black/45">
                   <span className="inline-flex items-baseline gap-1">
-                    <span className="text-base font-bold text-ink-900">{author.followerCount}</span> 关注者
+                    <span className="text-base font-semibold text-black/90">{author.followerCount}</span> 关注者
                   </span>
                   <span className="h-3 w-px bg-sky-100" aria-hidden="true" />
                   <span className="inline-flex items-baseline gap-1">
-                    <span className="text-base font-bold text-ink-900">{author.followingCount}</span> 关注
+                    <span className="text-base font-semibold text-black/90">{author.followingCount}</span> 关注
                   </span>
                 </div>
               </div>
@@ -144,8 +144,8 @@ export function AuthorPage() {
 
         {/* ── 作品墙：标题条 + 瀑布流 / 空态 ── */}
         <div className="mb-6 flex items-baseline justify-between">
-          <h2 className="text-lg font-bold text-ink-900">TA 的作品</h2>
-          {posts.length > 0 && <span className="text-sm text-ink-400">共 {posts.length} 件</span>}
+          <h2 className="text-lg font-semibold text-black/90">TA 的作品</h2>
+          {posts.length > 0 && <span className="text-sm text-black/45">共 {posts.length} 件</span>}
         </div>
 
         {posts.length === 0 ? (
@@ -153,19 +153,19 @@ export function AuthorPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <ImageOff size={24} className="text-sky-300" />
             </div>
-            <p className="text-ink-400">这位创作者还没有发布作品</p>
+            <p className="text-black/45">这位创作者还没有发布作品</p>
           </div>
         ) : (
           <>
             <MasonryGrid posts={posts} animateKey={userId} />
             <div ref={sentinelRef} className="h-8" aria-hidden="true" />
             {isFetchingNextPage && (
-              <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-ink-400">
+              <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-black/45">
                 <Loader2 size={15} className="animate-spin" /> 加载更多…
               </p>
             )}
             {!hasNextPage && (
-              <p className="flex items-center justify-center gap-1.5 pb-2 pt-8 text-center text-sm text-ink-300">
+              <p className="flex items-center justify-center gap-1.5 pb-2 pt-8 text-center text-sm text-black/35">
                 <Users size={13} /> 已经到底啦
               </p>
             )}

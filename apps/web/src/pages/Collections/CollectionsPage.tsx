@@ -65,7 +65,7 @@ export function CollectionsPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <FolderHeart size={24} className="text-sky-400" />
             </div>
-            <p className="text-ink-500">登录后即可创建合集、收藏喜欢的作品</p>
+            <p className="text-black/55">登录后即可创建合集、收藏喜欢的作品</p>
             <button
               onClick={() => nav('/login')}
               className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
@@ -108,7 +108,7 @@ export function CollectionsPage() {
         </div>
       ) : isError ? (
         <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
-          <p className="text-ink-500">收藏夹加载失败了</p>
+          <p className="text-black/55">收藏夹加载失败了</p>
           <button
             onClick={() => refetch()}
             className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
@@ -121,7 +121,7 @@ export function CollectionsPage() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
             <FolderHeart size={24} className="text-sky-300" />
           </div>
-          <p className="text-ink-500">还没有合集，去社区收藏喜欢的作品吧</p>
+          <p className="text-black/55">还没有合集，去社区收藏喜欢的作品吧</p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
             <button
               onClick={() => setModalOpen(true)}
@@ -131,7 +131,7 @@ export function CollectionsPage() {
             </button>
             <button
               onClick={() => nav('/community')}
-              className="inline-flex items-center rounded-full border border-sky-200 bg-white px-5 py-2.5 text-sm font-semibold text-ink-700 shadow-soft transition hover:border-sky-300 hover:bg-sky-50"
+              className="inline-flex items-center rounded-full border border-sky-200 bg-white px-5 py-2.5 text-sm font-semibold text-black/75 shadow-soft transition hover:border-sky-300 hover:bg-sky-50"
             >
               逛逛作品广场
             </button>
@@ -152,7 +152,7 @@ export function CollectionsPage() {
             <span className={`flex h-12 w-12 items-center justify-center rounded-full bg-white text-sky-500 shadow-soft ring-1 ring-sky-100 transition-transform group-hover:scale-110 motion-reduce:transition-none ${EASE}`}>
               <Plus size={22} />
             </span>
-            <span className="text-sm font-semibold text-ink-700">新建合集</span>
+            <span className="text-sm font-semibold text-black/75">新建合集</span>
           </button>
         </div>
       )}
@@ -189,7 +189,7 @@ export function CollectionsPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <label className="flex items-center gap-2 text-sm text-ink-700 select-none">
+          <label className="flex items-center gap-2 text-sm text-black/75 select-none">
             <input
               type="checkbox"
               className="h-4 w-4 rounded border-sky-300 text-sky-500 focus:ring-sky-400"
@@ -213,8 +213,8 @@ function Hero({ action }: { action?: React.ReactNode }) {
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500 ring-1 ring-sky-100 backdrop-blur">
           <Sparkles size={12} /> 我的收藏夹
         </span>
-        <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">我的收藏</h1>
-        <p className="mt-2 max-w-xl text-ink-500">
+        <h1 className="fwx-display mt-4 text-4xl font-semibold tracking-tight text-black/90 lg:text-5xl">我的收藏</h1>
+        <p className="mt-3 max-w-xl text-black/55">
           把喜欢的木质飞行器收进合集，像收藏夹一样分门别类，随时回来看，或者复用它们的设计。
         </p>
       </div>
@@ -252,14 +252,14 @@ function BoardCard({ collection, onOpen }: { collection: CollectionDTO; onOpen: 
           </div>
         )}
         {!collection.isPublic && (
-          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/85 px-2 py-0.5 text-[11px] font-medium text-ink-500 shadow-soft backdrop-blur-md">
+          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/85 px-2 py-0.5 text-[11px] font-medium text-black/55 shadow-soft backdrop-blur-md">
             <Lock size={11} /> 私密
           </span>
         )}
       </div>
       <div className="p-4">
-        <h3 className="truncate font-semibold text-ink-900">{collection.name}</h3>
-        <p className="mt-1 inline-flex items-center gap-1 text-sm text-ink-400">
+        <h3 className="truncate font-semibold text-black/90">{collection.name}</h3>
+        <p className="mt-1 inline-flex items-center gap-1 text-sm text-black/45">
           <Bookmark size={12} /> {collection.itemCount} 件作品
         </p>
       </div>

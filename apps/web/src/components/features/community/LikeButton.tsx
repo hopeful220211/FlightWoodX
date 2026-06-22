@@ -33,7 +33,7 @@ export function LikeButton({
       onClick={handle}
       aria-pressed={liked}
       aria-label={liked ? '取消点赞' : '点赞'}
-      className={`relative inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 ${
+      className={`relative inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 ${
         liked
           ? 'bg-rose-500 text-white hover:bg-rose-600'
           : 'border border-sky-200 bg-white text-black/70 hover:border-rose-200 hover:text-rose-500'

@@ -98,12 +98,12 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
       <Avatar comment={comment} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold text-ink-900">
+          <span className="truncate text-sm font-semibold text-black/90">
             {comment.author?.username || '匿名'}
           </span>
-          <span className="shrink-0 text-xs text-ink-400">{relativeTime(comment.createdAt)}</span>
+          <span className="shrink-0 text-xs text-black/45">{relativeTime(comment.createdAt)}</span>
         </div>
-        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-700">
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-black/75">
           {comment.body}
         </p>
       </div>
@@ -114,7 +114,7 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
           className={cn(
-            'rounded-full p-1.5 text-ink-400 transition-all duration-300 hover:bg-white hover:text-sky-600 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40',
+            'rounded-full p-1.5 text-black/45 transition-all duration-300 hover:bg-white hover:text-sky-600 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40',
             'opacity-0 group-hover:opacity-100 motion-reduce:opacity-100',
             menuOpen && 'opacity-100 bg-white text-sky-600 shadow-soft',
           )}
@@ -140,7 +140,7 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
               </button>
             ) : (
               <>
-                <div className="flex items-center gap-1.5 px-3 pb-1 pt-1 text-xs font-medium text-ink-400">
+                <div className="flex items-center gap-1.5 px-3 pb-1 pt-1 text-xs font-medium text-black/45">
                   <Flag size={12} /> 举报理由
                 </div>
                 {REASONS.map((reason) => (
@@ -149,7 +149,7 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
                     type="button"
                     role="menuitem"
                     onClick={() => onReport(reason)}
-                    className="block w-full px-3 py-2 text-left text-sm text-ink-700 transition-colors hover:bg-sky-50 focus-visible:bg-sky-50 focus-visible:outline-none"
+                    className="block w-full px-3 py-2 text-left text-sm text-black/75 transition-colors hover:bg-sky-50 focus-visible:bg-sky-50 focus-visible:outline-none"
                   >
                     {reason}
                   </button>
@@ -190,7 +190,7 @@ export function CommentSection({ postId }: { postId: string }) {
 
   return (
     <section className="space-y-5" aria-label="评论区">
-      <h2 className="flex items-center gap-2 text-base font-semibold text-ink-900">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-black/90">
         <MessageCircle size={18} className="text-sky-500" />
         评论
         {count > 0 && (
@@ -210,12 +210,12 @@ export function CommentSection({ postId }: { postId: string }) {
             rows={3}
             maxLength={MAX_LEN}
             className={cn(
-              'w-full resize-none rounded-xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-ink-900 shadow-soft transition placeholder:text-ink-400',
+              'w-full resize-none rounded-xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-black/90 shadow-soft transition placeholder:text-black/45',
               'focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100',
             )}
           />
           <div className="mt-2.5 flex items-center justify-between pl-1">
-            <span className={cn('text-xs tabular-nums transition-colors', nearLimit ? 'text-rose-500' : 'text-ink-400')}>
+            <span className={cn('text-xs tabular-nums transition-colors', nearLimit ? 'text-rose-500' : 'text-black/45')}>
               {draft.length}/{MAX_LEN}
             </span>
             <button
@@ -232,7 +232,7 @@ export function CommentSection({ postId }: { postId: string }) {
       ) : (
         <div className="flex flex-col items-center gap-1 rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 px-4 py-6 text-center">
           <MessageCircle size={22} className="text-sky-300" />
-          <p className="text-sm text-ink-500">登录后就能在这里留言啦</p>
+          <p className="text-sm text-black/55">登录后就能在这里留言啦</p>
         </div>
       )}
 
@@ -251,7 +251,7 @@ export function CommentSection({ postId }: { postId: string }) {
         </ul>
       ) : isError ? (
         <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/40 py-10 text-center">
-          <p className="text-sm text-ink-500">评论加载失败了</p>
+          <p className="text-sm text-black/55">评论加载失败了</p>
           <button
             onClick={() => refetch()}
             className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
@@ -264,7 +264,7 @@ export function CommentSection({ postId }: { postId: string }) {
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
             <MessageCircle size={20} className="text-sky-300" />
           </div>
-          <p className="text-sm text-ink-500">还没有评论，来说两句吧</p>
+          <p className="text-sm text-black/55">还没有评论，来说两句吧</p>
         </div>
       ) : (
         <ul className="-mx-3 divide-y divide-sky-50">

@@ -110,6 +110,7 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
       <Button
         size="sm"
         variant={isSaved ? 'primary' : 'outline'}
+        className="!rounded-full"
         leftIcon={<Bookmark size={14} fill={isSaved ? 'currentColor' : 'none'} />}
         onClick={openPopover}
         aria-pressed={isSaved}
@@ -120,7 +121,7 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
       <Modal open={open} title="收藏到合集" onClose={closeModal}>
         <div className="space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-ink-400">
+            <div className="flex items-center justify-center gap-2 py-10 text-black/45">
               <Loader2 size={18} className="animate-spin motion-reduce:animate-none" />
               <span className="text-sm">正在加载你的合集…</span>
             </div>
@@ -131,7 +132,7 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
                     <Bookmark size={20} className="text-sky-300" />
                   </div>
-                  <p className="text-sm text-ink-500">还没有合集，新建一个开始收藏吧</p>
+                  <p className="text-sm text-black/55">还没有合集，新建一个开始收藏吧</p>
                 </div>
               ) : (
                 <ul className="-mx-1 max-h-80 space-y-1 overflow-y-auto px-1">
@@ -158,10 +159,10 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-center gap-1.5">
-                              <span className="truncate text-sm font-semibold text-ink-900">{c.name}</span>
-                              {!c.isPublic && <Lock size={11} className="shrink-0 text-ink-400" aria-label="私密合集" />}
+                              <span className="truncate text-sm font-semibold text-black/90">{c.name}</span>
+                              {!c.isPublic && <Lock size={11} className="shrink-0 text-black/45" aria-label="私密合集" />}
                             </span>
-                            <span className="mt-0.5 block text-xs text-ink-400">{c.itemCount} 件作品</span>
+                            <span className="mt-0.5 block text-xs text-black/45">{c.itemCount} 件作品</span>
                           </span>
                           <span
                             className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${EASE} ${
@@ -207,7 +208,7 @@ export function SaveToCollectionButton({ postId }: SaveToCollectionButtonProps) 
                 <button
                   type="button"
                   onClick={() => nav('/collections')}
-                  className="rounded text-sm text-ink-400 transition-colors hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                  className="rounded text-sm text-black/45 transition-colors hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
                 >
                   管理我的合集
                 </button>

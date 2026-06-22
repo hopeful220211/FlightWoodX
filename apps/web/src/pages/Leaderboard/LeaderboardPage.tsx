@@ -29,11 +29,14 @@ async function fetchLeaderboard(): Promise<LeaderRow[]> {
   return res.data.items ?? []
 }
 
-/** 名次配色与文案：1 金 / 2 银 / 3 铜。 */
+/**
+ * 名次配色与文案：1 金 / 2 银 / 3 铜。
+ * grad/badge 走浅色金银铜（装饰），score 走 *-600 深一档 —— 大字在白底达 WCAG AA。
+ */
 const PODIUM = {
-  1: { ring: 'ring-amber-300', grad: 'from-amber-300 to-amber-500', badge: 'bg-amber-400', label: '冠军', glow: 'shadow-[0_18px_50px_rgba(245,180,30,.30)]' },
-  2: { ring: 'ring-slate-300', grad: 'from-slate-300 to-slate-400', badge: 'bg-slate-400', label: '亚军', glow: 'shadow-lift' },
-  3: { ring: 'ring-orange-300', grad: 'from-orange-300 to-orange-500', badge: 'bg-orange-400', label: '季军', glow: 'shadow-lift' },
+  1: { grad: 'from-amber-300 to-amber-500', badge: 'bg-amber-400', label: '冠军', score: 'text-amber-600', glow: 'shadow-[0_18px_50px_rgba(245,180,30,.30)]' },
+  2: { grad: 'from-slate-300 to-slate-400', badge: 'bg-slate-400', label: '亚军', score: 'text-slate-600', glow: 'shadow-lift' },
+  3: { grad: 'from-orange-300 to-orange-500', badge: 'bg-orange-400', label: '季军', score: 'text-orange-600', glow: 'shadow-lift' },
 } as const
 
 function likeText(n: number) {
@@ -59,12 +62,14 @@ export function LeaderboardPage() {
     <CommunityShell>
       <PageContainer className="py-10 lg:py-14">
         {/* ── Hero ── */}
-        <header className="mb-8 lg:mb-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500 ring-1 ring-sky-100 backdrop-blur">
-            <Trophy size={12} /> 点赞排行榜
+        <header className="mb-10 lg:mb-14">
+          <span className="fwx-display inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[12px] font-medium uppercase tracking-[0.2em] text-sky-600 ring-1 ring-sky-100 backdrop-blur">
+            <Trophy size={12} /> Leaderboard · 点赞排行榜
           </span>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">人气作品榜</h1>
-          <p className="mt-2 max-w-xl text-ink-500">
+          <h1 className="fwx-display mt-5 font-semibold leading-[1.05] tracking-tight text-black/90 [font-size:max(40px,4.5vw)]">
+            人气作品榜
+          </h1>
+          <p className="mt-4 max-w-xl text-[18px] leading-relaxed text-black/55">
             社区里被点赞最多的木质飞行器，按总点赞数从高到低排名。点开任意一架，看看它凭什么火。
           </p>
         </header>
@@ -72,24 +77,24 @@ export function LeaderboardPage() {
         {isLoading ? (
           <LeaderboardSkeleton />
         ) : isError ? (
-          <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
-            <p className="text-ink-500">排行榜加载失败了</p>
+          <div className="rounded-3xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
+            <p className="text-[15px] text-black/55">排行榜加载失败了</p>
             <button
               onClick={() => refetch()}
-              className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
+              className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-medium text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
             >
               重试
             </button>
           </div>
         ) : rows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
+          <div className="rounded-3xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <Sparkles size={24} className="text-sky-300" />
             </div>
-            <p className="text-ink-500">榜单还空着，去给喜欢的作品点个赞，把它送上榜吧！</p>
+            <p className="text-[15px] text-black/55">榜单还空着，去给喜欢的作品点个赞，把它送上榜吧！</p>
             <Link
               to="/community"
-              className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
+              className={`mt-5 inline-flex items-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
             >
               逛逛作品广场
             </Link>
@@ -98,13 +103,15 @@ export function LeaderboardPage() {
           <>
             {top3.length > 0 && <Podium top3={top3} />}
             {rest.length > 0 && (
-              <ol className="mt-8 space-y-2.5 lg:mt-12">
+              <ol className="mt-10 space-y-3 lg:mt-16">
                 {rest.map((row, i) => (
                   <RankRow key={row.id} row={row} rank={i + 4} />
                 ))}
               </ol>
             )}
-            <p className="pb-2 pt-10 text-center text-sm text-ink-300">· 共上榜 {rows.length} 件作品 ·</p>
+            <p className="fwx-display pb-2 pt-12 text-center text-[13px] tracking-wide text-black/40">
+              · 共上榜 <span className="tabular-nums text-black/55">{rows.length}</span> 件作品 ·
+            </p>
           </>
         )}
       </PageContainer>
@@ -179,15 +186,10 @@ function PodiumCard({ row, rank }: { row: LeaderRow; rank: 1 | 2 | 3 }) {
       </div>
 
       <div className={`p-4 ${isChamp ? 'sm:p-5' : ''}`}>
-        <div className="flex items-center justify-between gap-2">
-          <span className={`inline-flex items-center gap-1 text-xs font-semibold ${rank === 1 ? 'text-amber-500' : rank === 2 ? 'text-slate-500' : 'text-orange-500'}`}>
-            <Medal size={13} /> {p.label}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-500">
-            <Heart size={12} fill="currentColor" /> {likeText(row.likeCount)}
-          </span>
-        </div>
-        <h3 className={`mt-2 truncate font-bold text-ink-900 ${isChamp ? 'text-lg' : 'text-base'}`}>{row.title}</h3>
+        <span className={`inline-flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.16em] ${p.score}`}>
+          <Medal size={13} /> {p.label}
+        </span>
+        <h3 className={`fwx-display mt-2 truncate font-semibold text-black/90 ${isChamp ? 'text-lg' : 'text-base'}`}>{row.title}</h3>
         <div className="mt-1.5 flex items-center gap-1.5">
           <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sky-100 text-[10px] font-semibold text-sky-600">
             {row.author?.avatar ? (
@@ -196,7 +198,20 @@ function PodiumCard({ row, rank }: { row: LeaderRow; rank: 1 | 2 | 3 }) {
               initials(row.author?.username)
             )}
           </span>
-          <span className="truncate text-xs text-ink-500">{row.author?.username || '匿名'}</span>
+          <span className="truncate text-[13px] text-black/55">{row.author?.username || '匿名'}</span>
+        </div>
+
+        {/* BigStat：分数为卡片视觉焦点 —— 大字呼应名次金/银/铜 */}
+        <div className="mt-4 flex items-baseline gap-1.5 border-t border-black/[0.06] pt-4">
+          <Heart size={isChamp ? 18 : 16} fill="currentColor" className={`${p.score} translate-y-[-0.18em]`} aria-hidden />
+          <span
+            className={`fwx-display font-semibold leading-none tabular-nums ${p.score} ${
+              isChamp ? '[font-size:max(56px,4vw)]' : 'text-[48px]'
+            }`}
+          >
+            {likeText(row.likeCount)}
+          </span>
+          <span className="ml-0.5 text-[12px] font-medium text-black/55">赞</span>
         </div>
       </div>
     </Link>
@@ -209,9 +224,9 @@ function RankRow({ row, rank }: { row: LeaderRow; rank: number }) {
     <li>
       <Link
         to={`/community/${row.id}`}
-        className={`group flex items-center gap-3 rounded-2xl bg-white p-2.5 pr-4 shadow-soft ring-1 ring-black/[0.04] transition-all ${EASE} hover:-translate-y-0.5 hover:shadow-lift hover:ring-sky-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:gap-4`}
+        className={`group flex items-center gap-3 rounded-2xl bg-white p-2.5 pr-5 shadow-soft ring-1 ring-black/[0.04] transition-all ${EASE} hover:-translate-y-0.5 hover:shadow-lift hover:ring-sky-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:gap-4`}
       >
-        <span className="w-7 shrink-0 text-center text-base font-bold tabular-nums text-ink-300 sm:w-9 sm:text-lg">
+        <span className="fwx-display w-8 shrink-0 text-center text-lg font-medium tabular-nums text-black/55 sm:w-11 sm:text-xl">
           {rank}
         </span>
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-paper-100 to-sky-50/60 sm:h-16 sm:w-16">
@@ -229,7 +244,7 @@ function RankRow({ row, rank }: { row: LeaderRow; rank: number }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-ink-900 sm:text-base">{row.title}</h3>
+          <h3 className="fwx-display truncate text-[15px] font-semibold text-black/90 sm:text-base">{row.title}</h3>
           <div className="mt-1 flex items-center gap-1.5">
             <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sky-100 text-[9px] font-semibold text-sky-600">
               {row.author?.avatar ? (
@@ -238,11 +253,12 @@ function RankRow({ row, rank }: { row: LeaderRow; rank: number }) {
                 initials(row.author?.username)
               )}
             </span>
-            <span className="truncate text-xs text-ink-500">{row.author?.username || '匿名'}</span>
+            <span className="truncate text-[13px] text-black/55">{row.author?.username || '匿名'}</span>
           </div>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-rose-500">
-          <Heart size={14} fill="currentColor" /> {likeText(row.likeCount)}
+        <span className="inline-flex shrink-0 items-baseline gap-1.5">
+          <Heart size={14} fill="currentColor" className="translate-y-[0.15em] text-rose-400" aria-hidden />
+          <span className="fwx-display text-xl font-semibold tabular-nums text-black/90 sm:text-2xl">{likeText(row.likeCount)}</span>
         </span>
       </Link>
     </li>
@@ -258,23 +274,29 @@ function LeaderboardSkeleton() {
           <div key={i} className="sm:flex-1 sm:max-w-xs">
             <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/5">
               <div className={`animate-pulse bg-paper-100 ${i === 1 ? 'aspect-[4/3] sm:aspect-square' : 'aspect-[4/3]'}`} />
-              <div className="space-y-2 p-4">
-                <div className="h-4 w-2/3 animate-pulse rounded bg-paper-100" />
+              <div className="p-4">
                 <div className="h-3 w-1/3 animate-pulse rounded bg-paper-100" />
+                <div className="mt-2 h-4 w-2/3 animate-pulse rounded bg-paper-100" />
+                <div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-paper-100" />
+                {/* BigStat 占位 */}
+                <div className="mt-4 border-t border-black/[0.06] pt-4">
+                  <div className="h-11 w-1/2 animate-pulse rounded-lg bg-paper-100" />
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-8 space-y-2.5">
+      <div className="mt-10 space-y-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 rounded-2xl bg-white p-2.5 pr-4 ring-1 ring-black/[0.04]">
-            <div className="h-5 w-7 animate-pulse rounded bg-paper-100 sm:w-9" />
+          <div key={i} className="flex items-center gap-4 rounded-2xl bg-white p-2.5 pr-5 ring-1 ring-black/[0.04]">
+            <div className="h-6 w-8 animate-pulse rounded bg-paper-100 sm:w-11" />
             <div className="h-16 w-16 animate-pulse rounded-xl bg-paper-100" />
             <div className="flex-1 space-y-2">
               <div className="h-4 w-1/2 animate-pulse rounded bg-paper-100" />
               <div className="h-3 w-1/4 animate-pulse rounded bg-paper-100" />
             </div>
+            <div className="h-6 w-12 animate-pulse rounded bg-paper-100" />
           </div>
         ))}
       </div>

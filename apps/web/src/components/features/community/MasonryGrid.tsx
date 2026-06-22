@@ -16,7 +16,7 @@ export function MasonryGrid({ posts, animateKey }: { posts: PostCard[]; animateK
       <style>{'@keyframes fwxRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}'}</style>
       <div
         key={animateKey}
-        className="grid grid-cols-2 items-start gap-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4 2xl:grid-cols-5"
+        className="grid grid-cols-2 items-start gap-5 sm:grid-cols-3 sm:gap-6 xl:grid-cols-4 2xl:grid-cols-5"
       >
         {posts.map((post, i) => (
           <WorkCard

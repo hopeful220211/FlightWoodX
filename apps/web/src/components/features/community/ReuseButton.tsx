@@ -31,7 +31,7 @@ export function ReuseButton({ postId, projectId, reusable }: ReuseButtonProps) {
 
   if (!reusable) {
     return (
-      <Button size="sm" variant="outline" leftIcon={<GitFork size={14} />} disabled title="作者未开放复用">
+      <Button size="sm" variant="outline" className="!rounded-full" leftIcon={<GitFork size={14} />} disabled title="作者未开放复用">
         复用这个设计
       </Button>
     )
@@ -56,6 +56,7 @@ export function ReuseButton({ postId, projectId, reusable }: ReuseButtonProps) {
     <Button
       size="sm"
       variant="outline"
+      className="!rounded-full"
       leftIcon={<GitFork size={14} />}
       onClick={onReuse}
       disabled={fork.isPending}

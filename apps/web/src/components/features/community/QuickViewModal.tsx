@@ -106,7 +106,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
           type="button"
           onClick={onClose}
           aria-label="关闭"
-          className={`absolute left-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-ink-700 shadow-lift ring-1 ring-black/5 backdrop-blur-md transition hover:scale-105 hover:bg-white hover:text-ink-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:hover:scale-100 ${EASE}`}
+          className={`absolute left-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-black/70 shadow-lift ring-1 ring-black/5 backdrop-blur-md transition hover:scale-105 hover:bg-white hover:text-black/90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:hover:scale-100 ${EASE}`}
         >
           <ArrowLeft size={18} />
         </button>
@@ -114,7 +114,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
           type="button"
           onClick={expand}
           aria-label="展开查看完整作品"
-          className={`absolute right-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3.5 py-2 text-sm font-semibold text-ink-700 shadow-lift ring-1 ring-black/5 backdrop-blur-md transition hover:scale-[1.03] hover:bg-white hover:text-sky-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:hover:scale-100 ${EASE}`}
+          className={`fwx-display absolute right-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3.5 py-2 text-sm font-medium text-black/70 shadow-lift ring-1 ring-black/5 backdrop-blur-md transition hover:scale-[1.03] hover:bg-white hover:text-sky-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:hover:scale-100 ${EASE}`}
         >
           <Maximize2 size={15} /> 展开
         </button>
@@ -122,7 +122,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
         {isError ? (
           /* ── 加载失败：给重试 / 关闭，不无限转圈（Codex） ── */
           <div className="flex w-full flex-col items-center justify-center gap-4 p-12 py-20 text-center">
-            <p className="text-ink-500">作品加载失败了</p>
+            <p className="text-[15px] text-black/55">作品加载失败了</p>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -134,7 +134,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full border border-sky-200 bg-white px-5 py-2 text-sm font-medium text-ink-600 transition hover:bg-sky-50"
+                className="rounded-full border border-sky-200 bg-white px-5 py-2 text-sm font-medium text-black/70 transition hover:bg-sky-50"
               >
                 关闭
               </button>
@@ -175,7 +175,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
                   />
                   {/* 放大提示：hover / focus 时浮现 */}
                   <span
-                    className={`pointer-events-none absolute bottom-3.5 left-3.5 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-ink-700 opacity-0 shadow-soft ring-1 ring-black/5 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none ${EASE}`}
+                    className={`pointer-events-none absolute bottom-3.5 left-3.5 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-black/70 opacity-0 shadow-soft ring-1 ring-black/5 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none ${EASE}`}
                   >
                     <ZoomIn size={13} /> 放大查看
                   </span>
@@ -185,7 +185,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
                   <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/70 shadow-soft ring-1 ring-sky-100">
                     <ImageOff size={28} />
                   </span>
-                  <span className="text-xs font-medium text-ink-400">这件作品还没有封面图</span>
+                  <span className="text-[13px] font-medium text-black/55">这件作品还没有封面图</span>
                 </div>
               )}
             </div>
@@ -194,17 +194,17 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
             <div className="flex min-h-0 w-full flex-col lg:w-1/2 lg:overflow-y-auto">
               <div className="border-b border-paper-200/70 px-6 pb-6 pt-16 lg:px-8">
                 {post.forkFrom && (
-                  <p className="mb-2.5 inline-flex items-center rounded-full bg-paper-100 px-2.5 py-1 text-[11px] font-medium text-ink-500">
+                  <p className="mb-3 inline-flex items-center rounded-full bg-paper-100 px-2.5 py-1 text-[12px] font-medium text-black/55">
                     基于 @{post.forkFrom.authorName || '某位创作者'} 的《{post.forkFrom.title}》再创作
                   </p>
                 )}
-                <h2 className="text-2xl font-bold leading-tight tracking-tight text-ink-900">{post.title}</h2>
+                <h2 className="fwx-display text-[28px] font-semibold leading-[1.12] tracking-tight text-black/90 break-words [overflow-wrap:anywhere]">{post.title}</h2>
 
                 {/* 作者行 → /u/:id */}
                 <button
                   type="button"
                   onClick={goAuthor}
-                  className={`group mt-4 flex items-center gap-2.5 rounded-full py-1 pr-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${EASE}`}
+                  className={`group mt-5 flex items-center gap-2.5 rounded-full py-1 pr-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${EASE}`}
                 >
                   <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-100 to-sky-200/60 text-xs font-semibold text-sky-600 ring-1 ring-sky-100">
                     {post.author?.avatar ? (
@@ -213,7 +213,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
                       <User size={16} />
                     )}
                   </span>
-                  <span className="text-sm font-semibold text-ink-700 transition-colors group-hover:text-sky-600">
+                  <span className="text-[15px] font-medium text-black/70 transition-colors group-hover:text-sky-600">
                     {post.author?.username || '匿名创作者'}
                   </span>
                 </button>
@@ -230,14 +230,14 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
                   <button
                     type="button"
                     onClick={share}
-                    className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 text-sm font-semibold text-ink-700 transition-all active:scale-95 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:active:scale-100 ${EASE}`}
+                    className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 text-sm font-medium text-black/70 transition-all active:scale-95 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:active:scale-100 ${EASE}`}
                   >
                     <Share2 size={15} /> 分享
                   </button>
                 </div>
 
                 {post.description && (
-                  <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-ink-600">{post.description}</p>
+                  <p className="mt-5 whitespace-pre-wrap text-[15px] leading-relaxed text-black/70">{post.description}</p>
                 )}
               </div>
 

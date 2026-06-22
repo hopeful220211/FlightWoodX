@@ -126,7 +126,7 @@ export function CollectionDetailPage() {
           </div>
         ) : isError || !collection ? (
           <div className="mt-6 rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
-            <p className="text-ink-500">合集不存在或加载失败</p>
+            <p className="text-black/55">合集不存在或加载失败</p>
             <button
               onClick={() => refetch()}
               className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
@@ -140,19 +140,19 @@ export function CollectionDetailPage() {
             <header className="mt-6 flex flex-wrap items-end justify-between gap-4 lg:mt-8">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="truncate text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">
+                  <h1 className="fwx-display truncate text-4xl font-semibold tracking-tight text-black/90 lg:text-5xl">
                     {collection.name}
                   </h1>
                   {!collection.isPublic && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-medium text-ink-500 ring-1 ring-sky-100 backdrop-blur">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-medium text-black/55 ring-1 ring-sky-100 backdrop-blur">
                       <Lock size={12} /> 私密
                     </span>
                   )}
                 </div>
                 {collection.description && (
-                  <p className="mt-2.5 max-w-2xl text-ink-500">{collection.description}</p>
+                  <p className="mt-3 max-w-2xl text-black/55">{collection.description}</p>
                 )}
-                <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-ink-400">
+                <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-black/45">
                   <Images size={14} /> {collection.items.length} 件作品
                 </p>
               </div>
@@ -165,7 +165,7 @@ export function CollectionDetailPage() {
                       className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold shadow-soft transition-all ${EASE} ${
                         manage
                           ? 'bg-sky-500 text-white shadow-sky-glow hover:bg-sky-600'
-                          : 'border border-sky-200 bg-white text-ink-700 hover:border-sky-300 hover:bg-sky-50'
+                          : 'border border-sky-200 bg-white text-black/75 hover:border-sky-300 hover:bg-sky-50'
                       }`}
                     >
                       <Settings2 size={15} /> {manage ? '完成' : '管理'}
@@ -173,14 +173,14 @@ export function CollectionDetailPage() {
                   )}
                   <button
                     onClick={openEdit}
-                    className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-sky-300 hover:bg-sky-50 ${EASE}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-black/75 shadow-soft transition-all hover:border-sky-300 hover:bg-sky-50 ${EASE}`}
                   >
                     <Pencil size={14} /> 编辑
                   </button>
                   <button
                     onClick={onDelete}
                     disabled={deleteCollection.isPending}
-                    className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-ink-700 shadow-soft transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 ${EASE}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-black/75 shadow-soft transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 ${EASE}`}
                   >
                     <Trash2 size={14} /> {deleteCollection.isPending ? '删除中…' : '删除'}
                   </button>
@@ -195,7 +195,7 @@ export function CollectionDetailPage() {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
                     <ImageOff size={24} className="text-sky-300" />
                   </div>
-                  <p className="text-ink-500">这个合集还没有作品</p>
+                  <p className="text-black/55">这个合集还没有作品</p>
                   <button
                     onClick={() => nav('/community')}
                     className={`mt-4 inline-flex items-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all hover:bg-sky-600 ${EASE}`}
@@ -245,7 +245,7 @@ export function CollectionDetailPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
-            <label className="flex items-center gap-2 text-sm text-ink-700 select-none">
+            <label className="flex items-center gap-2 text-sm text-black/75 select-none">
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-sky-300 text-sky-500 focus:ring-sky-400"
@@ -276,7 +276,7 @@ function ManageGrid({
 }) {
   return (
     <>
-      <p className="mb-4 text-sm text-ink-400">管理模式：点右上角 ✕ 把作品移出合集，完成后点「完成」。</p>
+      <p className="mb-4 text-sm text-black/45">管理模式：点右上角 ✕ 把作品移出合集，完成后点「完成」。</p>
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((post) => {
           const pending = pendingId === post.id
@@ -293,7 +293,7 @@ function ManageGrid({
                 disabled={pending}
                 aria-label="从合集移除"
                 title="从合集移除"
-                className="absolute right-2.5 top-2.5 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-ink-500 shadow-soft backdrop-blur-md transition-all hover:bg-rose-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed"
+                className="absolute right-2.5 top-2.5 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-black/55 shadow-soft backdrop-blur-md transition-all hover:bg-rose-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed"
               >
                 <X size={15} />
               </button>
@@ -312,8 +312,8 @@ function ManageGrid({
                 )}
               </div>
               <div className="p-4">
-                <h3 className="truncate font-semibold text-ink-900">{post.title}</h3>
-                <p className="mt-1 truncate text-sm text-ink-400">{post.author?.username || '匿名'}</p>
+                <h3 className="truncate font-semibold text-black/90">{post.title}</h3>
+                <p className="mt-1 truncate text-sm text-black/45">{post.author?.username || '匿名'}</p>
               </div>
             </article>
           )

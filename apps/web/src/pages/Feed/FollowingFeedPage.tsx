@@ -41,7 +41,7 @@ export function FollowingFeedPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <Users size={24} className="text-sky-300" />
             </div>
-            <p className="text-ink-400">登录后才能查看你的关注</p>
+            <p className="text-black/45">登录后才能查看你的关注</p>
             <button
               onClick={() => nav('/login')}
               className="mt-4 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
@@ -62,8 +62,8 @@ export function FollowingFeedPage() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500 ring-1 ring-sky-100 backdrop-blur">
             <Heart size={12} /> 我的关注
           </span>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">关注动态</h1>
-          <p className="mt-2 max-w-xl text-ink-500">你关注的创作者的最新作品，第一时间看到他们又拼出了什么新飞行器。</p>
+          <h1 className="fwx-display mt-4 text-4xl font-semibold tracking-tight text-black/90 lg:text-5xl">关注动态</h1>
+          <p className="mt-3 max-w-xl text-black/55">你关注的创作者的最新作品，第一时间看到他们又拼出了什么新飞行器。</p>
         </header>
 
         {/* ── 三态 ── */}
@@ -85,7 +85,7 @@ export function FollowingFeedPage() {
           </div>
         ) : isError ? (
           <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
-            <p className="text-ink-400">关注动态加载失败了</p>
+            <p className="text-black/45">关注动态加载失败了</p>
             <button
               onClick={() => refetch()}
               className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
@@ -98,8 +98,8 @@ export function FollowingFeedPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <Users size={28} className="text-sky-300" />
             </div>
-            <p className="text-ink-600">你还没有关注任何创作者</p>
-            <p className="mt-1 text-sm text-ink-400">去社区逛逛，关注喜欢的小创客吧</p>
+            <p className="text-black/70">你还没有关注任何创作者</p>
+            <p className="mt-1 text-sm text-black/45">去社区逛逛，关注喜欢的小创客吧</p>
             <button
               onClick={() => nav('/community')}
               className="mt-5 inline-flex items-center gap-2 rounded-full bg-sky-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sky-glow transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-sky-600 hover:shadow-lift active:scale-[0.97] motion-reduce:transition-none"
@@ -112,12 +112,12 @@ export function FollowingFeedPage() {
             <MasonryGrid posts={posts} />
             <div ref={sentinelRef} className="h-8" aria-hidden="true" />
             {isFetchingNextPage && (
-              <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-ink-400">
+              <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-black/45">
                 <Loader2 size={15} className="animate-spin" /> 加载更多…
               </p>
             )}
             {!hasNextPage && (
-              <p className="flex items-center justify-center gap-1.5 pb-2 pt-8 text-center text-sm text-ink-300">
+              <p className="flex items-center justify-center gap-1.5 pb-2 pt-8 text-center text-sm text-black/35">
                 <Heart size={13} /> 已经到底啦
               </p>
             )}
