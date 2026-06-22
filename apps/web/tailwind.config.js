@@ -52,6 +52,12 @@ export default {
           sky: '#4AA3F0',     // 与 sky-400 同步
           leaf: '#3EB489',
           gold: '#D4A74A',
+          spark: '#1E9BFF',   // RFC-020：唯一高饱和点睛蓝（<5% 面积，仅按钮/编号/关键数字/关键词）
+        },
+        /* ── RFC-020：浅色交替区块面（不上深色） ── */
+        surface: {
+          white: '#F5F9FF',
+          ice: '#EAF2FB',
         },
         success: '#22c55e',
         warning: '#f59e0b',
@@ -60,6 +66,18 @@ export default {
       fontFamily: {
         sans: ['Inter', 'MiSans', 'system-ui', 'sans-serif'],
         display: ['"DingTalk JinBuTi"', 'MiSans', 'system-ui', 'sans-serif'],
+        /* ── RFC-020：英文/数字展示字体（标题、大数据），中文正文仍走 sans ── */
+        grotesk: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
+      },
+      /* ── RFC-020：流体字号令牌（映射 index.css 的 CSS 变量，便于 text-hero 等直接用） ── */
+      fontSize: {
+        hero: ['var(--fs-hero)', { lineHeight: '1', letterSpacing: '-0.3px' }],
+        h2: ['var(--fs-h2)', { lineHeight: '1.05' }],
+        h3: ['var(--fs-h3)', { lineHeight: '1.1' }],
+        'title-sm': ['var(--fs-title-sm)', { lineHeight: '1.2' }],
+        body: ['var(--fs-body)', { lineHeight: '1.5' }],
+        label: ['var(--fs-label)', { lineHeight: '1', letterSpacing: '1.2px' }],
+        stat: ['var(--fs-stat)', { lineHeight: '1' }],
       },
       boxShadow: {
         soft: '0 10px 30px rgba(0,0,0,.06)',
@@ -73,6 +91,10 @@ export default {
         lg: '10px',
         xl: '12px',
         '2xl': '16px',
+        /* ── RFC-020：胶囊/卡片/标签圆角 ── */
+        pill: '40px',
+        card: '20px',
+        tag: '10px',
       },
       backgroundImage: {
         'sky-gradient': 'linear-gradient(180deg, #e0efff 0%, #f0f7ff 50%, #ffffff 100%)',
