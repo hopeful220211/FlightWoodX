@@ -1,7 +1,9 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Trophy, Users, Calendar, ArrowRight, Crown, MapPin } from 'lucide-react'
+import { Calendar, Crown, MapPin } from 'lucide-react'
 import { editorialFor } from '../content/competitionContent'
+import { HoverReveal } from '../../../components/common/HoverReveal'
+import { BigStat } from '../../../components/common/BigStat'
 import {
   COMPETITION_STATUS_LABEL,
   COMPETITION_STATUS_CLASS,
@@ -20,7 +22,7 @@ function dateRange(start: string, end: string): string {
 function StatusBadge({ status }: { status: CompetitionView['status'] }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${COMPETITION_STATUS_CLASS[status]}`}
+      className={`inline-flex items-center rounded-tag px-3 py-1 text-label uppercase ${COMPETITION_STATUS_CLASS[status]}`}
     >
       {COMPETITION_STATUS_LABEL[status]}
     </span>
@@ -30,7 +32,9 @@ function StatusBadge({ status }: { status: CompetitionView['status'] }) {
 const EASE = [0.2, 0.8, 0.2, 1] as const
 
 /**
- * 年度旗舰赛事大卡：横向大尺寸，annual-2026-cover 封面 + 名称 + 状态 + 报名数 + tagline。
+ * 年度旗舰赛事大卡（RFC-020 A 节）：不对称 5fr/7fr 左文右图。
+ * 文案 col-span-5、配图 col-span-7（HoverReveal）；rounded-card、留白足、shadow-sky-glow。
+ * 报名数用 BigStat 大数据；标题 text-h3、正文 text-body。
  */
 export function FlagshipCard({ comp }: { comp: CompetitionView }) {
   const nav = useNavigate()
@@ -46,54 +50,46 @@ export function FlagshipCard({ comp }: { comp: CompetitionView }) {
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.6, ease: EASE }}
       whileHover={reduce ? undefined : { y: -4 }}
-      className="group block w-full overflow-hidden rounded-2xl border border-sky-100/70 bg-white text-left shadow-soft transition-shadow hover:shadow-lift"
+      className="group block w-full overflow-hidden rounded-card border border-sky-100/70 bg-surface-white text-left shadow-sky-glow transition-shadow hover:shadow-lift"
     >
-      <div className="grid md:grid-cols-2">
-        {/* 封面 */}
-        <div className="relative aspect-[16/10] overflow-hidden md:aspect-auto md:min-h-[20rem]">
-          <img
-            src={editorial.heroImage}
-            alt={comp.name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-accent-gold px-3 py-1 text-xs font-bold text-white shadow-sm">
-            <Crown size={14} />
-            年度旗舰赛事
-          </span>
-        </div>
-
-        {/* 内容 */}
-        <div className="flex flex-col justify-center gap-4 p-6 sm:p-8">
-          <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-600">
-              <Trophy size={16} className="text-accent-gold" />
-              翼创未来
+      <div className="grid items-stretch lg:grid-cols-12">
+        {/* 文案区 5fr */}
+        <div className="flex flex-col justify-center gap-5 p-8 sm:p-10 lg:col-span-5 lg:p-12">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-tag bg-accent-spark px-2.5 py-1 font-grotesk text-label uppercase text-white">
+              <Crown size={13} />
+              Flagship
             </span>
             <StatusBadge status={comp.status} />
           </div>
 
-          <h2 className="font-display text-2xl font-bold leading-snug text-ink-900 sm:text-3xl">
+          <h2 className="font-grotesk text-h3 font-bold leading-snug text-ink-900">
             {comp.name}
           </h2>
 
-          <p className="text-base leading-relaxed text-ink-600">{editorial.tagline}</p>
+          <p className="max-w-[560px] text-body text-ink-600">{editorial.tagline}</p>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-400">
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar size={14} />
-              {dateRange(comp.startTime, comp.endTime)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Users size={14} />
-              {comp.registeredCount} 人报名
-            </span>
+          <div className="flex items-end gap-8 pt-1">
+            <BigStat value={comp.registeredCount} unit="人" label="累计报名" />
+            <div className="flex flex-col gap-2 pb-1">
+              <span className="inline-flex items-center gap-1.5 text-sm text-ink-500">
+                <Calendar size={15} />
+                {dateRange(comp.startTime, comp.endTime)}
+              </span>
+              <span className="font-grotesk text-label uppercase text-accent-spark">
+                查看赛事详情 →
+              </span>
+            </div>
           </div>
+        </div>
 
-          <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-sky-600 transition-colors group-hover:text-sky-700">
-            查看赛事详情
-            <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-          </span>
+        {/* 配图区 7fr */}
+        <div className="lg:col-span-7">
+          <HoverReveal
+            image={editorial.heroImage}
+            alt={comp.name}
+            className="aspect-[16/10] h-full w-full rounded-none lg:aspect-auto lg:min-h-[22rem]"
+          />
         </div>
       </div>
     </motion.button>
@@ -101,7 +97,7 @@ export function FlagshipCard({ comp }: { comp: CompetitionView }) {
 }
 
 /**
- * 区域赛事卡：稍小，regional-cover 封面。
+ * 区域赛事次卡（RFC-020）：更紧凑，regional-cover 封面 + 标题 + 报名数。
  */
 export function RegionalCard({ comp }: { comp: CompetitionView }) {
   const nav = useNavigate()
@@ -117,7 +113,7 @@ export function RegionalCard({ comp }: { comp: CompetitionView }) {
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.55, ease: EASE }}
       whileHover={reduce ? undefined : { y: -4 }}
-      className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-sky-100/70 bg-white text-left shadow-soft transition-shadow hover:shadow-lift"
+      className="group flex h-full w-full flex-col overflow-hidden rounded-card border border-sky-100/70 bg-surface-white text-left shadow-soft transition-shadow hover:shadow-lift"
     >
       <div className="relative aspect-[16/9] overflow-hidden">
         <img
@@ -126,33 +122,33 @@ export function RegionalCard({ comp }: { comp: CompetitionView }) {
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-wood-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-tag bg-wood-500/90 px-2.5 py-1 font-grotesk text-label uppercase text-white shadow-sm">
           <MapPin size={13} />
-          区域赛事
+          Regional
         </span>
         <span className="absolute right-3 top-3">
           <StatusBadge status={comp.status} />
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-5 sm:p-6">
-        <h3 className="font-display text-xl font-bold leading-snug text-ink-900">{comp.name}</h3>
-        <p className="flex-1 text-sm leading-relaxed text-ink-600">{editorial.tagline}</p>
+      <div className="flex flex-1 flex-col gap-3 p-6 sm:p-7">
+        <h3 className="font-grotesk text-title-sm font-bold leading-snug text-ink-900">
+          {comp.name}
+        </h3>
+        <p className="flex-1 text-body text-ink-600">{editorial.tagline}</p>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-400">
-          <span className="inline-flex items-center gap-1.5">
-            <Calendar size={13} />
+        <div className="flex items-center justify-between pt-1">
+          <span className="inline-flex items-center gap-1.5 text-sm text-ink-500">
+            <Calendar size={14} />
             {dateRange(comp.startTime, comp.endTime)}
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Users size={13} />
-            {comp.registeredCount} 人报名
+          <span className="font-grotesk text-sm text-ink-500">
+            <span className="font-semibold text-accent-spark">{comp.registeredCount}</span> 人报名
           </span>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-600 transition-colors group-hover:text-sky-700">
-          查看详情
-          <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+        <span className="font-grotesk text-label uppercase text-accent-spark">
+          查看详情 →
         </span>
       </div>
     </motion.button>

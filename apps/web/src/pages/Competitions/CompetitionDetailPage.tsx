@@ -12,6 +12,7 @@ import { Breadcrumb } from '../../components/common/Breadcrumb'
 import { Button } from '../../components/common/Button'
 import { Card } from '../../components/common/Card'
 import { useToast } from '../../components/common/Toast'
+import { SectionLabel } from '../../components/common/SectionLabel'
 import { useAuthStore } from '../../stores/authStore'
 import { useCompetition, useRegister } from '../../hooks/useCompetitions'
 import { editorialFor, SECTION_IDS } from './content/competitionContent'
@@ -42,8 +43,8 @@ export function CompetitionDetailPage() {
   if (isLoading) {
     return (
       <PageContainer className="py-8 space-y-4">
-        <div className="h-8 w-1/3 animate-pulse rounded bg-sky-50" />
-        <div className="h-80 animate-pulse rounded-3xl bg-sky-50" />
+        <div className="h-8 w-1/3 animate-pulse rounded bg-surface-ice" />
+        <div className="h-80 animate-pulse rounded-card bg-surface-ice" />
       </PageContainer>
     )
   }
@@ -98,44 +99,50 @@ export function CompetitionDetailPage() {
       <AnchorNav />
 
       {/* 赛事介绍 */}
-      <section id={SECTION_IDS.intro} className="scroll-mt-24 py-8 md:py-12">
-        <div className="mb-6">
-          <p className="text-sm font-medium uppercase tracking-wider text-sky-500">About</p>
-          <h2 className="mt-1 font-display text-2xl font-bold text-ink-900 md:text-3xl">
-            赛事介绍
-          </h2>
-        </div>
-
+      <section
+        id={SECTION_IDS.intro}
+        className="scroll-mt-24 space-y-12 rounded-card bg-surface-white px-6 py-16 md:px-10 md:py-20"
+      >
         <div className="space-y-4">
-          {editorial.intro.map((para, i) => (
-            <p key={i} className="max-w-3xl text-base leading-relaxed text-ink-600">
-              {para}
-            </p>
-          ))}
+          <SectionLabel>About</SectionLabel>
+          <h2 className="font-grotesk text-h2 font-semibold text-ink-900">赛事介绍</h2>
+          <div className="space-y-4">
+            {editorial.intro.map((para, i) => (
+              <p key={i} className="max-w-[560px] text-body text-ink-600">
+                {para}
+              </p>
+            ))}
+          </div>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           {/* 赛道 */}
-          <div className="rounded-2xl bg-white p-6 shadow-soft ring-1 ring-sky-100">
-            <h3 className="font-display text-lg font-bold text-ink-900">赛道</h3>
-            <p className="mt-2 text-sm font-medium text-ink-700">{comp.trackConfig?.name}</p>
+          <div className="rounded-card bg-surface-ice p-8">
+            <SectionLabel>Track</SectionLabel>
+            <h3 className="mt-3 font-grotesk text-h3 font-semibold text-ink-900">赛道</h3>
+            <p className="mt-3 text-body font-medium text-ink-700">{comp.trackConfig?.name}</p>
             {comp.trackConfig?.description && (
-              <p className="mt-1 text-sm text-ink-500">{comp.trackConfig.description}</p>
+              <p className="mt-2 max-w-[560px] text-body text-ink-500">
+                {comp.trackConfig.description}
+              </p>
             )}
           </div>
 
           {/* 评分维度 */}
-          <div className="rounded-2xl bg-white p-6 shadow-soft ring-1 ring-sky-100">
-            <h3 className="font-display text-lg font-bold text-ink-900">评分维度</h3>
-            <ul className="mt-3 space-y-2">
+          <div className="rounded-card bg-surface-ice p-8">
+            <SectionLabel>Scoring</SectionLabel>
+            <h3 className="mt-3 font-grotesk text-h3 font-semibold text-ink-900">评分维度</h3>
+            <ul className="mt-5 space-y-3">
               {Object.entries(comp.scoringRules || {}).map(([k, v]) => (
-                <li key={k} className="flex items-center justify-between text-sm">
+                <li key={k} className="flex items-center justify-between text-body">
                   <span className="text-ink-600">{SCORING_LABEL[k] || k}</span>
-                  <span className="font-semibold text-sky-600">{v as number} 分</span>
+                  <span className="font-grotesk font-semibold text-accent-spark">
+                    {v as number} 分
+                  </span>
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-xs text-ink-400">
+            <p className="mt-5 text-sm text-ink-400">
               不评纯竞速，看设计巧思、编程逻辑、创意表达与任务完成。
             </p>
           </div>
@@ -143,9 +150,10 @@ export function CompetitionDetailPage() {
 
         {/* 赛制说明 */}
         {comp.rulesDescription && (
-          <div className="mt-4 rounded-2xl bg-sky-50/60 p-6 ring-1 ring-sky-100">
-            <h3 className="font-display text-lg font-bold text-ink-900">赛制说明</h3>
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink-600">
+          <div className="rounded-card bg-surface-ice p-8">
+            <SectionLabel>Rules</SectionLabel>
+            <h3 className="mt-3 font-grotesk text-h3 font-semibold text-ink-900">赛制说明</h3>
+            <p className="mt-3 max-w-[560px] whitespace-pre-line text-body text-ink-600">
               {comp.rulesDescription}
             </p>
           </div>

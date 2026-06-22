@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
+import { SectionLabel } from '../../../components/common/SectionLabel'
 import { SECTION_IDS, type SectionId } from '../content/competitionContent'
 
 interface NavItem {
@@ -74,9 +75,9 @@ export function AnchorNav(): JSX.Element {
   return (
     <nav
       aria-label="赛事区块导航"
-      className="sticky top-16 z-30 -mx-4 border-b border-sky-100 bg-white/85 px-4 backdrop-blur lg:-mx-6 lg:px-6"
+      className="sticky top-16 z-30 -mx-4 border-b border-sky-100 bg-surface-white/85 px-4 backdrop-blur lg:-mx-6 lg:px-6"
     >
-      <ul className="flex gap-1 overflow-x-auto py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="flex gap-7 overflow-x-auto py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {NAV_ITEMS.map((it) => {
           const isActive = active === it.id
           return (
@@ -85,13 +86,17 @@ export function AnchorNav(): JSX.Element {
                 href={`#${it.id}`}
                 onClick={(e) => handleClick(e, it.id)}
                 aria-current={isActive ? 'true' : undefined}
-                className={`relative inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-sky-500 text-white shadow-sky-glow'
-                    : 'text-ink-600 hover:bg-sky-50 hover:text-sky-600'
-                }`}
+                className="inline-flex items-center transition-colors"
               >
-                {it.label}
+                <SectionLabel
+                  className={
+                    isActive
+                      ? 'text-accent-spark'
+                      : 'text-ink-400 hover:text-ink-700'
+                  }
+                >
+                  {it.label}
+                </SectionLabel>
               </a>
             </li>
           )

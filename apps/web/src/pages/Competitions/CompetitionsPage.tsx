@@ -1,46 +1,39 @@
-import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { BarChart3, Inbox, AlertCircle, ArrowRight } from 'lucide-react'
+import { Inbox, AlertCircle } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
 import { useCompetitions } from '../../hooks/useCompetitions'
 import { isFlagship } from './content/competitionContent'
 import { CompetitionHero } from './components/CompetitionHero'
 import { FlagshipCard, RegionalCard } from './components/CompetitionCards'
+import { SectionLabel } from '../../components/common/SectionLabel'
+import { PillButton } from '../../components/common/PillButton'
+import { BigStat } from '../../components/common/BigStat'
 
 const PAGE_SIZE = 20
-const EASE = [0.2, 0.8, 0.2, 1] as const
 
-/** 排行榜入口卡：指向旗舰赛事排行榜，取不到旗舰则回退赛事列表。 */
-function LeaderboardEntryCard({ flagshipId }: { flagshipId?: string }) {
+/** 排行榜入口（RFC-020）：浅色冰蓝区块 + 大数据 + PillButton，避免整块蓝渐变。 */
+function LeaderboardEntryCard({ flagshipId, total }: { flagshipId?: string; total: number }) {
   const nav = useNavigate()
-  const reduce = useReducedMotion()
   const target = flagshipId ? `/competitions/${flagshipId}/leaderboard` : '/competitions'
 
   return (
-    <motion.button
-      type="button"
-      onClick={() => nav(target)}
-      initial={reduce ? false : { opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.55, ease: EASE }}
-      whileHover={reduce ? undefined : { y: -3 }}
-      className="group flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-500 to-sky-600 p-6 text-left shadow-sky-glow transition-shadow hover:shadow-lift sm:p-8"
-    >
-      <div className="flex items-center gap-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/25">
-          <BarChart3 size={24} />
-        </span>
-        <div>
-          <h3 className="font-display text-xl font-bold text-white sm:text-2xl">实时排行榜</h3>
-          <p className="mt-1 text-sm text-white/85">看看高手们的作品成绩，向榜首发起挑战。</p>
-        </div>
+    <section className="flex flex-col items-start justify-between gap-8 rounded-card bg-surface-ice px-8 py-12 sm:px-12 lg:flex-row lg:items-center">
+      <div className="max-w-xl">
+        <SectionLabel className="text-accent-spark">Leaderboard</SectionLabel>
+        <h2 className="mt-4 font-grotesk text-h2 font-bold leading-tight text-ink-900">
+          看看高手们的成绩
+        </h2>
+        <p className="mt-4 max-w-[560px] text-body text-ink-600">
+          实时排行榜，向榜首发起挑战。每一份作品都来自真实参赛的同学。
+        </p>
       </div>
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-4 py-2 text-sm font-semibold text-sky-600 shadow-sm transition-transform group-hover:translate-x-0.5">
-        查看排行
-        <ArrowRight size={16} />
-      </span>
-    </motion.button>
+      <div className="flex items-end gap-10">
+        <BigStat value={total} unit="人" label="正在同台竞技" />
+        <PillButton arrow onClick={() => nav(target)}>
+          查看排行
+        </PillButton>
+      </div>
+    </section>
   )
 }
 
@@ -54,18 +47,19 @@ export function CompetitionsPage() {
     items.find((c) => c.status === 'open' || c.status === 'running') ??
     items[0]
   const others = items.filter((c) => c.id !== featured?.id)
+  const totalRegistered = items.reduce((sum, c) => sum + (c.registeredCount ?? 0), 0)
 
   return (
-    <PageContainer className="space-y-10 py-6 sm:space-y-12 sm:py-8">
+    <PageContainer className="space-y-16 py-6 sm:space-y-24 sm:py-10">
       <CompetitionHero />
 
       {/* loading */}
       {isLoading && (
         <div className="space-y-6">
-          <div className="h-72 animate-pulse rounded-2xl bg-sky-50" />
+          <div className="h-80 animate-pulse rounded-card bg-surface-ice" />
           <div className="grid gap-6 sm:grid-cols-2">
             {[0, 1].map((i) => (
-              <div key={i} className="h-64 animate-pulse rounded-2xl bg-sky-50" />
+              <div key={i} className="h-64 animate-pulse rounded-card bg-surface-ice" />
             ))}
           </div>
         </div>
@@ -73,7 +67,7 @@ export function CompetitionsPage() {
 
       {/* error */}
       {isError && (
-        <div className="rounded-2xl border border-sky-100/60 bg-white py-12 text-center shadow-soft">
+        <div className="rounded-card border border-sky-100/60 bg-surface-white py-12 text-center shadow-soft">
           <AlertCircle size={32} className="mx-auto mb-3 text-error" />
           <p className="text-sm text-ink-600">
             加载赛事失败：{(error as Error)?.message || '请稍后重试'}
@@ -83,7 +77,7 @@ export function CompetitionsPage() {
 
       {/* empty */}
       {!isLoading && !isError && items.length === 0 && (
-        <div className="rounded-2xl border border-sky-100/60 bg-white py-16 text-center shadow-soft">
+        <div className="rounded-card border border-sky-100/60 bg-surface-white py-16 text-center shadow-soft">
           <Inbox size={36} className="mx-auto mb-3 text-sky-200" />
           <p className="text-sm text-ink-500">暂时还没有开放的赛事，敬请期待</p>
         </div>
@@ -91,28 +85,34 @@ export function CompetitionsPage() {
 
       {/* content */}
       {!isLoading && !isError && items.length > 0 && (
-        <div className="space-y-10 sm:space-y-12">
+        <div className="space-y-16 sm:space-y-24">
           {featured && (
-            <section className="space-y-5">
+            <section className="space-y-7">
               <header>
-                <h2 className="font-display text-2xl font-bold tracking-tight text-sky-900 lg:text-3xl">
+                <SectionLabel className="text-accent-spark">Featured</SectionLabel>
+                <h2 className="mt-3 font-grotesk text-h2 font-bold leading-tight text-ink-900">
                   本届主赛事
                 </h2>
-                <p className="mt-1 text-base text-sky-700">一年一度的木质无人机创意盛典</p>
+                <p className="mt-3 max-w-[560px] text-body text-ink-500">
+                  一年一度的木质无人机创意盛典
+                </p>
               </header>
               <FlagshipCard comp={featured} />
             </section>
           )}
 
           {others.length > 0 && (
-            <section className="space-y-5">
+            <section className="space-y-7">
               <header>
-                <h2 className="font-display text-2xl font-bold tracking-tight text-sky-900 lg:text-3xl">
+                <SectionLabel>More Events</SectionLabel>
+                <h2 className="mt-3 font-grotesk text-h2 font-bold leading-tight text-ink-900">
                   更多赛事
                 </h2>
-                <p className="mt-1 text-base text-sky-700">区域实飞、专项挑战，总有一场适合你</p>
+                <p className="mt-3 max-w-[560px] text-body text-ink-500">
+                  区域实飞、专项挑战，总有一场适合你
+                </p>
               </header>
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2 lg:gap-8">
                 {others.map((comp) => (
                   <RegionalCard key={comp.id} comp={comp} />
                 ))}
@@ -120,7 +120,7 @@ export function CompetitionsPage() {
             </section>
           )}
 
-          <LeaderboardEntryCard flagshipId={featured?.id} />
+          <LeaderboardEntryCard flagshipId={featured?.id} total={totalRegistered} />
         </div>
       )}
     </PageContainer>

@@ -1,54 +1,51 @@
 /**
- * 奖项设置区块（RFC-018 P2 富区块）。
+ * 奖项设置区块（RFC-018 P2 富区块 · RFC-020 视觉整改）。
  *
- * 纯展示：顶部 awards.png 主视觉横幅 + 金/银/铜三档奖项卡（色调区分）+
- * 特别奖（special）单列说明。各卡显示 title / detail / count。
+ * 纯展示：awards.png 主视觉 + 金/银/铜三档（名额用 BigStat 大字做冲击）+
+ * 特别奖（special）单列说明。金奖走点睛/质感高亮（小面积金色 ring/描边，不上大色块）。
  */
 import { motion, useReducedMotion } from 'framer-motion'
+import { BigStat } from '../../../components/common/BigStat'
+import { SectionLabel } from '../../../components/common/SectionLabel'
 import { SECTION_IDS, type AwardContent } from '../content/competitionContent'
 
 const AWARDS_BANNER = '/competitions/awards.png'
 
-/** 三档奖牌色调（金=accent-gold、银=灰、铜=wood）。special 走单列样式，不在此表。 */
+/** 三档奖牌质感（小面积金色高亮 / 描边，不上大色块）。special 走单列样式，不在此表。 */
 const TIER_STYLE: Record<
-  AwardContent['tier'],
-  { ring: string; badge: string; label: string }
+  Exclude<AwardContent['tier'], 'special'>,
+  { ring: string; label: string }
 > = {
-  gold: {
-    ring: 'ring-accent-gold/40',
-    badge: 'bg-accent-gold text-white',
-    label: 'text-accent-gold',
-  },
-  silver: {
-    ring: 'ring-ink-200',
-    badge: 'bg-ink-400 text-white',
-    label: 'text-ink-600',
-  },
-  bronze: {
-    ring: 'ring-wood-300/60',
-    badge: 'bg-wood-500 text-white',
-    label: 'text-wood-600',
-  },
-  special: {
-    ring: 'ring-sky-200',
-    badge: 'bg-sky-500 text-white',
-    label: 'text-sky-600',
-  },
+  gold: { ring: 'ring-2 ring-accent-gold/60', label: 'text-accent-gold' },
+  silver: { ring: 'ring-1 ring-ink-200', label: 'text-ink-600' },
+  bronze: { ring: 'ring-1 ring-wood-300/60', label: 'text-wood-600' },
+}
+
+/** 把「1 名」「若干」拆成 BigStat 的 value + unit；纯数字优先放大。 */
+function splitCount(count?: string): { value: string; unit?: string } {
+  if (!count) return { value: '—' }
+  const m = count.match(/^(\d+)\s*(.*)$/)
+  if (m) return { value: m[1], unit: m[2] || undefined }
+  return { value: count }
 }
 
 export function AwardsSection({ awards }: { awards: AwardContent[] }): JSX.Element {
   const reduce = useReducedMotion()
 
-  const podium = awards.filter((a) => a.tier !== 'special')
+  const podium = awards.filter(
+    (a): a is AwardContent & { tier: 'gold' | 'silver' | 'bronze' } =>
+      a.tier !== 'special',
+  )
   const specials = awards.filter((a) => a.tier === 'special')
 
   return (
-    <section id={SECTION_IDS.awards} className="scroll-mt-24 py-12 md:py-16">
-      <div className="mb-8 md:mb-12">
-        <p className="text-sm font-medium uppercase tracking-wider text-accent-gold">
-          Awards
-        </p>
-        <h2 className="mt-1 font-display text-2xl font-bold text-ink-900 md:text-3xl">
+    <section
+      id={SECTION_IDS.awards}
+      className="scroll-mt-24 bg-surface-ice py-20 md:py-24"
+    >
+      <div className="mb-16 md:mb-20">
+        <SectionLabel>Awards</SectionLabel>
+        <h2 className="mt-3 font-grotesk text-h2 font-bold text-ink-900">
           奖项设置
         </h2>
       </div>
@@ -59,7 +56,7 @@ export function AwardsSection({ awards }: { awards: AwardContent[] }): JSX.Eleme
         whileInView={reduce ? undefined : { opacity: 1, scale: 1 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="mb-8 overflow-hidden rounded-2xl shadow-soft ring-1 ring-wood-100"
+        className="mb-16 overflow-hidden rounded-card shadow-soft md:mb-20"
       >
         <img
           src={AWARDS_BANNER}
@@ -69,10 +66,11 @@ export function AwardsSection({ awards }: { awards: AwardContent[] }): JSX.Eleme
         />
       </motion.div>
 
-      {/* 金/银/铜三档 */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* 金/银/铜三档：名额用 BigStat 大字 */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         {podium.map((award, i) => {
           const s = TIER_STYLE[award.tier]
+          const { value, unit } = splitCount(award.count)
           return (
             <motion.div
               key={award.tier}
@@ -80,23 +78,15 @@ export function AwardsSection({ awards }: { awards: AwardContent[] }): JSX.Eleme
               whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: 'easeOut' }}
-              className={`flex flex-col rounded-2xl bg-white p-6 shadow-soft ring-1 ${s.ring}`}
+              className={`flex flex-col gap-6 rounded-card bg-surface-white p-8 shadow-soft ${s.ring}`}
             >
-              <div className="flex items-center justify-between">
-                <h3 className={`font-display text-xl font-bold ${s.label}`}>
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className={`font-grotesk text-title-sm font-bold ${s.label}`}>
                   {award.title}
                 </h3>
-                {award.count && (
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${s.badge}`}
-                  >
-                    {award.count}
-                  </span>
-                )}
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-ink-600">
-                {award.detail}
-              </p>
+              <BigStat value={value} unit={unit} label="名额" />
+              <p className="text-body text-ink-600">{award.detail}</p>
             </motion.div>
           )
         })}
@@ -104,38 +94,31 @@ export function AwardsSection({ awards }: { awards: AwardContent[] }): JSX.Eleme
 
       {/* 特别奖：单列说明 */}
       {specials.length > 0 && (
-        <div className="mt-4 grid grid-cols-1 gap-4">
-          {specials.map((award) => {
-            const s = TIER_STYLE.special
-            return (
-              <motion.div
-                key={award.title}
-                initial={reduce ? false : { opacity: 0, y: 20 }}
-                whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                className={`flex flex-col gap-2 rounded-2xl bg-sky-50 p-6 ring-1 ${s.ring} sm:flex-row sm:items-center sm:justify-between`}
-              >
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h3 className={`font-display text-lg font-bold ${s.label}`}>
-                      {award.title}
-                    </h3>
-                    {award.count && (
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${s.badge}`}
-                      >
-                        {award.count}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-600">
-                    {award.detail}
-                  </p>
+        <div className="mt-6 grid grid-cols-1 gap-6">
+          {specials.map((award) => (
+            <motion.div
+              key={award.title}
+              initial={reduce ? false : { opacity: 0, y: 20 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="flex flex-col gap-3 rounded-card bg-surface-white p-8 shadow-soft ring-1 ring-sky-100 sm:flex-row sm:items-center sm:justify-between sm:gap-8"
+            >
+              <div>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-grotesk text-title-sm font-bold text-accent-spark">
+                    {award.title}
+                  </h3>
+                  {award.count && (
+                    <span className="rounded-tag bg-accent-spark px-3 py-1 text-label uppercase text-white">
+                      {award.count}
+                    </span>
+                  )}
                 </div>
-              </motion.div>
-            )
-          })}
+                <p className="mt-2 text-body text-ink-600">{award.detail}</p>
+              </div>
+            </motion.div>
+          ))}
         </div>
       )}
     </section>
