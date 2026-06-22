@@ -81,6 +81,10 @@ app.use('/api/programs', programRoutes)
 const meRoutes = require('./routes/me')
 app.use('/api/me', meRoutes)
 
+// 成长体系路由（RFC-011 §4-E4 — 真连库派生成长事件 + 排行榜，鉴权在路由内）
+const growthRoutes = require('./routes/growth')
+app.use('/api/growth', growthRoutes)
+
 // 上传文件静态服务（disk 存储驱动用；生产走对象存储 + CDN）。
 // 单独放开 CORP，允许前端跨源加载图片。
 const { UPLOAD_DIR } = require('./lib/storage')
