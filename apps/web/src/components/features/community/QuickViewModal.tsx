@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, Share2, Maximize2, ImageOff, User, ZoomIn, X } from 'lucide-react'
+import { ArrowLeft, Share2, Maximize2, ImageOff, User, ZoomIn, X } from 'lucide-react'
 import { useToast } from '../../common/Toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { useCommunityPost, useToggleLike } from '../../../hooks/useCommunity'
 import { CommentSection } from './CommentSection'
 import { SaveToCollectionButton } from './SaveToCollectionButton'
 import { ReuseButton } from './ReuseButton'
+import { LikeButton } from './LikeButton'
 
 const EASE = 'ease-[cubic-bezier(0.22,1,0.36,1)]'
 
@@ -93,11 +94,11 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
       aria-label={post?.title ? `作品预览：${post.title}` : '作品预览'}
     >
       <style>
-        {'@keyframes fwxQvFade{from{opacity:0}to{opacity:1}}@keyframes fwxQvPop{from{opacity:0;transform:translateY(14px) scale(0.97)}to{opacity:1;transform:none}}@keyframes fwxQvZoom{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:none}}'}
+        {'@keyframes fwxQvFade{from{opacity:0}to{opacity:1}}@keyframes fwxQvPop{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:none}}@keyframes fwxQvZoom{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:none}}'}
       </style>
 
       <div
-        className={`relative my-auto flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-lift ring-1 ring-black/5 motion-safe:animate-[fwxQvPop_0.34s_cubic-bezier(0.22,1,0.36,1)] lg:max-h-[90vh] lg:flex-row ${EASE}`}
+        className="relative my-auto flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_-2px_rgba(0,0,0,0.16),0_3px_6px_rgba(0,0,0,0.12),0_5px_12px_4px_rgba(0,0,0,0.09)] ring-1 ring-black/5 motion-safe:animate-[fwxQvPop_0.2s_cubic-bezier(0.645,0.045,0.355,1)] lg:max-h-[90vh] lg:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 浮动控件：左上 ← 关闭、右上「展开」，始终高对比、永不被裁切 */}
@@ -219,24 +220,7 @@ export function QuickViewModal({ postId, onClose }: { postId: string; onClose: (
 
                 {/* 操作胶囊：窄屏自动换行 */}
                 <div className="mt-5 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={onLike}
-                    aria-pressed={post.likedByMe}
-                    aria-label={post.likedByMe ? '取消点赞' : '点赞'}
-                    className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-sm font-semibold tabular-nums transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 motion-reduce:active:scale-100 ${EASE} ${
-                      post.likedByMe
-                        ? 'bg-rose-500 text-white shadow-soft hover:bg-rose-600'
-                        : 'border border-sky-200 bg-white text-ink-700 hover:border-rose-200 hover:text-rose-500'
-                    }`}
-                  >
-                    <Heart
-                      size={15}
-                      fill={post.likedByMe ? 'currentColor' : 'none'}
-                      className={`transition-transform ${EASE} ${post.likedByMe ? 'scale-110 motion-reduce:scale-100' : ''}`}
-                    />
-                    {post.likeCount}
-                  </button>
+                  <LikeButton liked={post.likedByMe} count={post.likeCount} onToggle={onLike} className="tabular-nums" />
 
                   <SaveToCollectionButton postId={post.id} />
                   {post.project && (

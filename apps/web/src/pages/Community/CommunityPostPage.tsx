@@ -22,6 +22,7 @@ import { CommunityShell } from '../../components/features/community/CommunityShe
 import { CommentSection } from '../../components/features/community/CommentSection'
 import { SaveToCollectionButton } from '../../components/features/community/SaveToCollectionButton'
 import { ReuseButton } from '../../components/features/community/ReuseButton'
+import { LikeButton } from '../../components/features/community/LikeButton'
 import { AssembledDrone } from '../../components/design/AssembledDrone'
 import { PartsList } from '../ExportPreview/PartsList'
 
@@ -98,7 +99,7 @@ export function CommunityPostPage() {
           type="button"
           onClick={onBack}
           aria-label="返回"
-          className="group inline-flex items-center gap-2 rounded-full bg-white/80 py-2 pl-2 pr-4 text-sm font-semibold text-ink-700 shadow-soft ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-x-0.5 hover:bg-white hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          className="group inline-flex items-center gap-2 rounded-full bg-white/80 py-2 pl-2 pr-4 text-sm font-semibold text-black/70 shadow-soft ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:-translate-x-0.5 hover:bg-white hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-50 text-sky-500 transition-colors group-hover:bg-sky-100">
             <ArrowLeft size={17} />
@@ -113,7 +114,7 @@ export function CommunityPostPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <ImageOff size={24} className="text-sky-300" />
             </div>
-            <p className="text-ink-500">作品不存在或加载失败了</p>
+            <p className="text-black/55">作品不存在或加载失败了</p>
             <button
               onClick={() => refetch()}
               className="mt-4 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
@@ -150,7 +151,7 @@ export function CommunityPostPage() {
                         />
                       </Canvas>
                       {/* 拖动旋转提示 */}
-                      <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-ink-500 shadow-sm ring-1 ring-black/5 backdrop-blur">
+                      <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-black/55 shadow-sm ring-1 ring-black/5 backdrop-blur">
                         <Move3d size={13} className="text-sky-500" />
                         拖动可旋转查看
                       </div>
@@ -170,7 +171,7 @@ export function CommunityPostPage() {
                 </div>
                 {/* 小标题 caption */}
                 <div className="flex items-center justify-between gap-3 border-t border-black/5 bg-white/60 px-4 py-2.5 backdrop-blur">
-                  <p className="truncate text-xs text-ink-400">
+                  <p className="truncate text-xs text-black/50">
                     {hasModel
                       ? `${post.title} · 木质榫卯飞行器 3D 预览`
                       : `${post.title} · 作品预览图`}
@@ -197,14 +198,14 @@ export function CommunityPostPage() {
                 )}
 
                 <div className="min-w-0">
-                  <h1 className="text-2xl font-bold leading-tight tracking-tight text-ink-900 sm:text-3xl">
+                  <h1 className="text-2xl font-bold leading-tight tracking-tight text-black/90 sm:text-3xl">
                     {post.title}
                   </h1>
-                  <p className="mt-2 flex items-center gap-1.5 text-sm text-ink-400">
+                  <p className="mt-2 flex items-center gap-1.5 text-sm text-black/50">
                     <Heart size={13} className="text-rose-400" fill="currentColor" />
                     {post.likeCount} 人喜欢
                     {post.favoriteCount > 0 && (
-                      <span className="text-ink-300">· {post.favoriteCount} 人收藏</span>
+                      <span className="text-black/40">· {post.favoriteCount} 人收藏</span>
                     )}
                   </p>
                 </div>
@@ -224,7 +225,7 @@ export function CommunityPostPage() {
                         <>
                           <Link
                             to={`/u/${post.author.id}`}
-                            className="block truncate font-semibold text-ink-900 transition-colors hover:text-sky-600"
+                            className="block truncate font-semibold text-black/90 transition-colors hover:text-sky-600"
                           >
                             {post.author.username}
                           </Link>
@@ -236,7 +237,7 @@ export function CommunityPostPage() {
                           </Link>
                         </>
                       ) : (
-                        <span className="font-semibold text-ink-900">匿名创作者</span>
+                        <span className="font-semibold text-black/90">匿名创作者</span>
                       )}
                     </div>
                   </div>
@@ -244,20 +245,7 @@ export function CommunityPostPage() {
 
                 {/* 操作条：点赞 / 收藏 / 复用 / 分享 */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={onLike}
-                    aria-pressed={post.likedByMe}
-                    aria-label={post.likedByMe ? '取消点赞' : '点赞'}
-                    className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-sm font-semibold shadow-sm transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 ${
-                      post.likedByMe
-                        ? 'bg-rose-500 text-white shadow-soft hover:bg-rose-600'
-                        : 'border border-sky-200 bg-white text-ink-700 hover:border-rose-200 hover:text-rose-500'
-                    }`}
-                  >
-                    <Heart size={15} fill={post.likedByMe ? 'currentColor' : 'none'} />
-                    {post.likeCount}
-                  </button>
+                  <LikeButton liked={post.likedByMe} count={post.likeCount} onToggle={onLike} />
                   <SaveToCollectionButton postId={post.id} />
                   {post.project && (
                     <ReuseButton
@@ -269,7 +257,7 @@ export function CommunityPostPage() {
                   <button
                     type="button"
                     onClick={onShare}
-                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 text-sm font-semibold text-ink-700 shadow-sm transition-all duration-300 active:scale-95 hover:border-sky-300 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-sky-200 bg-white px-4 text-sm font-semibold text-black/70 shadow-sm transition-all duration-300 active:scale-95 hover:border-sky-300 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
                   >
                     <Share2 size={15} />
                     分享
@@ -278,11 +266,11 @@ export function CommunityPostPage() {
 
                 {/* 作品介绍 */}
                 <section className="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-black/5">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-black/90">
                     <Sparkles size={16} className="text-sky-500" />
                     作品介绍
                   </h2>
-                  <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed text-ink-600">
+                  <p className="mt-2.5 whitespace-pre-wrap text-sm leading-relaxed text-black/65">
                     {post.description || '这位创作者还没有写作品介绍，但作品本身已经在说话啦。'}
                   </p>
                 </section>
@@ -299,8 +287,8 @@ export function CommunityPostPage() {
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 ring-1 ring-sky-100">
                   <Boxes size={24} className="text-sky-300" />
                 </div>
-                <p className="font-semibold text-ink-700">这是示例作品</p>
-                <p className="mt-1 text-sm text-ink-400">暂无可旋转的 3D 模型 / 零件清单</p>
+                <p className="font-semibold text-black/70">这是示例作品</p>
+                <p className="mt-1 text-sm text-black/50">暂无可旋转的 3D 模型 / 零件清单</p>
               </section>
             )}
 

@@ -56,8 +56,8 @@ export function CommunityPage() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-500 ring-1 ring-sky-100 backdrop-blur">
             <Sparkles size={12} /> FlightWoodX 社区
           </span>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink-900 lg:text-4xl">作品广场</h1>
-          <p className="mt-2 max-w-xl text-ink-500">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-black/90 lg:text-4xl">作品广场</h1>
+          <p className="mt-2 max-w-xl text-black/55">
             小创客们用榫卯拼出的木质飞行器，挑一架喜欢的，点开看看，点赞、收藏，或者复用它的设计自己改造。
           </p>
         </header>
@@ -71,7 +71,7 @@ export function CommunityPage() {
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submitSearch()}
-              className="w-full rounded-full border border-sky-100 bg-white/80 py-2.5 pl-11 pr-4 text-sm text-ink-800 shadow-soft outline-none backdrop-blur transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+              className="w-full rounded-full border border-sky-100 bg-white/80 py-2.5 pl-11 pr-4 text-sm text-black/80 shadow-soft outline-none backdrop-blur transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
             />
           </div>
           <div className="inline-flex shrink-0 items-center gap-0.5 self-start rounded-full bg-white/70 p-1 ring-1 ring-sky-100 backdrop-blur sm:self-auto">
@@ -81,7 +81,7 @@ export function CommunityPage() {
                 type="button"
                 onClick={() => setTab(t.key)}
                 className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${
-                  tab === t.key ? 'bg-sky-500 text-white shadow-soft' : 'text-ink-400 hover:text-ink-600'
+                  tab === t.key ? 'bg-sky-500 text-white shadow-soft' : 'text-black/45 hover:text-black/70'
                 }`}
               >
                 {t.label}
@@ -92,24 +92,20 @@ export function CommunityPage() {
 
         {/* ── 三态 ── */}
         {isLoading ? (
-          <div className="flex gap-5">
-            {Array.from({ length: 4 }).map((_, c) => (
-              <div key={c} className="flex flex-1 flex-col gap-5">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.04]">
-                    <div className="aspect-[4/5] animate-pulse bg-paper-100" />
-                    <div className="space-y-2 p-4">
-                      <div className="h-4 w-2/3 animate-pulse rounded bg-paper-100" />
-                      <div className="h-3 w-1/3 animate-pulse rounded bg-paper-100" />
-                    </div>
-                  </div>
-                ))}
+          <div className="grid grid-cols-2 items-start gap-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4 2xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.05]">
+                <div className="aspect-[4/3] animate-pulse bg-paper-100" />
+                <div className="space-y-2 p-3.5">
+                  <div className="h-3.5 w-2/3 animate-pulse rounded bg-paper-100" />
+                  <div className="h-3 w-1/3 animate-pulse rounded bg-paper-100" />
+                </div>
               </div>
             ))}
           </div>
         ) : isError ? (
           <div className="rounded-2xl border border-dashed border-sky-200 bg-white/50 py-20 text-center">
-            <p className="text-ink-500">作品墙加载失败了</p>
+            <p className="text-black/55">作品墙加载失败了</p>
             <button
               onClick={() => refetch()}
               className="mt-3 rounded-full bg-sky-500 px-5 py-2 text-sm font-medium text-white shadow-soft transition hover:bg-sky-600"
@@ -122,7 +118,7 @@ export function CommunityPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-soft ring-1 ring-sky-100">
               <ImageOff size={24} className="text-sky-300" />
             </div>
-            <p className="text-ink-500">
+            <p className="text-black/55">
               {active.mode === 'new' && q
                 ? `没有找到与「${q}」相关的作品`
                 : active.mode === 'trending'
@@ -135,11 +131,11 @@ export function CommunityPage() {
             <MasonryGrid posts={posts} animateKey={`${tab}|${q}`} />
             <div ref={sentinelRef} className="h-8" aria-hidden="true" />
             {isFetchingNextPage && (
-              <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-ink-400">
+              <p className="flex items-center justify-center gap-2 pb-2 pt-4 text-sm text-black/45">
                 <Loader2 size={15} className="animate-spin" /> 加载更多…
               </p>
             )}
-            {!hasNextPage && <p className="pb-2 pt-8 text-center text-sm text-ink-300">· 共 {total} 件作品 ·</p>}
+            {!hasNextPage && <p className="pb-2 pt-8 text-center text-sm text-black/40">· 共 {total} 件作品 ·</p>}
           </>
         )}
       </PageContainer>
