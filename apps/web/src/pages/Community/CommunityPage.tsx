@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search, ImageOff, Sparkles, Loader2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Search, ImageOff, Sparkles, Loader2, Trophy } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
 import { useCommunityFeed, type FeedMode, type TrendingWindow } from '../../hooks/useCommunityFeed'
 import { CommunityShell } from '../../components/features/community/CommunityShell'
@@ -74,19 +75,29 @@ export function CommunityPage() {
               className="w-full rounded-full border border-sky-100 bg-white/80 py-2.5 pl-11 pr-4 text-sm text-black/80 shadow-soft outline-none backdrop-blur transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
             />
           </div>
-          <div className="inline-flex shrink-0 items-center gap-0.5 self-start rounded-full bg-white/70 p-1 ring-1 ring-sky-100 backdrop-blur sm:self-auto">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setTab(t.key)}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${
-                  tab === t.key ? 'bg-sky-500 text-white shadow-soft' : 'text-black/45 hover:text-black/70'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">
+            {/* 排行榜入口：从顶部导航搬到这里，放在排序标签左边；与标签同一套药丸样式 */}
+            <Link
+              to="/community/leaderboard"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/70 px-3.5 py-2 text-sm font-medium text-sky-600 ring-1 ring-sky-100 backdrop-blur transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+            >
+              <Trophy size={15} />
+              排行榜
+            </Link>
+            <div className="inline-flex items-center gap-0.5 rounded-full bg-white/70 p-1 ring-1 ring-sky-100 backdrop-blur">
+              {TABS.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setTab(t.key)}
+                  className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${
+                    tab === t.key ? 'bg-sky-500 text-white shadow-soft' : 'text-black/45 hover:text-black/70'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
