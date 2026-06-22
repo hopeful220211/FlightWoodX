@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from '../../components/common/Card'
+import { BigStat } from '../../components/common/BigStat'
+import { PillButton } from '../../components/common/PillButton'
 import { useToast } from '../../components/common/Toast'
 import { useAuthStore } from '../../stores/authStore'
 import { getAllUsers } from '../../utils/api'
@@ -84,7 +86,7 @@ export function AdminPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-lg font-semibold text-slate-600 dark:text-slate-400">
+        <div className="text-title-sm font-medium text-slate-600 dark:text-slate-400">
           加载中...
         </div>
       </div>
@@ -93,22 +95,17 @@ export function AdminPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-wood-50 via-gray-50 to-wood-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="flex min-h-screen items-center justify-center bg-surface-white dark:from-slate-900 dark:to-slate-800 dark:bg-gradient-to-br">
         <Card className="max-w-md">
-          <div className="p-8 text-center">
+          <div className="p-10 text-center">
             <div className="mb-4 text-4xl">⚠️</div>
-            <h2 className="mb-2 text-xl font-extrabold text-gray-900 dark:text-white">
+            <h2 className="mb-3 text-h3 font-semibold text-gray-900 dark:text-white">
               加载失败
             </h2>
-            <p className="mb-6 text-slate-600 dark:text-slate-400">
+            <p className="mb-8 text-body text-slate-600 dark:text-slate-400">
               {error}
             </p>
-            <button
-              onClick={loadUsers}
-              className="rounded-lg bg-wood-500 px-6 py-2 text-white transition hover:bg-wood-600"
-            >
-              重试
-            </button>
+            <PillButton onClick={loadUsers}>重试</PillButton>
           </div>
         </Card>
       </div>
@@ -122,19 +119,19 @@ export function AdminPage() {
   const adminsCount = Array.isArray(users) ? users.filter((u) => u?.role === 'admin').length : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wood-50 via-gray-50 to-wood-100 dark:from-slate-900 dark:to-slate-800">
-      <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="min-h-screen bg-surface-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-800">
+      <div className="mx-auto max-w-7xl px-6 py-10">
         {/* 头部 */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="rounded-lg bg-wood-200 p-2 dark:bg-slate-800">
-              <Shield size={24} className="text-wood-700 dark:text-wood-400" />
+        <div className="mb-10">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="rounded-card bg-sky-100 p-2.5 dark:bg-slate-800">
+              <Shield size={24} className="text-sky-600 dark:text-wood-400" />
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+            <h1 className="text-h3 font-semibold text-gray-900 dark:text-white">
               用户管理
             </h1>
           </div>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-body text-slate-600 dark:text-slate-400">
             当前登录：
             <span className="font-semibold">
               {currentUser?.nickname || currentUser?.username}
@@ -143,76 +140,40 @@ export function AdminPage() {
         </div>
 
         {/* 统计卡片 */}
-        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="mb-10 grid grid-cols-1 gap-5 md:grid-cols-4">
           <Card hoverable>
-            <div className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-wood-100 p-3 dark:bg-slate-800">
-                  <Users className="text-wood-600 dark:text-wood-400" size={24} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {totalUsers}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    总用户数
-                  </div>
-                </div>
+            <div className="flex items-start gap-4 p-6">
+              <div className="rounded-card bg-sky-100 p-3 dark:bg-slate-800">
+                <Users className="text-sky-600 dark:text-wood-400" size={24} />
               </div>
+              <BigStat value={totalUsers} label="总用户数" />
             </div>
           </Card>
 
           <Card hoverable>
-            <div className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-green-100 p-3 dark:bg-green-900">
-                  <Users className="text-green-600 dark:text-green-400" size={24} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {studentsCount}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    学生用户
-                  </div>
-                </div>
+            <div className="flex items-start gap-4 p-6">
+              <div className="rounded-card bg-green-100 p-3 dark:bg-green-900">
+                <Users className="text-green-600 dark:text-green-400" size={24} />
               </div>
+              <BigStat value={studentsCount} label="学生用户" />
             </div>
           </Card>
 
           <Card hoverable>
-            <div className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900">
-                  <Users className="text-blue-600 dark:text-blue-400" size={24} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {teachersCount}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    教师用户
-                  </div>
-                </div>
+            <div className="flex items-start gap-4 p-6">
+              <div className="rounded-card bg-blue-100 p-3 dark:bg-blue-900">
+                <Users className="text-blue-600 dark:text-blue-400" size={24} />
               </div>
+              <BigStat value={teachersCount} label="教师用户" />
             </div>
           </Card>
 
           <Card hoverable>
-            <div className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900">
-                  <Shield className="text-red-600 dark:text-red-400" size={24} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {adminsCount}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    管理员
-                  </div>
-                </div>
+            <div className="flex items-start gap-4 p-6">
+              <div className="rounded-card bg-red-100 p-3 dark:bg-red-900">
+                <Shield className="text-red-600 dark:text-red-400" size={24} />
               </div>
+              <BigStat value={adminsCount} label="管理员" />
             </div>
           </Card>
         </div>
@@ -220,33 +181,33 @@ export function AdminPage() {
         {/* 用户列表 */}
         <Card>
           <div className="p-6">
-            <h2 className="mb-4 text-xl font-extrabold text-gray-900 dark:text-white">
+            <h2 className="mb-6 text-title-sm font-semibold text-gray-900 dark:text-white">
               用户列表
             </h2>
 
             {users.length === 0 ? (
-              <div className="py-12 text-center">
+              <div className="py-16 text-center">
                 <Users className="mx-auto mb-4 text-slate-300 dark:text-slate-700" size={48} />
-                <p className="text-slate-600 dark:text-slate-400">暂无注册用户</p>
+                <p className="text-body text-slate-600 dark:text-slate-400">暂无注册用户</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-slate-200 dark:border-slate-700">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3.5 text-left text-label uppercase text-slate-500 dark:text-slate-400">
                         用户名
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3.5 text-left text-label uppercase text-slate-500 dark:text-slate-400">
                         昵称
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3.5 text-left text-label uppercase text-slate-500 dark:text-slate-400">
                         角色
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3.5 text-left text-label uppercase text-slate-500 dark:text-slate-400">
                         注册时间
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3.5 text-left text-label uppercase text-slate-500 dark:text-slate-400">
                         最后登录
                       </th>
                     </tr>
@@ -255,15 +216,15 @@ export function AdminPage() {
                     {users.map((user) => (
                       <tr
                         key={user.username}
-                        className="border-b border-slate-100 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
+                        className="border-b border-slate-100 transition hover:bg-sky-50/60 dark:border-slate-800 dark:hover:bg-slate-800/50"
                       >
-                        <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">
+                        <td className="px-4 py-4 font-semibold text-gray-900 dark:text-white">
                           {user.username}
                         </td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        <td className="px-4 py-4 text-slate-600 dark:text-slate-400">
                           {user.nickname}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-4">
                           {user.role ? (
                             <span
                               className={`
@@ -295,13 +256,13 @@ export function AdminPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                        <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
                           <div className="flex items-center gap-2">
                             <Calendar size={14} />
                             {formatDate(user.createdAt)}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                        <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
                           {user.lastLogin ? (
                             <div className="flex items-center gap-2">
                               <Clock size={14} />

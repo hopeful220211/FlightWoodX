@@ -26,19 +26,19 @@ export function AdminLayout() {
   }
 
   const linkCls = (isActive: boolean) =>
-    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+    `flex items-center gap-3 rounded-pill px-4 py-2.5 text-sm font-medium transition ${
       isActive ? 'bg-sky-100 text-sky-700' : 'text-sky-700/70 hover:bg-sky-50 hover:text-sky-700'
     }`
 
   return (
-    <div className="flex min-h-screen bg-sky-50/40">
+    <div className="flex min-h-screen bg-surface-white">
       {/* 侧栏（桌面） */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-sky-100 bg-white md:flex">
-        <div className="flex h-16 items-center gap-2 border-b border-sky-100 px-5">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-sky-100 bg-white md:flex">
+        <div className="flex h-16 items-center gap-2 border-b border-sky-100 px-6">
           <Shield size={20} className="text-sky-600" />
-          <span className="font-bold text-sky-900">管理后台</span>
+          <span className="text-title-sm font-semibold text-sky-900">管理后台</span>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1.5 p-4">
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => linkCls(isActive)}>
               <item.icon size={18} />
@@ -48,7 +48,7 @@ export function AdminLayout() {
         </nav>
         <button
           onClick={exit}
-          className="m-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-sky-700/70 transition hover:bg-sky-50 hover:text-sky-700"
+          className="m-4 flex items-center gap-2 rounded-pill px-4 py-2.5 text-sm text-sky-700/70 transition hover:bg-sky-50 hover:text-sky-700"
         >
           <LogOut size={16} />
           退出后台
@@ -58,14 +58,14 @@ export function AdminLayout() {
       {/* 内容区 */}
       <main className="min-w-0 flex-1">
         {/* 移动端顶部导航 */}
-        <div className="flex items-center gap-1 overflow-x-auto border-b border-sky-100 bg-white px-3 py-2 md:hidden">
+        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-sky-100 bg-white px-4 py-2.5 md:hidden">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `whitespace-nowrap rounded-lg px-3 py-1.5 text-sm ${
+                `whitespace-nowrap rounded-pill px-4 py-1.5 text-sm ${
                   isActive ? 'bg-sky-100 font-semibold text-sky-700' : 'text-sky-700/70'
                 }`
               }
@@ -74,7 +74,7 @@ export function AdminLayout() {
             </NavLink>
           ))}
         </div>
-        <div className="mx-auto max-w-6xl px-4 py-8 lg:px-6">
+        <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
           <Outlet />
         </div>
       </main>

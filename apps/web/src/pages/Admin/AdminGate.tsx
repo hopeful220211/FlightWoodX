@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { verifyAdminAccessKey } from '../../utils/api'
+import { PillButton } from '../../components/common/PillButton'
 
 interface AdminGateProps {
   onVerified: () => void
@@ -30,12 +31,12 @@ export function AdminGate({ onVerified }: AdminGateProps) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-sm mx-4">
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6 space-y-4">
+    <div className="flex min-h-screen items-center justify-center bg-surface-white px-4">
+      <div className="w-full max-w-sm">
+        <form onSubmit={handleSubmit} className="space-y-6 rounded-card bg-white p-8 shadow-sky-glow">
           <div className="text-center">
-            <h2 className="text-lg font-bold text-gray-800">管理后台</h2>
-            <p className="text-sm text-gray-500 mt-1">仅管理员可访问</p>
+            <h2 className="text-h3 font-semibold text-sky-900">管理后台</h2>
+            <p className="mt-2 text-body text-sky-500">仅管理员可访问</p>
           </div>
 
           <div>
@@ -45,21 +46,21 @@ export function AdminGate({ onVerified }: AdminGateProps) {
               value={key}
               onChange={(e) => setKey(e.target.value)}
               placeholder="请输入管理密码"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+              className="w-full rounded-tag border border-sky-200 px-4 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent-spark"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-error">{error}</p>
           )}
 
-          <button
+          <PillButton
             type="submit"
             disabled={loading || !key.trim()}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full"
           >
             {loading ? '验证中...' : '进入'}
-          </button>
+          </PillButton>
         </form>
       </div>
     </div>
