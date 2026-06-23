@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "promote-admin": "node scripts/promote-to-admin.js",
-    "wipe-designs": "node scripts/wipe-designs.js"
+    "wipe-designs": "node scripts/wipe-designs.js",
+    "smoke": "node scripts/smoke-test.js"
   },
   "dependencies": {
     "@fwx/parts-schema": "workspace:*",

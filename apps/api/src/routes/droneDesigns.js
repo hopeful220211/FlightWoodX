@@ -9,15 +9,23 @@ router.use(authenticate)
 
 /**
  * GET /api/drone-designs
- * List current user's drone designs (newest first)
+ * List current user's drone designs (newest first)。
+ * RFC-014 W3：统一分页信封 { items, total, page, pageSize }。
  */
 router.get('/', async (req, res) => {
   try {
-    const designs = await DroneDesign.find({ ownerId: req.userId })
-      .sort({ updatedAt: -1 })
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 20))
+
+    const filter = { ownerId: req.userId }
+    const total = await DroneDesign.countDocuments(filter)
+    const items = await DroneDesign.find(filter)
+      .sort({ updatedAt: -1, _id: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
       .lean()
 
-    res.json({ designs })
+    res.json({ items, total, page, pageSize })
   } catch (error) {
     console.error('[drone-designs] List error:', error)
     res.status(500).json({ error: '获取设计列表失败' })

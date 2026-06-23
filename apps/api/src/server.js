@@ -11,6 +11,19 @@ const app = express()
 // 否则 express-rate-limit 会按代理 IP 限流，req.ip 也拿不到真实客户端 IP。
 app.set('trust proxy', 1)
 
+// ===== 请求日志（RFC-014 W10）=====
+// 极简内联实现，零额外依赖。只记录方法/路径/状态码/耗时，
+// 只记录方法/路径/状态码/耗时；不记请求体、Header、token、密码。
+// 注意 path 含资源 id（如 /api/projects/:id），但不含明文 PII。
+app.use((req, res, next) => {
+  const start = Date.now()
+  res.on('finish', () => {
+    const ms = Date.now() - start
+    console.log(`${req.method} ${req.path} ${res.statusCode} ${ms}ms`)
+  })
+  next()
+})
+
 // ===== 中间件配置 =====
 app.use(helmet())
 

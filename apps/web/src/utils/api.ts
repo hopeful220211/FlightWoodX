@@ -361,15 +361,33 @@ export interface ProjectData {
   updatedAt: string
 }
 
-/** 获取当前用户的所有项目 */
-export async function getProjects(): Promise<ApiResponse<ProjectData[]>> {
-  const res = await apiFetch<{ projects: ProjectData[] }>('/projects')
-  // Backend returns { projects: [...] }
-  if (res.success && res.data) {
-    const projects = (res.data as unknown as { projects?: ProjectData[] }).projects ?? res.data
-    return { ...res, data: projects as ProjectData[] }
+/**
+ * 拉取分页接口的全部条目。后端 RFC-014 W3 列表默认每页 20，
+ * 这里按 total 翻页拉全，保证调用方拿到完整列表（不静默截断成 20 条）。
+ */
+async function fetchAllItems<T>(path: string): Promise<ApiResponse<T[]>> {
+  const all: T[] = []
+  const pageSize = 100
+  let page = 1
+  let last: ApiResponse<{ items: T[]; total: number }> | null = null
+  for (;;) {
+    const sep = path.includes('?') ? '&' : '?'
+    const res = await apiFetch<{ items: T[]; total: number }>(`${path}${sep}page=${page}&pageSize=${pageSize}`)
+    last = res
+    if (!res.success || !res.data) return res as unknown as ApiResponse<T[]>
+    const body = res.data as unknown as { items?: T[]; total?: number }
+    const items = body.items ?? (res.data as unknown as T[])
+    all.push(...items)
+    const total = typeof body.total === 'number' ? body.total : all.length
+    if (items.length === 0 || all.length >= total) break
+    page++
   }
-  return res as ApiResponse<ProjectData[]>
+  return { ...(last as ApiResponse<{ items: T[]; total: number }>), data: all } as unknown as ApiResponse<T[]>
+}
+
+/** 获取当前用户的所有项目（后端分页，前端翻页拉全） */
+export async function getProjects(): Promise<ApiResponse<ProjectData[]>> {
+  return fetchAllItems<ProjectData>('/projects')
 }
 
 /** 获取单个项目 */
@@ -507,14 +525,9 @@ export interface DroneDesignData {
   updatedAt: string
 }
 
-/** List current user's drone designs */
+/** List current user's drone designs（后端分页，前端翻页拉全） */
 export async function getDroneDesigns(): Promise<ApiResponse<DroneDesignData[]>> {
-  const res = await apiFetch<{ designs: DroneDesignData[] }>('/drone-designs')
-  if (res.success && res.data) {
-    const designs = (res.data as unknown as { designs?: DroneDesignData[] }).designs ?? res.data
-    return { ...res, data: designs as DroneDesignData[] }
-  }
-  return res as ApiResponse<DroneDesignData[]>
+  return fetchAllItems<DroneDesignData>('/drone-designs')
 }
 
 /** Save (create) a drone design to backend */
@@ -593,14 +606,13 @@ function normalizeProgram(p: ProgramRecord): ProgramRecord {
   return { ...p, id: p.id || (p as unknown as { _id: string })._id }
 }
 
-/** List current user's programs（按 updatedAt 倒序） */
+/** List current user's programs（按 updatedAt 倒序，后端分页前端翻页拉全） */
 export async function getPrograms(): Promise<ApiResponse<ProgramRecord[]>> {
-  const res = await apiFetch<{ programs: ProgramRecord[] }>('/programs')
+  const res = await fetchAllItems<ProgramRecord>('/programs')
   if (res.success && res.data) {
-    const programs = (res.data as unknown as { programs?: ProgramRecord[] }).programs ?? res.data
-    return { ...res, data: (programs as ProgramRecord[]).map(normalizeProgram) }
+    return { ...res, data: res.data.map(normalizeProgram) }
   }
-  return res as ApiResponse<ProgramRecord[]>
+  return res
 }
 
 /** Get a single program by id */

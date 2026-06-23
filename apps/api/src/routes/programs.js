@@ -7,13 +7,21 @@ const { CommandProgramSchema } = require('@fwx/shared/runtime-cjs')
 const router = express.Router()
 router.use(authenticate)
 
-/** GET /api/programs — list user's programs */
+/** GET /api/programs — list user's programs（RFC-014 W3：统一分页信封） */
 router.get('/', async (req, res) => {
   try {
-    const programs = await Program.find({ ownerId: req.userId })
-      .sort({ updatedAt: -1 })
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 20))
+
+    const filter = { ownerId: req.userId }
+    const total = await Program.countDocuments(filter)
+    const items = await Program.find(filter)
+      .sort({ updatedAt: -1, _id: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
       .lean()
-    res.json({ programs })
+
+    res.json({ items, total, page, pageSize })
   } catch (error) {
     console.error('[programs] List error:', error)
     res.status(500).json({ error: '获取程序列表失败' })
