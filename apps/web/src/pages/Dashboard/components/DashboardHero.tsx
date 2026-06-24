@@ -191,8 +191,11 @@ export function DashboardHero({
               onClick={onEditProfile}
               className="min-h-[44px] min-w-[150px] bg-white/70"
             >
-              <Pencil className="mr-2 h-4 w-4" strokeWidth={2.2} aria-hidden />
-              编辑个人资料
+              {/* 图标内联在文字前（flex 容器，避免 svg 默认 block 撑到文字上方） */}
+              <span className="inline-flex items-center gap-2">
+                <Pencil className="h-4 w-4" strokeWidth={2.2} aria-hidden />
+                编辑个人资料
+              </span>
             </PillButton>
           </div>
         </div>
