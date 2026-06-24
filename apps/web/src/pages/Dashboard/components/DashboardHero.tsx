@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { Pencil, Sparkles, BookOpen, Clock, Boxes, GraduationCap, Trophy } from 'lucide-react'
+import { Pencil, Sparkles, BookOpen, Clock, Boxes, GraduationCap, Trophy, ArrowRight } from 'lucide-react'
 import { levelOf } from '@fwx/shared'
 import { cn } from '../../../utils/cn'
 import { BigStat } from '../../../components/common/BigStat'
@@ -174,8 +174,16 @@ export function DashboardHero({
           {/* 行动按钮：可选主按钮 + 编辑个人资料（右下） */}
           <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
             {onPrimary ? (
-              <PillButton variant="primary" arrow onClick={onPrimary} className="min-w-[160px]">
-                {primaryLabel ?? '继续学习'}
+              // 纯实心胶囊 + 行内箭头（去掉原右侧白色圆圈），干净统一品牌蓝
+              <PillButton variant="primary" onClick={onPrimary} className="min-w-[160px]">
+                <span className="inline-flex items-center gap-2">
+                  {primaryLabel ?? '继续学习'}
+                  <ArrowRight
+                    className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                </span>
               </PillButton>
             ) : null}
             <PillButton
