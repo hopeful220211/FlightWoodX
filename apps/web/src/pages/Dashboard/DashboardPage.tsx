@@ -4,7 +4,7 @@ import { useToast } from '../../components/common/Toast'
 import { DashboardHero } from './components/DashboardHero'
 import { LearningJourneyCard } from './components/LearningJourneyCard'
 import { WeeklyGoalsCard } from './components/WeeklyGoalsCard'
-import { AchievementsActivityCard } from './components/AchievementsActivityCard'
+import { MyGrowthCard } from './components/MyGrowthCard'
 import { MyWorks } from './components/MyWorks'
 import {
   SAMPLE_DASHBOARD,
@@ -61,11 +61,11 @@ export function DashboardPage() {
           resetDays={WEEKLY_RESET_DAYS}
           onGoalClick={handleGoal}
         />
-        <AchievementsActivityCard
+        <MyGrowthCard
+          totalPoints={data.user.totalPoints}
           achievements={data.achievements}
           activities={data.activities}
-          onViewBadges={() => nav('/me/growth')}
-          onViewActivities={() => nav('/me/growth')}
+          onViewDetail={() => nav('/me/growth')}
           onActivityClick={() => nav('/me/growth')}
         />
       </div>
