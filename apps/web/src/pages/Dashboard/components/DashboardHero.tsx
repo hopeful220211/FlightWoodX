@@ -32,7 +32,13 @@ function statItems(stats: DashboardStats) {
     {
       key: 'lessons',
       label: '完成课时',
-      value: `${stats.completedLessons}/${stats.totalLessons}`,
+      // 复合值：分母小一号 + 收紧斜杠，避免 5 字符在窄列里占满整列。
+      value: (
+        <span className="tabular-nums">
+          {stats.completedLessons}
+          <span className="text-[0.62em] font-medium text-ink-400">/{stats.totalLessons}</span>
+        </span>
+      ),
       unit: undefined,
       Icon: GraduationCap,
     },
@@ -115,10 +121,11 @@ export function DashboardHero({
           <div className="flex items-center gap-5 sm:gap-6">
             <HeroAvatar user={user} levelName={levelName} />
             <div className="min-w-0">
-              <h1 className="font-display text-h2 leading-tight text-sky-900">
-                欢迎回来，{user.name}
+              {/* 仪表盘标题档（~28-32px），非首页 4.5vw 营销大字，避免「苏小/航」单字孤行 */}
+              <h1 className="text-balance font-display text-[1.625rem] leading-tight text-sky-900 sm:text-[2rem]">
+                欢迎回来，<span className="whitespace-nowrap">{user.name}</span>
               </h1>
-              <p className="mt-1.5 text-body text-sky-700/90">从一块木头，到一架会飞的无人机。</p>
+              <p className="mt-1.5 text-base text-sky-700/90 sm:text-body">从一块木头，到一架会飞的无人机。</p>
               <p className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-accent-gold">
                 <Sparkles className="h-4 w-4" strokeWidth={2.2} aria-hidden />
                 {user.title}
@@ -153,12 +160,12 @@ export function DashboardHero({
                 <div
                   key={key}
                   className={cn(
-                    'rounded-2xl border border-white/70 bg-white/80 p-3.5',
+                    'min-w-0 overflow-hidden rounded-2xl border border-white/70 bg-white/80 p-3.5',
                     'shadow-[0_6px_18px_rgba(42,136,219,0.10)]',
                   )}
                 >
                   <Icon className="h-4 w-4 text-accent-spark" strokeWidth={2.2} aria-hidden />
-                  <BigStat className="mt-2 gap-1" value={value} unit={unit} label={label} />
+                  <BigStat className="mt-2" size="sm" value={value} unit={unit} label={label} />
                 </div>
               ))}
             </dl>

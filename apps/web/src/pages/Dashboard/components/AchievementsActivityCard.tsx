@@ -74,7 +74,7 @@ function BadgeItem({ badge }: { badge: DashboardAchievement }): JSX.Element {
       >
         {badge.name}
       </span>
-      <span className="text-[10px] leading-tight text-slate-400 dark:text-slate-500">
+      <span className="line-clamp-2 text-[11px] leading-tight text-slate-400 dark:text-slate-500">
         {badge.conditionText}
       </span>
     </div>
@@ -91,7 +91,8 @@ export function AchievementsActivityCard({
   return (
     <section
       className={cn(
-        'relative flex h-full flex-col overflow-hidden rounded-card border border-sky-100/70 bg-surface-white p-5',
+        // 不裁内容：内容自适应高度（本卡通常最高，撑起等高行），不再用 overflow-hidden 切掉「近期动态」
+        'relative flex h-full flex-col rounded-card border border-sky-100/70 bg-surface-white p-5',
         'shadow-soft transition-shadow duration-300 hover:shadow-sky-glow',
         'dark:border-slate-800 dark:bg-slate-900/70',
       )}
@@ -109,7 +110,8 @@ export function AchievementsActivityCard({
         </button>
       </header>
 
-      <div className="mt-3 grid grid-cols-4 gap-2">
+      {/* 每行 2 个：给条件文案足够宽度，杜绝末字孤行（保/存、点/赞） */}
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4">
         {achievements.map((b, i) => (
           <BadgeItem key={`${b.iconKey}-${i}`} badge={b} />
         ))}
@@ -131,7 +133,8 @@ export function AchievementsActivityCard({
       </header>
 
       <ul className="mt-2 flex-1 space-y-1" role="list">
-        {activities.map((a) => {
+        {/* 最多 3 条，任何数据量下都不撑爆/被裁；更多走「查看全部」 */}
+        {activities.slice(0, 3).map((a) => {
           const Icon = ACTIVITY_ICONS[a.type] ?? ThumbsUp
           return (
             <li key={a.id}>

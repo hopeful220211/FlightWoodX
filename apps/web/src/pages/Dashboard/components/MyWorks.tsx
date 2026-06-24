@@ -63,7 +63,7 @@ export function MyWorks({
     <section aria-labelledby="my-works-title" className="space-y-5">
       {/* 标题 + 主按钮 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="my-works-title" className="text-h3 font-bold text-sky-900">
+        <h2 id="my-works-title" className="text-2xl font-bold text-sky-900">
           我的作品
         </h2>
         <button
