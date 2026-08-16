@@ -26,7 +26,7 @@ FlightWoodX 是一个木质榫卯无人机 STEAM 教育平台。当前仓库已�
 本次 GitHub 交付分支规划为：
 
 - 分支：codex/clean-handoff-2026-08-17
-- 形式：只包含当前完整文件树的单提交快照
+- 形式：以当前完整文件树建立独立快照历史，不包含本机开发祖先
 - 原因：公开远端尚未包含本机 37 个祖先提交，项目又登记了历史凭据风险；快照分支避免新增公开这些祖先
 - 不做：不覆盖 main，不强制推送，不修改原始脏工作树，不改变仓库可见性
 
@@ -384,7 +384,7 @@ apps/web/src/utils/api.ts 目前是约 800 行的单文件客户端，负责：
 1. 用户用指针自由绘制轮廓。
 2. 前端简化路径并检测闭合。
 3. 转换为二维折线。
-4. 以固定 2 mm 厚度生成三维拉伸预览。
+4. 以归一化视觉厚度生成三维拉伸预览；保存时固定写入 2 mm 契约。
 5. 估算面积与质量。
 6. 登录用户保存到 /api/custom-parts。
 7. 服务端再次解析 SVG 路径、复核几何并把制造通过状态强制设为 false。
@@ -927,11 +927,14 @@ Harness Engineering 在这里不是单独安装的第三方框架，也不是只
 corepack enable
 corepack prepare pnpm@9.12.0 --activate
 pnpm install --frozen-lockfile
+pnpm --filter api build:runtime-deps
 cp apps/web/.env.example apps/web/.env
 cp apps/api/.env.example apps/api/.env
 ~~~
 
-必须修改 apps/api/.env 中的 JWT_SECRET。非测试环境至少 32 字节，不能使用示例值。真实密钥、数据库凭据和云密钥不得提交。
+必须修改 apps/api/.env 中的 JWT_SECRET。非测试环境至少 32 字节，不能使用示例值。本地不使用管理后台时让 ADMIN_ACCESS_KEY 保持为空；需要后台时改为至少 16 字节的非模板值。真实密钥、数据库凭据和云密钥不得提交。
+
+三个供 API 使用的共享 CommonJS 运行产物位于被忽略的 dist-cjs 目录，不随 Git 上传。上面的 build:runtime-deps 会在新电脑生成它们；pnpm dev 和 pnpm dev:api 也会在启动 API 前自动重建。修改 shared、parts-schema 或 geometry 后需要重启 API，或手动重跑该命令。
 
 ### 16.3 启动
 
@@ -944,6 +947,8 @@ pnpm dev
 - Web：http://localhost:5173
 - API：http://localhost:3000
 - API 健康检查：http://localhost:3000/api/health
+
+API 的开发脚本会先生成共享 CommonJS 运行产物，再启动 nodemon。生产 Docker 构建仍在 builder 阶段生成这些文件，runtime 不会临时编译。
 
 也可分开启动：
 
@@ -985,7 +990,7 @@ VITE_ 前缀变量会进入浏览器包，绝不能放秘密。
 | TRUST_PROXY_HOPS | 可信反向代理层数 | 直连 0，单层 Nginx 应为 1 |
 | JSON_BODY_MAX_BYTES | JSON 请求体上限 | 默认 6 MB，最高 8 MB |
 | CAD_PARTS_DIR | API 受控 DXF 目录 | 留空使用 API assets |
-| ADMIN_ACCESS_KEY | 临时后台访问密钥 | 后续正式 RBAC 移除 |
+| ADMIN_ACCESS_KEY | 临时后台访问密钥 | 本地不用后台时留空；启用时至少 16 字节，后续正式 RBAC 移除 |
 | STORAGE_DRIVER | disk、s3 或 oss | 本地默认 disk |
 | PUBLIC_BASE_URL | disk 文件公开基址 | 本地 API 地址 |
 | CDN_DOMAIN | CDN 前缀 | 可选 |
@@ -1034,11 +1039,11 @@ deploy 目录包含：
 
 ## 19. GitHub 异地接续
 
-### 19.1 为什么使用单提交快照
+### 19.1 为什么使用无本机祖先的快照分支
 
 当前 GitHub 仓库已经公开，默认分支是 main。干净本地分支相对远端包含 37 个任何远端分支都不可达的祖先提交。直接推送会把这些历史一起变为公开可达，而当前状态仍登记历史凭据未完成轮换与清理。
 
-因此本次上传只取最终已验证 Git tree，生成一个没有父提交的快照分支。它包含全部受版本控制的当前项目文件，但不包含这 37 个本机祖先提交。
+因此本次上传只取最终已验证 Git tree，以一个没有父提交的根快照建立独立分支。它包含全部受版本控制的当前项目文件，但不包含这 37 个本机祖先提交。若远端验证发现交付配置问题，只在该根快照上追加小型快进修复，仍不接入本机开发祖先。
 
 代价：
 
@@ -1054,6 +1059,7 @@ cd flightwoodx
 corepack enable
 corepack prepare pnpm@9.12.0 --activate
 pnpm install --frozen-lockfile
+pnpm --filter api build:runtime-deps
 cp apps/web/.env.example apps/web/.env
 cp apps/api/.env.example apps/api/.env
 ~~~

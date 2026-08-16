@@ -5,11 +5,12 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "dev": "pnpm run build:runtime-deps && nodemon src/server.js",
+    "build:runtime-deps": "pnpm --filter @fwx/shared build:cjs && pnpm --filter @fwx/parts-schema build:cjs && pnpm --filter @fwx/geometry build:cjs",
     "promote-admin": "node scripts/promote-to-admin.js",
     "wipe-designs": "node scripts/wipe-designs.js",
     "smoke": "node scripts/smoke-test.js",
-    "pretest": "pnpm --filter @fwx/shared build:cjs && pnpm --filter @fwx/parts-schema build:cjs && pnpm --filter @fwx/geometry build:cjs",
+    "pretest": "pnpm run build:runtime-deps",
     "test": "node --test test/*.test.js",
     "lint": "eslint src scripts test eslint.config.js",
     "typecheck": "tsc -p jsconfig.json"
