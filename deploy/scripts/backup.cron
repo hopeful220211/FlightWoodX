@@ -1,0 +1,3 @@
+# FlightWoodX 每日备份 cron 样例。安装：crontab -e，粘贴下面一行（改成你的实际路径）。
+# 每天凌晨 3 点跑一次，日志追加到 /var/log/fwx-backup.log。
+0 3 * * * cd /opt/flightwoodx && bash deploy/scripts/backup-daily.sh >> /var/log/fwx-backup.log 2>&1

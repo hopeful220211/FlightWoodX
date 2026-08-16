@@ -1,0 +1,4 @@
+interface:
+  display_name: "FlightWoodX Development"
+  short_description: "实现、修复、重构、审查与恢复 FlightWoodX 功能"
+  default_prompt: "使用 $flightwoodx-development 实现并验证这项 FlightWoodX 变更。"

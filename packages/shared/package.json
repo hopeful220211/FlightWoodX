@@ -1,0 +1,30 @@
+{
+  "name": "@fwx/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime-cjs": {
+      "require": "./dist-cjs/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "pnpm build:cjs",
+    "build:cjs": "tsup src/index.ts --format cjs --out-dir dist-cjs --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fwx/parts-schema": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "vitest": "^4.1.10"
+  }
+}

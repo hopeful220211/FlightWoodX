@@ -1,0 +1,85 @@
+/* Blockly 编程器外观 —— 仅作用于编程页（外层 .coding-blockly-shell）。
+   目标：左侧分类从「emoji 文字列表」变成 Scratch/MakeCode 风格的彩色图标按钮。 */
+
+/* 工具箱容器（Blockly v12 根类名 .blocklyToolbox） */
+.coding-blockly-shell .blocklyToolbox {
+  background: #ffffff;
+  border-right: 1px solid #e6f0fb;
+  padding: 10px 8px;
+}
+
+/* 分类行 → 圆角图标按钮。
+   把"按钮"做在 .blocklyToolboxCategory（整行点击区）上，并给足高度让它包住内容，
+   否则内层内容比行高高、相邻行会重叠堆在一起。
+   同时去掉 Blockly 默认注入的 8px 彩色左条（颜色已由右边图标 chip 表达，避免重复+错位）。 */
+.coding-blockly-shell .blocklyToolboxCategory {
+  margin: 3px 4px;
+  padding: 0 2px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  border-left: 0 !important; /* 覆盖内联 border-left: 8px solid <colour> */
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+
+/* hover 态 */
+.coding-blockly-shell .blocklyToolboxCategory:hover {
+  background: #eef5ff;
+  border-color: #dbe9fb;
+}
+
+/* 选中态 */
+.coding-blockly-shell .blocklyToolboxCategory.blocklyToolboxSelected {
+  background: #e3efff;
+  border-color: #c9def8;
+}
+
+/* 行内容容器：图标 + 文字横向排布，撑满整行 */
+.coding-blockly-shell .blocklyTreeRowContentContainer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 4px 10px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+.coding-blockly-shell .blocklyToolboxCategory.blocklyToolboxSelected .blocklyTreeRowContentContainer {
+  color: #0f2e4d;
+}
+
+/* 分类标签 */
+.coding-blockly-shell .blocklyToolboxCategoryLabel {
+  font-size: 13.5px;
+  letter-spacing: .01em;
+}
+
+/* 图标 chip：彩色圆角块（颜色按分类），白色 glyph 由 JS 注入 background-image */
+.coding-blockly-shell .fwx-cat-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  flex: 0 0 auto;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 15px;
+  box-shadow: 0 1px 2px rgba(15, 46, 77, .14);
+}
+.coding-blockly-shell .fwx-cat-start { background-color: #7C5CFF; }
+.coding-blockly-shell .fwx-cat-flight { background-color: #4AA3F0; }
+.coding-blockly-shell .fwx-cat-sensor { background-color: #3EB489; }
+.coding-blockly-shell .fwx-cat-logic { background-color: #D4A74A; }
+.coding-blockly-shell .fwx-cat-loop { background-color: #a67038; }
+
+/* —— Bug 修复 ——
+   flyout 的滚动条是 injectionDiv 的兄弟节点，flyout 收起后它不会跟着消失，
+   于是中间偏左残留一根长竖条。直接隐藏 flyout 滚动条（flyout 仍可滚轮滚动）；
+   只隐藏 flyout 的，主工作区自身的滚动条不受影响。 */
+.coding-blockly-shell .blocklyFlyoutScrollbar {
+  display: none !important;
+}

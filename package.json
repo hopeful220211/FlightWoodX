@@ -1,0 +1,47 @@
+{
+  "name": "flightwoodx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FlightWoodX — 木质榫卯无人机 STEAM 教育系统",
+  "scripts": {
+    "dev": "pnpm --parallel -r --filter=./apps/* dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter web build",
+    "build:api": "pnpm check:api",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "check:api": "find apps/api/src apps/api/scripts -type f -name '*.js' -print0 | xargs -0 -n1 node --check",
+    "harness": "node scripts/check-harness.mjs",
+    "security": "node scripts/check-secrets.mjs && pnpm audit",
+    "test": "node --test scripts/*.test.mjs && pnpm -r --if-present test",
+    "check": "pnpm harness && pnpm typecheck && pnpm check:api && pnpm test && pnpm lint && pnpm security",
+    "ci": "pnpm check && pnpm build",
+    "clean": "pnpm -r exec rm -rf node_modules dist && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "pnpm": {
+    "overrides": {
+      "body-parser": "1.20.6",
+      "brace-expansion@1": "1.1.18",
+      "brace-expansion@2": "2.1.4",
+      "brace-expansion@5": "5.0.9",
+      "@babel/core": "7.29.6",
+      "@ungap/structured-clone": "1.3.1",
+      "esbuild": "0.28.1",
+      "ip-address": "10.4.0",
+      "js-yaml": "4.3.1",
+      "nanoid@3": "3.3.18",
+      "postcss": "8.5.25",
+      "qs": "6.15.3",
+      "vite": "7.3.5"
+    }
+  }
+}

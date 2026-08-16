@@ -1,0 +1,72 @@
+# FlightWoodX 国内部署编排（RFC-024 §4.8）。目标：阿里云 ECS 成都 2C2G / 3Mbps。
+# 三服务：api（Node/Express）· mongo（内网私有，绝不暴露公网）· nginx（前端静态页 + 反代 + HTTPS）。
+# 一切大文件（GLB/贴图/缩略图/DXF/zip）走 OSS，不经这台机器。所有凭证从 .env 注入，绝不写死。
+#
+# 用法（在 deploy/ 目录）：
+#   cp .env.example .env && vim .env      # 填真实凭证
+#   docker compose config                 # 校验配置
+#   docker compose up -d --build          # 起服务
+name: flightwoodx
+
+services:
+  api:
+    build:
+      context: ..                          # 仓库根（pnpm workspace 需要完整上下文）
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped                # 崩溃/重启后自恢复
+    env_file:
+      - path: .env
+        required: false                    # 无 .env 也能 config 通过；运行时按需加载
+    environment:
+      # 覆盖为 compose 内网 mongo（服务名 DNS 解析），确保 API 永远连内网库、绝不连公网库
+      MONGODB_URI: mongodb://mongo:27017/flightwoodx
+      PORT: "3000"
+      NODE_ENV: production
+    depends_on:
+      - mongo
+    expose:
+      - "3000"                             # 仅在内网暴露给 nginx，不 ports 到公网
+    networks:
+      - fwxnet
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    # ⚠️ 刻意不写 ports：绝不把 27017 暴露到公网，只有 fwxnet 内的 api 能连。
+    volumes:
+      - mongo-data:/data/db                # 命名卷持久化，容器重建不丢库
+    networks:
+      - fwxnet
+    # 硬化（可选）：需库鉴权时，设 MONGO_INITDB_ROOT_USERNAME/PASSWORD（走 .env）
+    # 并把上面 api 的 MONGODB_URI 改成带账号的形式。骨架默认内网无鉴权（无公网端口）。
+
+  nginx:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # nginx 官方镜像会用 envsubst 把 /etc/nginx/templates/*.template 里的 ${FWX_*} 替换后输出到 conf.d。
+      # NGINX_ENVSUBST_FILTER 限定只替换 FWX_ 前缀变量，绝不误伤 nginx 自己的 $host/$uri 等。
+      NGINX_ENVSUBST_FILTER: "^FWX_"
+      FWX_SERVER_NAME: "${FWX_SERVER_NAME:-flightwoodx.com}"    # 先 .com；.cn 备案后空格追加
+      FWX_SSL_CERT: "${FWX_SSL_CERT:-/etc/letsencrypt/live/flightwoodx.com/fullchain.pem}"
+      FWX_SSL_CERT_KEY: "${FWX_SSL_CERT_KEY:-/etc/letsencrypt/live/flightwoodx.com/privkey.pem}"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/templates:/etc/nginx/templates:ro                # envsubst 模板（含 HTTPS server 块）
+      - ${WEB_DIST_DIR:-../apps/web/dist}:/usr/share/nginx/html:ro # 前端构建产物（deploy.sh 先构建）
+      - ${CERTBOT_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro       # certbot 证书目录
+      - ./nginx/certbot-www:/var/www/certbot                      # ACME http-01 挑战根
+    networks:
+      - fwxnet
+
+volumes:
+  mongo-data:
+
+networks:
+  fwxnet:
+    driver: bridge

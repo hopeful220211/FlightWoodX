@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2022", "DOM"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "maxNodeModuleJsDepth": 0,
+    "noEmit": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": ["src/**/*.js", "scripts/**/*.js", "test/**/*.js", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "../../node_modules"]
+}

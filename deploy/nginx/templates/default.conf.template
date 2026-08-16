@@ -1,0 +1,58 @@
+# FlightWoodX 站点 server 块（容器启动时 envsubst 把 ${FWX_*} 替换后落到 /etc/nginx/conf.d/fwx.conf）。
+# 只有 FWX_ 前缀变量被替换（NGINX_ENVSUBST_FILTER=^FWX_），nginx 自己的 $host/$uri 等原样保留。
+
+# ---- HTTP：放行 ACME 挑战 + 其余 80 → 443 跳转 ----
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${FWX_SERVER_NAME};   # 先 flightwoodx.com；.cn 备案后空格追加
+
+    # certbot http-01 挑战（webroot 模式，与 compose 的 certbot-www 卷对应）
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ---- HTTPS：托管前端 SPA + 反代 /api ----
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name ${FWX_SERVER_NAME};
+
+    # 证书路径走变量：首启用自签占位（setup-server.sh 生成），certbot 签发后改指真实路径并 reload
+    ssl_certificate     ${FWX_SSL_CERT};
+    ssl_certificate_key ${FWX_SSL_CERT_KEY};
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    client_max_body_size 2m;   # 只收小 JSON/封面；大文件走 OSS 直传，不经这里
+
+    # API 反代到内网 api:3000
+    location /api/ {
+        proxy_pass http://fwx_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    # 前端静态资源缓存（JS/CSS 带 hash，可长缓存）
+    location /assets/ {
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # SPA 路由回退
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

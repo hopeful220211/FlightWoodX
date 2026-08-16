@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缩略图生成器 - FlightWoodX</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #D4A574;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #C09464;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .progress {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .thumbnail-item {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .thumbnail-item canvas {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    }
+    .thumbnail-item .name {
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+    }
+    .thumbnail-item .actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+    }
+    .thumbnail-item button {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 12px;
+      margin: 0;
+    }
+    .status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+    .status.loading {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <h1>🖼️ FlightWoodX 缩略图生成器</h1>
+
+  <div class="controls">
+    <button id="generateAll">生成所有缩略图</button>
+    <button id="downloadAll">下载所有图片 (ZIP)</button>
+    <button id="copyJson">复制 JSON 配置</button>
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="grid" id="thumbnails"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import JSZip from 'jszip';
+    import { PART_REGISTRY } from '@fwx/parts-schema';
+
+    // 与产品零件库共用唯一 registry，避免模型数量、目录和命名再次漂移。
+    const models = PART_REGISTRY.map(({ id, modelPath }) => ({ id, modelPath }));
+
+    const thumbnailData = {};
+    const grid = document.getElementById('thumbnails');
+    const progress = document.getElementById('progress');
+
+    // 为每个模型生成缩略图
+    async function generateThumbnail(model, canvas) {
+      return new Promise((resolve, reject) => {
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf5f5f5);
+
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
+        camera.position.set(0.4, 0.3, 0.4);
+        camera.lookAt(0, 0, 0);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        scene.add(ambientLight);
+
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight1.position.set(2, 2, 2);
+        scene.add(directionalLight1);
+
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight2.position.set(-2, -1, -2);
+        scene.add(directionalLight2);
+
+        const renderer = new THREE.WebGLRenderer({
+          canvas,
+          antialias: true,
+          alpha: true,
+          preserveDrawingBuffer: true,
+        });
+
+        renderer.setSize(200, 200);
+        renderer.setClearColor(0xf5f5f5, 1);
+
+        const loader = new GLTFLoader();
+
+        loader.load(
+          model.modelPath,
+          (gltf) => {
+            const box = new THREE.Box3().setFromObject(gltf.scene);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            gltf.scene.position.sub(center);
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            const cameraZ = Math.abs(maxDim / Math.tan(fov / 2)) * 1.8;
+            const distance = Math.max(cameraZ, maxDim * 2.5);
+
+            camera.position.set(distance * 0.5, distance * 0.4, distance * 0.5);
+            camera.lookAt(0, 0, 0);
+            camera.updateProjectionMatrix();
+
+            scene.add(gltf.scene);
+
+            renderer.render(scene, camera);
+
+            renderer.dispose();
+
+            resolve();
+          },
+          undefined,
+          (error) => {
+            console.error(`Failed to load ${model.id}:`, error);
+            reject(error);
+          }
+        );
+      });
+    }
+
+    // 创建缩略图项
+    function createThumbnailItem(modelId) {
+      const item = document.createElement('div');
+      item.className = 'thumbnail-item';
+      item.dataset.modelId = modelId;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 200;
+      canvas.height = 200;
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.append(document.createTextNode(modelId));
+      const status = document.createElement('span');
+      status.className = 'status loading';
+      status.textContent = '加载中...';
+      name.appendChild(status);
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const downloadButton = document.createElement('button');
+      downloadButton.type = 'button';
+      downloadButton.textContent = '下载 PNG';
+      downloadButton.addEventListener('click', () => downloadImage(modelId));
+      actions.appendChild(downloadButton);
+
+      item.append(canvas, name, actions);
+
+      grid.appendChild(item);
+      return canvas;
+    }
+
+    // 下载单张图片
+    function downloadImage(modelId) {
+      const item = Array.from(grid.children).find(el => el.dataset.modelId === modelId);
+      if (!item) return;
+      const canvas = item.querySelector('canvas');
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${modelId}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      });
+    }
+
+    // 生成所有缩略图
+    document.getElementById('generateAll').addEventListener('click', async () => {
+      grid.replaceChildren();
+      progress.textContent = '生成中...';
+
+      const generateBtn = document.getElementById('generateAll');
+      generateBtn.disabled = true;
+
+      for (let i = 0; i < models.length; i++) {
+        const model = models[i];
+        const modelId = model.id;
+        progress.textContent = `生成中... ${i + 1}/${models.length} - ${modelId}`;
+
+        const canvas = createThumbnailItem(modelId);
+        const item = canvas.parentElement;
+        const statusSpan = item.querySelector('.status');
+
+        try {
+          await generateThumbnail(model, canvas);
+
+          // 保存 base64 数据
+          thumbnailData[modelId] = canvas.toDataURL('image/png');
+
+          statusSpan.textContent = '✓ 完成';
+          statusSpan.className = 'status success';
+        } catch (error) {
+          console.error(`Failed to generate ${modelId}:`, error);
+          statusSpan.textContent = '✗ 失败';
+          statusSpan.className = 'status error';
+        }
+
+        // 添加延迟避免浏览器卡顿
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      progress.textContent = `✅ 完成！生成了 ${Object.keys(thumbnailData).length} 张缩略图`;
+      generateBtn.disabled = false;
+      document.getElementById('downloadAll').disabled = false;
+      document.getElementById('copyJson').disabled = false;
+    });
+
+    document.getElementById('downloadAll').addEventListener('click', async () => {
+      const button = document.getElementById('downloadAll');
+      button.disabled = true;
+      progress.textContent = '正在打包缩略图...';
+      try {
+        const zip = new JSZip();
+        for (const [modelId, dataUrl] of Object.entries(thumbnailData)) {
+          zip.file(`${modelId}.png`, dataUrl.slice(dataUrl.indexOf(',') + 1), { base64: true });
+        }
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'flightwoodx-thumbnails.zip';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        progress.textContent = `已打包 ${Object.keys(thumbnailData).length} 张缩略图`;
+      } catch (error) {
+        console.error('Failed to create thumbnail ZIP:', error);
+        progress.textContent = '打包失败，请查看控制台';
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    // 复制 JSON 配置
+    document.getElementById('copyJson').addEventListener('click', () => {
+      const config = {};
+      for (const [modelId, dataUrl] of Object.entries(thumbnailData)) {
+        config[modelId] = `/thumbnails/${modelId}.png`;
+      }
+
+      const json = JSON.stringify(config, null, 2);
+      navigator.clipboard.writeText(json);
+      alert('已复制 JSON 配置到剪贴板！');
+    });
+
+    // 初始状态
+    document.getElementById('downloadAll').disabled = true;
+    document.getElementById('copyJson').disabled = true;
+  </script>
+</body>
+</html>
