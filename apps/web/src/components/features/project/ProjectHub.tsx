@@ -8,7 +8,7 @@
  * 数据来自 useProjectHub（真实绑定优先，游客/离线降级为「本地草稿」并诚实标注）。
  * 三态齐全：加载骨架 / 错误重试 / 空态引导。
  */
-import { useCallback, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -19,6 +19,7 @@ import { PageContainer } from '../../layout/PageContainer'
 import { Button } from '../../common/Button'
 import { useToast } from '../../common/Toast'
 import { uploadProjectCover } from '../../../utils/api'
+import { useAuthStore } from '../../../stores/authStore'
 import { DesignPreview3D } from '../../design/DesignPreview3D'
 import { IRBlocksPreview } from '../../coding/IRBlocksPreview'
 import { FlightPreview3D } from '../../simulator/FlightPreview3D'
@@ -73,22 +74,51 @@ export function ProjectHub() {
   }
 
   // 复用「设计」卡的 3D 渲染：加载完成后抓一帧，上传为项目封面 → 列表（读 coverUrl）显示真实作品。
-  // 仅对真实后端项目写封面；本地草稿（游客/离线）无后端记录，跳过。
-  const coverKeyRef = useRef('')
+  // 只有当前账号、项目与已绑定快照都有效时才上传，不能把本地回退草稿写到服务器项目。
+  const token = useAuthStore(state => state.token)
+  const ownerId = useAuthStore(state => state.user?.id)
+  const isGuest = useAuthStore(state => state.user?.isGuest)
+  const coverEligible = !!token && !!ownerId && !isGuest && hub.loggedIn && hub.source === 'server'
+    && hub.projectId === id && !!id && hub.designBound && !hub.degraded && hub.status === 'ready'
+    && !!hub.design?.parts.length
+  const coverKey = JSON.stringify([id, hub.design?.id, hub.design?.updatedAt, hub.design?.parts])
+  const coverBinding = useMemo(() => coverEligible ? { projectId: id, token, ownerId, key: coverKey } : null,
+    [coverEligible, id, token, ownerId, coverKey])
+  const currentCoverBinding = useRef<typeof coverBinding>(null)
+  const coverAttemptRef = useRef<typeof coverBinding>(null)
+  const coverQueueRef = useRef<Promise<void>>(Promise.resolve())
+  useLayoutEffect(() => {
+    currentCoverBinding.current = coverBinding
+    return () => { currentCoverBinding.current = null }
+  }, [coverBinding])
+
   const handleDesignSnapshot = useCallback(
     async (blob: Blob) => {
-      if (hub.source !== 'server' || !id || !hub.design) return
-      const key = `${id}:${hub.design.id}:${hub.design.parts.length}`
-      if (coverKeyRef.current === key) return
-      coverKeyRef.current = key
-      const res = await uploadProjectCover(id, blob)
-      if (res.success) {
-        qc.invalidateQueries({ queryKey: ['projects'] })
-      } else {
-        coverKeyRef.current = '' // 失败允许下次重试
+      const isCurrent = () => coverBinding !== null && currentCoverBinding.current === coverBinding
+        && useAuthStore.getState().token === coverBinding.token
+        && useAuthStore.getState().user?.id === coverBinding.ownerId
+      if (!coverBinding || !isCurrent() || coverAttemptRef.current === coverBinding) return
+      coverAttemptRef.current = coverBinding
+      const upload = async () => {
+        // A queued image may become obsolete while a previous upload is in flight.
+        if (!isCurrent()) return
+        try {
+          const res = await uploadProjectCover(coverBinding.projectId, blob)
+          if (!isCurrent()) return
+          if (res.success) {
+            await qc.invalidateQueries({ queryKey: ['projects'] })
+          } else if (coverAttemptRef.current === coverBinding) {
+            coverAttemptRef.current = null
+          }
+        } catch {
+          if (isCurrent() && coverAttemptRef.current === coverBinding) coverAttemptRef.current = null
+        }
       }
+      const pending = coverQueueRef.current.then(upload, upload)
+      coverQueueRef.current = pending
+      await pending
     },
-    [hub.source, hub.design, id, qc],
+    [coverBinding, qc],
   )
 
   // ── 加载态 ──

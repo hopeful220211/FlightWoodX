@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { Html, useBounds } from '@react-three/drei'
 import type { DesignPartInstance, UserPart } from '@fwx/parts-schema'
 import { useDesignStore } from '../../stores/designStore'
@@ -6,24 +6,37 @@ import { useAuthStore } from '../../stores/authStore'
 import { buildCustomGeometry } from './customAssembly'
 import { useCustomAssemblyPart } from './useCustomAssemblyPart'
 
-function SourceMesh({ part, instance, interactive }: { part: UserPart; instance: DesignPartInstance; interactive: boolean }) {
+export type CustomPartReadiness = { status: 'loading' | 'ready' } | { status: 'error'; error: Error }
+type ReadinessCallback = (instanceId: string, readiness: CustomPartReadiness) => void
+
+function SourceMesh({ part, instance, interactive, onReady }: { part: UserPart; instance: DesignPartInstance; interactive: boolean; onReady?: () => void }) {
   const geometry = useMemo(() => buildCustomGeometry(part.geometry), [part.geometry])
   const selected = useDesignStore(state => state.selectedInstanceId === instance.instanceId)
   const bounds = useBounds()
   useEffect(() => () => geometry.dispose(), [geometry])
   useEffect(() => { bounds?.refresh().clip().fit() }, [bounds, geometry])
+  // Passive effects run after R3F has attached this real mesh to its group.
+  useEffect(() => { onReady?.() }, [geometry, onReady])
   return <mesh geometry={geometry} castShadow receiveShadow onClick={interactive ? event => { event.stopPropagation(); useDesignStore.getState().setSelectedInstanceId(instance.instanceId) } : undefined}>
     <meshStandardMaterial color={selected && interactive ? '#e9ad48' : '#cba77a'} roughness={0.82} />
   </mesh>
 }
 
 /** No GLB alias or invented sockets: render the authenticated source contour, or a visible failure. */
-export function CustomAssemblyPart({ instance, interactive = false }: { instance: DesignPartInstance; interactive?: boolean }) {
+export function CustomAssemblyPart({ instance, interactive = false, onReadinessChange }: { instance: DesignPartInstance; interactive?: boolean; onReadinessChange?: ReadinessCallback }) {
   const query = useCustomAssemblyPart(instance)
   const token = useAuthStore(state => state.token)
   const available = !!token && !query.isError && !!query.data
+  const ready = available && !query.isFetching
+  const onReady = useCallback(() => onReadinessChange?.(instance.instanceId, { status: 'ready' }), [instance.instanceId, onReadinessChange])
+  useEffect(() => {
+    if (!onReadinessChange) return
+    if (!token || query.isError) onReadinessChange(instance.instanceId, { status: 'error', error: !token ? new Error('登录原账号后才能读取自制零件') : query.error ?? new Error('自制零件加载失败') })
+    else if (!ready) onReadinessChange(instance.instanceId, { status: 'loading' })
+    return () => onReadinessChange(instance.instanceId, { status: 'loading' })
+  }, [instance.instanceId, onReadinessChange, token, query.isError, query.error, ready])
   return <group position={instance.position} rotation={instance.rotation} scale={instance.scale}>
-    {available ? <SourceMesh part={query.data!} instance={instance} interactive={interactive} /> : <Html center>
+    {available ? <SourceMesh part={query.data!} instance={instance} interactive={interactive} onReady={ready && onReadinessChange ? onReady : undefined} /> : <Html center>
       <div role={query.isError || !token ? 'alert' : 'status'} className="w-52 rounded-lg border border-amber-300 bg-white p-3 text-xs text-amber-900 shadow">
         {!token ? '登录原账号后才能读取自制零件；来源引用仍保留' : query.isError ? `自制零件不可用：${query.error.message}` : '正在读取自制零件…'}
         {token && query.isError && <button type="button" className="mt-2 block underline" onClick={() => void query.refetch()}>重试读取零件</button>}

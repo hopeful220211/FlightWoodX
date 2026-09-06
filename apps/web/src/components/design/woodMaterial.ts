@@ -18,20 +18,54 @@ const WOOD_BOARD_TEXTURE_URL = assetUrl('/textures/wood-board.png')
 const WOOD_BOARD_TEXTURE_REPEAT = 4
 
 let woodBoardTexture: THREE.Texture | null = null
+const woodTextureLoads = new WeakMap<THREE.Texture, Promise<void>>()
 
 function getWoodBoardTexture(): THREE.Texture | null {
   if (woodBoardTexture) return woodBoardTexture
   if (typeof window === 'undefined') return null
 
-  woodBoardTexture = new THREE.TextureLoader().load(WOOD_BOARD_TEXTURE_URL)
+  let resolveReady!: () => void
+  let rejectReady!: (error: Error) => void
+  const ready = new Promise<void>((resolve, reject) => {
+    resolveReady = resolve
+    rejectReady = reject
+  })
+  // Editor meshes also use this resource without awaiting a snapshot. Keep the
+  // rejection available to preview consumers without an unhandled rejection.
+  void ready.catch(() => undefined)
+  const texture = new THREE.TextureLoader().load(WOOD_BOARD_TEXTURE_URL, resolveReady, undefined, () => {
+    if (woodBoardTexture === texture) woodBoardTexture = null
+    rejectReady(new Error('木纹加载失败'))
+  })
+  woodBoardTexture = texture
+  woodTextureLoads.set(texture, ready)
   woodBoardTexture.colorSpace = THREE.SRGBColorSpace
   woodBoardTexture.wrapS = THREE.RepeatWrapping
   woodBoardTexture.wrapT = THREE.RepeatWrapping
   woodBoardTexture.repeat.set(WOOD_BOARD_TEXTURE_REPEAT, WOOD_BOARD_TEXTURE_REPEAT)
   woodBoardTexture.anisotropy = 8
-  woodBoardTexture.needsUpdate = true
+  // TextureLoader marks the texture for upload after its image has loaded.
+  // Marking it here would request an upload with image === null on every frame.
 
   return woodBoardTexture
+}
+
+/** Wait for the exact textures attached to this scene, including prior failures.
+ * A retry creates a new texture; it must not make an older failed scene ready.
+ * Cancelling one preview does not cancel this shared image request.
+ */
+export async function waitForWoodTextures(scene: THREE.Object3D): Promise<void> {
+  const pending = new Set<Promise<void>>()
+  scene.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return
+    const materials = Array.isArray(child.material) ? child.material : [child.material]
+    for (const material of materials) {
+      if (!(material instanceof THREE.MeshStandardMaterial) || !material.map) continue
+      const ready = woodTextureLoads.get(material.map)
+      if (ready) pending.add(ready)
+    }
+  })
+  await Promise.all(pending)
 }
 
 /**

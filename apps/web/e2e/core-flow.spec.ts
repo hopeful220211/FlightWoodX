@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import sharp from 'sharp'
 import { expect, test } from '@playwright/test'
 import type { BrowserContext, Locator, Page, Response } from '@playwright/test'
 import { DroneDesignSnapshotSchema, PART_REGISTRY } from '@fwx/parts-schema'
@@ -26,6 +27,9 @@ async function guardLocalNetwork(context: BrowserContext) {
 function observeBrowser(page: Page, expectedFailure?: (response: Response) => boolean) {
   const failures: string[] = []
   page.on('pageerror', error => failures.push(error.message))
+  page.on('console', message => {
+    if (message.text().includes('Texture marked for update but no image data found')) failures.push(message.text())
+  })
   page.on('response', response => {
     if (response.status() >= 400 && !expectedFailure?.(response)) {
       failures.push(`${response.status()} ${response.request().method()} ${new URL(response.url()).pathname}`)
@@ -79,12 +83,50 @@ async function readDesign(page: Page): Promise<DroneDesignSnapshot | null> {
   return raw ? DroneDesignSnapshotSchema.parse(raw) : null
 }
 
+async function verifyWarmCover(page: Page, name: string) {
+  const uploaded = page.waitForResponse(response => /^\/api\/drone-designs\/[^/]+\/cover$/.test(new URL(response.url()).pathname)
+    && response.request().method() === 'POST').catch(() => null)
+  await page.goto('/dashboard')
+  const preview = page.getByRole('img', { name: `${name} 预览`, exact: true })
+  await expect(preview).toBeVisible()
+  // Read the image itself: a screenshot also includes the warm-coloured draft badge,
+  // which could incorrectly make a completely empty preview pass this check.
+  const pixels = await preview.evaluate(async element => {
+    const image = element as HTMLImageElement
+    await image.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Could not read the generated preview image.')
+    context.drawImage(image, 0, 0)
+    return canvas.toDataURL('image/png').split(',')[1]!
+  })
+  const { data, info } = await sharp(Buffer.from(pixels, 'base64')).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+  let warmPixels = 0
+  for (let index = 0; index < data.length; index += info.channels) {
+    const [red, green, blue] = [data[index]!, data[index + 1]!, data[index + 2]!]
+    if (red > 80 && green > 45 && red > blue + 15) warmPixels += 1
+  }
+  expect(warmPixels / (info.width * info.height), 'The saved preview must contain visible wood, not only a background or black silhouette').toBeGreaterThan(0.005)
+  const upload = await uploaded
+  expect(upload?.status(), 'The actual generated cover must also reach the account API').toBe(200)
+  if (!upload) throw new Error('The generated cover was not uploaded.')
+  const stored = new URL((await upload.json()).coverUrl as string, page.url())
+  expect(stored.origin, 'The stored cover must remain on the isolated origin').toBe(new URL(page.url()).origin)
+  const retrieved = await page.request.get(stored.href, { maxRedirects: 0 })
+  expect(retrieved.status()).toBe(200)
+  expect(await retrieved.body(), 'Reading the saved cover must return the uploaded image bytes').toEqual(upload.request().postDataBuffer())
+  await retrieved.dispose()
+}
+
 async function buildAndSave(page: Page, name: string) {
   await page.getByRole('button', { name: '新建作品', exact: true }).first().click()
   await page.getByLabel('无人机名字', { exact: true }).fill(name)
   await page.getByRole('button', { name: '开始搭建', exact: true }).click()
   await expect(page).toHaveURL(/\/design\/design-[^/]+$/)
   const designId = new URL(page.url()).pathname.split('/').at(-1)!
+  await expect(page.getByTitle('点一下改名字', { exact: true })).toHaveText(name)
 
   await page.getByRole('button', { name: '添加主板件01', exact: true }).click()
   await page.getByRole('button', { name: '下一步 →', exact: true }).click()
@@ -110,6 +152,8 @@ async function buildAndSave(page: Page, name: string) {
   const body = await response.json()
   const saved = DroneDesignSnapshotSchema.parse(body.design.designData)
   expect(saved.id).toBe(designId)
+  expect(body.design.name).toBe(name)
+  expect(saved.name).toBe(name)
   expect(saved.parts).toHaveLength(6)
   expect(new Set(saved.parts.map(part => part.instanceId)).size).toBe(6)
   expect(saved.parts.filter(part => part.category === 'mainboard')).toHaveLength(1)
@@ -126,6 +170,8 @@ async function buildAndSave(page: Page, name: string) {
   await page.reload()
   await expect(page.getByRole('button', { name: '继续积木编程', exact: true })).toBeVisible()
   await expect.poll(async () => (await readDesign(page))?.parts.length).toBe(6)
+  await expect(page.getByTitle('点一下改名字', { exact: true })).toHaveText(name)
+  expect((await readDesign(page))?.name).toBe(name)
   expect((await readDesign(page))?.currentStep).toBe('REVIEW')
   return designId
 }
@@ -170,6 +216,28 @@ test('desktop: register, assemble, save, restore on another device, program, and
   const failures = observeBrowser(page)
   const name = await registerDedicatedAccount(page)
   const designId = await buildAndSave(page, name)
+  const renamedName = '正式浏览器六件验收'
+  await page.getByTitle('点一下改名字', { exact: true }).click()
+  const nameInput = page.getByLabel('无人机名字', { exact: true })
+  await nameInput.fill(renamedName)
+  const renamedResponse = page.waitForResponse(response => {
+    if (!new URL(response.url()).pathname.endsWith('/api/drone-designs')
+      || response.request().method() !== 'PUT') return false
+    const submitted = response.request().postDataJSON()
+    return submitted.localId === designId && submitted.name === renamedName
+      && submitted.designData?.name === renamedName
+  })
+  await nameInput.press('Enter')
+  await expect(page.getByTitle('点一下改名字', { exact: true })).toHaveText(renamedName)
+  await page.getByRole('button', { name: '保存草稿', exact: true }).click()
+  const renameResponse = await renamedResponse
+  expect(renameResponse.ok(), 'The real API must persist the Chinese rename').toBe(true)
+  const renamed = (await renameResponse.json()).design
+  expect(renamed.name).toBe(renamedName)
+  expect(DroneDesignSnapshotSchema.parse(renamed.designData).name).toBe(renamedName)
+  await page.reload()
+  await expect(page.getByTitle('点一下改名字', { exact: true })).toHaveText(renamedName)
+  expect((await readDesign(page))?.name).toBe(renamedName)
   await saveExampleProgram(page)
 
   // Copy only the authenticated session into a new browser context. No design/program
@@ -188,10 +256,13 @@ test('desktop: register, assemble, save, restore on another device, program, and
   try {
     await restoredPage.goto(`/design/${designId}`)
     await expect.poll(async () => (await readDesign(restoredPage))?.parts.length).toBe(6)
+    await expect(restoredPage.getByTitle('点一下改名字', { exact: true })).toHaveText(renamedName)
+    expect((await readDesign(restoredPage))?.name).toBe(renamedName)
     await restoredPage.getByRole('button', { name: '继续积木编程', exact: true }).click()
     await expect(restoredPage.getByRole('button', { name: '运行', exact: true })).toBeEnabled()
     await expect(restoredPage.getByRole('button', { name: '从示例开始', exact: true })).toHaveCount(0)
     await runSimulation(restoredPage)
+    await verifyWarmCover(restoredPage, renamedName)
     expect(restoredFailures).toEqual([])
   } finally {
     await restoredContext.close()
@@ -297,6 +368,12 @@ test('custom part: draw, place without invented connectors, save, restore, and r
   expect(original.parts[0]).not.toHaveProperty('activeConnectorId')
   expect(original.parts[0]).not.toHaveProperty('geometry')
 
+  // An all-custom work used to produce a blank cover because its source was skipped.
+  // Verify actual pixels before adding official parts, which could hide that failure.
+  await verifyWarmCover(page, `${name} free`)
+  await page.goto(`/design/${original.id}`)
+  await expect(page.getByRole('button', { name, exact: true })).toBeVisible()
+
   await page.getByRole('button', { name: '零件详情：主板件01', exact: true }).click()
   await page.getByRole('button', { name: '添加到设计', exact: true }).click()
   await expect.poll(async () => (await readDesign(page))?.parts.length).toBe(2)
@@ -318,6 +395,7 @@ test('custom part: draw, place without invented connectors, save, restore, and r
   try {
     const reopened = await restored.newPage()
     const restoredErrors = observeBrowser(reopened, expectedDeletedSource)
+    await verifyWarmCover(reopened, `${name} free`)
     await reopened.goto(`/design/${original.id}`)
     await expect(reopened.getByLabel('自制零件 X 位置（毫米）')).toHaveValue('25')
     expect((await readDesign(reopened))!.parts[0]!.source).toEqual(source)

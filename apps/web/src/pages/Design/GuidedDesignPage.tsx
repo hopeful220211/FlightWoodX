@@ -66,20 +66,18 @@ export function GuidedDesignPage() {
   }, [activeDesign?.name])
 
   const commitRename = useCallback(() => {
-    setNameDraft((draft) => {
-      const current = useDesignStore.getState().getActiveDesign()
-      if (draft === null || !current) return null
-      const next = draft.trim() || '未命名无人机'
-      if (next !== current.name) {
-        useDesignStore.setState((state) => ({
-          designs: state.designs.map((d) =>
-            d.id === current.id ? { ...d, name: next, updatedAt: new Date().toISOString() } : d,
-          ),
-        }))
-      }
-      return null
-    })
-  }, [])
+    const current = useDesignStore.getState().getActiveDesign()
+    setNameDraft(null)
+    if (nameDraft === null || !current) return
+    const next = nameDraft.trim() || '未命名无人机'
+    if (next !== current.name) {
+      useDesignStore.setState((state) => ({
+        designs: state.designs.map((d) =>
+          d.id === current.id ? { ...d, name: next, updatedAt: new Date().toISOString() } : d,
+        ),
+      }))
+    }
+  }, [nameDraft])
 
   const handlePartClick = useCallback(async (part: Part) => {
     if (!activeDesign || pendingPartId) return
@@ -183,7 +181,7 @@ export function GuidedDesignPage() {
                 onChange={(e) => setNameDraft(e.target.value)}
                 onBlur={commitRename}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitRename()
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.nativeEvent.keyCode !== 229) commitRename()
                   if (e.key === 'Escape') setNameDraft(null)
                 }}
                 placeholder="未命名无人机"

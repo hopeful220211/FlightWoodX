@@ -72,24 +72,25 @@ export function WorkCard({ design, onOpen, onRename, onDelete, onPublish, onCapt
       )}
     >
       {/* 预览（整块可点 = 打开它自己） */}
-      <button
-        type="button"
-        onClick={() => onOpen(design)}
-        aria-label={`打开 ${design.name}`}
-        className="relative block aspect-video w-full overflow-hidden bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-spark"
-      >
+      <div className="relative block aspect-video w-full overflow-hidden bg-sky-50">
         {/* key 含 updatedAt/零件数：设计一改即重挂载缩略图，重新抓封面 */}
         <WorkThumbnail
           key={coverKeyOf(design)}
           design={design}
           onCapture={onCaptureCover ? (blob) => onCaptureCover(design, blob) : undefined}
         />
-        <span className="absolute left-2.5 top-2.5">
+        <button
+          type="button"
+          onClick={() => onOpen(design)}
+          aria-label={`打开 ${design.name}`}
+          className="absolute inset-0 z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-spark"
+        />
+        <span className="pointer-events-none absolute left-2.5 top-2.5 z-20">
           <Badge variant={assemblyComplete ? 'completed' : 'draft'}>
             {assemblyComplete ? '装配完成' : '草稿'}
           </Badge>
         </span>
-      </button>
+      </div>
 
       {/* 信息 + 操作 */}
       <div className="flex items-start justify-between gap-2 p-4">

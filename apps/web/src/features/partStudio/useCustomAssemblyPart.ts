@@ -4,12 +4,17 @@ import { useAuthStore } from '../../stores/authStore'
 import { getCustomPart } from '../../utils/api'
 import { resolveCustomPart } from './customAssembly'
 
+export function customAssemblyQueryKey(instance: DesignPartInstance, ownerId?: string) {
+  const source = instance.source
+  return ['custom-assembly-part', ownerId, source?.id, source?.version, source?.updatedAt, instance.category] as const
+}
+
 export function useCustomAssemblyPart(instance: DesignPartInstance) {
   const token = useAuthStore(state => state.token)
   const ownerId = useAuthStore(state => state.user?.id)
   const source = instance.source
   return useQuery({
-    queryKey: ['custom-assembly-part', ownerId, source?.id, source?.version, source?.updatedAt, instance.category],
+    queryKey: customAssemblyQueryKey(instance, ownerId),
     enabled: !!token && !!ownerId && !!source,
     queryFn: async () => {
       if (!source) throw new Error('零件缺少来源引用')

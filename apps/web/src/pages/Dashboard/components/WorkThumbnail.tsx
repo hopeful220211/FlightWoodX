@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plane } from 'lucide-react'
+import { useGLTF } from '@react-three/drei'
 import { DesignPreview3D } from '../../../components/design/DesignPreview3D'
 import type { Design } from '../../../types/design'
 import { coverKeyOf } from './coverKey'
+import { useAuthStore } from '../../../stores/authStore'
+import { partsData } from '../../../data/parts'
 
 /**
  * 作品卡缩略图：真实 3D 预览，但「懒加载 + 抓帧定格」以保护 WebGL Context。
@@ -55,11 +58,18 @@ export interface WorkThumbnailProps {
 }
 
 export function WorkThumbnail({ design, onCapture }: WorkThumbnailProps) {
-  const cacheKey = coverKeyOf(design)
+  const ownerId = useAuthStore(state => state.user?.id)
+  const cacheKey = `${ownerId ?? 'guest'}:${coverKeyOf(design)}`
+  return <ScopedWorkThumbnail key={cacheKey} design={design} onCapture={onCapture} cacheKey={cacheKey} />
+}
+
+function ScopedWorkThumbnail({ design, onCapture, cacheKey }: WorkThumbnailProps & { cacheKey: string }) {
   const hasParts = design.parts.length > 0
 
   const [cover, setCover] = useState<string | null>(() => coverCache.get(cacheKey) ?? null)
   const [live, setLive] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const holdsSlotRef = useRef(false)
 
@@ -105,7 +115,7 @@ export function WorkThumbnail({ design, onCapture }: WorkThumbnailProps) {
         releaseSlot()
       }
     }
-  }, [cacheKey, hasParts])
+  }, [cacheKey, hasParts, attempt])
 
   // 抓到封面：缓存 + 定格成静态图 + 卸载画布、归还名额；同时把 Blob 交给上层（存服务器封面）。
   const handleSnapshot = useCallback(
@@ -124,6 +134,15 @@ export function WorkThumbnail({ design, onCapture }: WorkThumbnailProps) {
     [cacheKey, onCapture],
   )
 
+  const handleSnapshotError = useCallback(() => {
+    setFailed(true)
+    setLive(false)
+    if (holdsSlotRef.current) {
+      holdsSlotRef.current = false
+      releaseSlot()
+    }
+  }, [])
+
   let inner
   if (!hasParts) {
     inner = (
@@ -141,8 +160,27 @@ export function WorkThumbnail({ design, onCapture }: WorkThumbnailProps) {
         className="h-full w-full object-cover"
       />
     )
+  } else if (failed) {
+    inner = (
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-slate-500">
+        <span role="status">加载失败</span>
+        <button type="button" className="relative z-20 text-sky-700 underline" onClick={(event) => {
+          event.stopPropagation()
+          // Suspense retains rejected GLB loads across remounts. Retry only
+          // this work's registered official URLs, never the global cache.
+          const modelUrls = new Set(design.parts.flatMap(instance => {
+            if (instance.source) return []
+            const part = partsData.find(value => value.id === instance.partId)
+            return part ? [part.modelUrl] : []
+          }))
+          for (const url of modelUrls) useGLTF.clear(url)
+          setFailed(false)
+          setAttempt((value) => value + 1)
+        }}>重试</button>
+      </div>
+    )
   } else if (live) {
-    inner = <DesignPreview3D design={design} fill onSnapshot={handleSnapshot} />
+    inner = <DesignPreview3D design={design} fill onSnapshot={handleSnapshot} onSnapshotError={handleSnapshotError} />
   } else {
     // 已可见但还在排队 / 尚未进入视口：天空蓝呼吸占位，不开画布。
     inner = <div className="h-full w-full animate-pulse bg-sky-gradient" />

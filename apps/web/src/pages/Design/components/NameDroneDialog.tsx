@@ -69,7 +69,7 @@ export function NameDroneDialog({ open, onConfirm, onCancel }: NameDroneDialogPr
           maxLength={40}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') submit()
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.nativeEvent.keyCode !== 229) submit()
           }}
           placeholder="未命名无人机"
           aria-label="无人机名字"

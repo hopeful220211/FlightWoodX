@@ -89,13 +89,15 @@ docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.ym
 docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml up -d --no-deps --no-build api nginx
 ```
 
-保留 Compose 项目名 `flightwoodx`，不更新 Mongo 服务、不运行 `down -v`、迁移或 wipe。更新 API/nginx 会有短暂停机，不称零停机。正式业务测试后还要验证一次 API 重建不会丢失专用测试作品及新上传。
+保留 Compose 项目名 `flightwoodx`，不更新 Mongo 服务、不运行 `down -v`、迁移或 wipe。更新 API/nginx 会有短暂停机，不称零停机。03:20 已实际重建一次 API 并 reload nginx；专用测试作品、零件、程序和新上传均重新登录回读成功，Mongo 容器未变。
 
-实际切换：2026-09-07 02:33:58，提交 `f5b12b3`、镜像 `flightwoodx-api:f5b12b3`。原镜像另保留为 `flightwoodx-api:rollback-20260907`。nginx 配置和证书 reload 成功，静态模型 403 尚待权限修复。回滚必须继续保留新上传卷和 `/uploads` 反代，先验证旧镜像的 disk 支持；不能直接套回旧 OSS/无上传挂载的配置。旧版本不认识自制来源引用，禁止用整库旧备份覆盖新记录；必要时先暂停写入，避免旧客户端改写新格式作品。
+后续仅修改 Web 时，保留已验证的 API 镜像，不重建 API 或 Mongo。先在独立的全新目录 `/root/flightwoodx-web-<前端提交>` 构建候选文件，不能让 Vite 清空 nginx 正在使用的 dist。通过 Node 22 容器运行现有资产准备脚本和 Web 的 Vite，将新目录挂载为独立构建输出；调用 `finalize-public-assets.mjs` 导出的 `makeDistReadable`，仅整理这个生成目录的权限。核对完整资源与构建成功后，将 `WEB_DIST_DIR` 指向该候选目录，先 `nginx -t`，再用上述相同 Compose 项目、env 文件及两个覆盖文件，只重建 `nginx`。读取正式首页的 JS/CSS 文件名、资源和真实业务流程，才记录发布完成。前端回退只将 `WEB_DIST_DIR` 切回已保留的上一目录并重建 nginx，数据库、上传卷和 API 镜像均保持不动。
+
+实际切换：2026-09-07 02:33:58，提交 `f5b12b3`、镜像 `flightwoodx-api:f5b12b3`。原镜像另保留为 `flightwoodx-api:rollback-20260907`。03:17 左右服务器更新到 `a71e822`，日志与 0600 文件权限确认 403 根因后，仅整理生成 dist 的 919 个条目；244 个正式资源及 5 个缺失资源 404 检查通过。回滚必须继续保留新上传卷和 `/uploads` 反代，先验证旧镜像的 disk 支持；不能直接套回旧 OSS/无上传挂载的配置。旧版本不认识自制来源引用，禁止用整库旧备份覆盖新记录；必要时先暂停写入，避免旧客户端改写新格式作品。
 
 ### 已确认的历史 localhost 封面修复
 
-生产 Project 的 3 个 `coverUrl` 指向 localhost，3 个对应文件都存在。维护脚本 `apps/api/scripts/repair-localhost-covers.js` 只接受该旧格式和已存在的普通文件，拒绝外部地址、查询参数、路径穿越、符号链接和缺失文件，转为同源 `/uploads/covers/...`。默认只读，执行需要明确数据库、精确条数和全新受限备份文件；条件更新不覆盖期间被用户改动的值。
+生产 Project 原有 3 个 `coverUrl` 指向 localhost，3 个对应文件都存在；本轮已修正并回读，不要重复应用。维护脚本 `apps/api/scripts/repair-localhost-covers.js` 只接受该旧格式和已存在的普通文件，拒绝外部地址、查询参数、路径穿越、符号链接和缺失文件，转为同源 `/uploads/covers/...`。默认只读，执行需要明确数据库、精确条数和全新受限备份文件；条件更新不覆盖期间被用户改动的值。
 
 ```bash
 node scripts/repair-localhost-covers.js --database=flightwoodx
