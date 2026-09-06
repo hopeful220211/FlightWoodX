@@ -93,6 +93,12 @@ docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.ym
 
 后续仅修改 Web 时，保留已验证的 API 镜像，不重建 API 或 Mongo。先在独立的全新目录 `/root/flightwoodx-web-<前端提交>` 构建候选文件，不能让 Vite 清空 nginx 正在使用的 dist。通过 Node 22 容器运行现有资产准备脚本和 Web 的 Vite，将新目录挂载为独立构建输出；调用 `finalize-public-assets.mjs` 导出的 `makeDistReadable`，仅整理这个生成目录的权限。核对完整资源与构建成功后，将 `WEB_DIST_DIR` 指向该候选目录，先 `nginx -t`，再用上述相同 Compose 项目、env 文件及两个覆盖文件，只重建 `nginx`。读取正式首页的 JS/CSS 文件名、资源和真实业务流程，才记录发布完成。前端回退只将 `WEB_DIST_DIR` 切回已保留的上一目录并重建 nginx，数据库、上传卷和 API 镜像均保持不动。
 
+构建资源与应用资源分开设置：这台主机显示总内存约 1.6 GiB、swap 4 GiB。候选构建容器限制 1 CPU、1500 MiB 内存、3 GiB 内存与 swap 总额时，Node 自动选择的约 768 MiB 堆不足，已实际触发构建失败；本次重试仅给该临时构建进程显式设置 `NODE_OPTIONS=--max-old-space-size=2048`。不修改生产 API 的运行参数，不把失败的候选目录切给 nginx；完整构建、权限整理和资源核验均成功后才切换。
+
+2026-09-07 04:00:59（北京时间）已按此方式切换前端至 `/root/flightwoodx-web-e47f0ca`，入口 `index-DqEFyc6i.js`。首页/入口 JS 的 SHA-256 与本机最终验证构建一致；API 镜像仍为 `flightwoodx-api:f5b12b3`，API 和 Mongo 未重建。原 release 内的 dist 保留，可只回退 nginx 前端挂载。
+
+仅调整 nginx 路由时，不重建 Web/API/Mongo。先用相同 Compose 文件、现有证书、API 镜像及已验证的 `WEB_DIST_DIR` 启动唯一命名的临时 nginx，使用 `run --no-deps` 且只将 443 映射到 `127.0.0.1:18443`。以 `curl --resolve flightwoodx.com:18443:127.0.0.1` 验证 HTTPS（禁止跳过证书校验）、`/dashboard` 和 `/dashboard/`、真实图片/模型及缺失二进制资源；配置和实际响应全部通过后再仅重建正式 nginx。只停止并删除这次创建的临时容器，不删卷。SPA 的 `try_files` 只试文件，不试目录，否则 `public/dashboard` 会截获工作台页面。
+
 实际切换：2026-09-07 02:33:58，提交 `f5b12b3`、镜像 `flightwoodx-api:f5b12b3`。原镜像另保留为 `flightwoodx-api:rollback-20260907`。03:17 左右服务器更新到 `a71e822`，日志与 0600 文件权限确认 403 根因后，仅整理生成 dist 的 919 个条目；244 个正式资源及 5 个缺失资源 404 检查通过。回滚必须继续保留新上传卷和 `/uploads` 反代，先验证旧镜像的 disk 支持；不能直接套回旧 OSS/无上传挂载的配置。旧版本不认识自制来源引用，禁止用整库旧备份覆盖新记录；必要时先暂停写入，避免旧客户端改写新格式作品。
 
 ### 已确认的历史 localhost 封面修复

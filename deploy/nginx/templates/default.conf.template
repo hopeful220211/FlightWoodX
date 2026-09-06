@@ -69,8 +69,8 @@ server {
         add_header Cache-Control "no-cache";
     }
 
-    # SPA 路由回退
+    # SPA 只匹配文件；public/dashboard 等同名目录不能截获页面路由。
     location / {
-        try_files $uri $uri/ /index.html;
+        try_files $uri /index.html;
     }
 }
