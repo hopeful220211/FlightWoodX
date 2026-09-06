@@ -74,12 +74,11 @@ fi
 cat <<'NEXT'
 
 装机完成。后续：
-  1) 在 deploy/ 目录：cp .env.example .env，填真实凭证
-  2) 首次签发正式证书（域名已解析到本机后）：
-       # 先清掉自签占位（nginx 仍在内存用旧证书，删盘不影响运行），certbot 才能干净签发到同一路径
-       rm -rf /etc/letsencrypt/live/flightwoodx.com /etc/letsencrypt/archive/flightwoodx.com /etc/letsencrypt/renewal/flightwoodx.com.conf
-       certbot certonly --webroot -w deploy/nginx/certbot-www --cert-name flightwoodx.com -d flightwoodx.com -d www.flightwoodx.com
-       # 真证书正好落在 FWX_SSL_CERT 默认指向的 /etc/letsencrypt/live/flightwoodx.com/，无需改 .env
-       docker compose restart nginx
-  3) 发布：deploy/deploy.sh
+  从仓库根目录阅读 deploy/README.md 的首次上线顺序。
+  本脚本未安装宿主机 Node/pnpm，也未启动 nginx。
+  先准备 Node >=22.12.0、pnpm 9.12.0 和 deploy/.env，再运行 deploy/deploy.sh。
+  nginx 的 HTTP 挑战路径可达后，才按 README 申请独立命名的正式证书。
+  保留全部已有证书，不删除 live/archive/renewal 目录。
+  根据 Certbot 实际输出填写证书和私钥文件路径，再验证并更新 nginx。
+  现有站点只走升级、备份与回滚流程，不重跑首次装机。
 NEXT
