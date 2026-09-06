@@ -4,7 +4,7 @@
  * 后端 /api/admin/* 实现后即生效；开发期默认走 mock。
  */
 import type { ApiResponse, ApiErrorObject } from '@fwx/shared'
-import { getErrorMessage } from '@fwx/shared'
+import { getErrorMessage, AdminOverviewSchema, AdminUserListSchema, AdminAuditListSchema } from '@fwx/shared'
 import { apiFetch } from '../../utils/api'
 import type { AdminApi, UserListQuery, PartListQuery, PageQuery } from './types'
 
@@ -17,9 +17,13 @@ function qs(params: Record<string, string | number | undefined> = {}): string {
   return s ? `?${s}` : ''
 }
 
-async function call<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
+async function call<T>(endpoint: string, options?: RequestInit, schema?: { safeParse: (value: unknown) => { success: true; data: T } | { success: false } }): Promise<ApiResponse<T>> {
   const r = await apiFetch<T>(endpoint, options)
-  if (r.success) return { success: true, data: r.data as T }
+  if (r.success) {
+    if (!schema) return { success: true, data: r.data as T }
+    const parsed = schema.safeParse(r.data)
+    return parsed.success ? { success: true, data: parsed.data } : { success: false, error: { code: 'INTERNAL', message: '服务器数据格式不正确，请重试' } }
+  }
   const e = r.error as unknown
   const error: ApiErrorObject =
     e && typeof e === 'object' && 'code' in e
@@ -29,9 +33,9 @@ async function call<T>(endpoint: string, options?: RequestInit): Promise<ApiResp
 }
 
 export const realAdminApi: AdminApi = {
-  getOverview: () => call('/admin/overview'),
+  getOverview: () => call('/admin/overview', undefined, AdminOverviewSchema),
 
-  listUsers: (q: UserListQuery = {}) => call(`/admin/users${qs(q)}`),
+  listUsers: (q: UserListQuery = {}) => call(`/admin/users${qs({ ...q })}`, undefined, AdminUserListSchema),
   getUser: (id) => call(`/admin/users/${id}`),
   patchUser: (id, body) => call(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   changeUserRole: (id, body) => call(`/admin/users/${id}/role`, { method: 'POST', body: JSON.stringify(body) }),
@@ -46,7 +50,7 @@ export const realAdminApi: AdminApi = {
   createGuardian: (body) => call('/admin/guardians', { method: 'POST', body: JSON.stringify(body) }),
 
   listCourses: () => call('/admin/courses'),
-  listParts: (q: PartListQuery = {}) => call(`/admin/parts${qs(q)}`),
+  listParts: (q: PartListQuery = {}) => call(`/admin/parts${qs({ ...q })}`),
   listKit: () => call('/admin/kit'),
-  listAudit: (q: PageQuery = {}) => call(`/admin/audit${qs(q)}`),
+  listAudit: (q: PageQuery = {}) => call(`/admin/audit${qs({ ...q })}`, undefined, AdminAuditListSchema),
 }

@@ -139,4 +139,35 @@ describe('作品装配快照契约', () => {
       })) }).success,
     ).toBe(false)
   })
+
+  const custom = {
+    instanceId: 'custom-instance',
+    partId: 'custom_507f1f77bcf86cd799439011',
+    category: 'joint', position: [0, 0, 0], rotation: [0, 0, 0],
+    source: { kind: 'custom', id: '507f1f77bcf86cd799439011', version: 1, updatedAt: '2026-09-07T00:00:00.000Z' },
+  }
+
+  it('preserves custom source revisions in free placement without copying geometry', () => {
+    const parsed = DroneDesignSnapshotSchema.parse({ ...snapshot, buildMode: 'free', parts: [custom] })
+    expect(parsed.parts[0]).toMatchObject(custom)
+    expect(parsed.parts[0]).not.toHaveProperty('geometry')
+  })
+
+  it('rejects fabricated custom connections, guided completion, and mismatched provenance', () => {
+    for (const candidate of [
+      { ...snapshot, parts: [custom] },
+      { ...snapshot, buildMode: 'free', parts: [{ ...custom, partId: 'core_hub_01' }] },
+      { ...snapshot, buildMode: 'free', parts: [{ ...custom, source: undefined }] },
+      { ...snapshot, buildMode: 'free', parts: [{ ...custom, activeConnectorId: 'invented' }] },
+      { ...snapshot, buildMode: 'free', parts: [custom, { ...snapshot.parts[1], attachedTo: { parentInstanceId: custom.instanceId, parentConnectorId: 'invented' } }] },
+    ]) expect(DroneDesignSnapshotSchema.safeParse(candidate).success).toBe(false)
+  })
+
+  it('rejects invalid custom revisions and inline source geometry', () => {
+    for (const part of [
+      { ...custom, source: { ...custom.source, version: 0 } },
+      { ...custom, source: { ...custom.source, updatedAt: 'unknown' } },
+      { ...custom, geometry: validUserPart.geometry },
+    ]) expect(DroneDesignSnapshotSchema.safeParse({ ...snapshot, buildMode: 'free', parts: [part] }).success).toBe(false)
+  })
 })

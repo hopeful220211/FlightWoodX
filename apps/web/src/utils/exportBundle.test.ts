@@ -29,6 +29,7 @@ function inst(partId: string, category: PartInstance['category']): PartInstance 
 
 function design(parts: PartInstance[]): Design {
   return {
+    schemaVersion: 1,
     id: 'test-design',
     name: '测试机',
     updatedAt: '2026-07-03T00:00:00.000Z',
@@ -74,6 +75,22 @@ describe('geometryToPart2D + bbox', () => {
 })
 
 describe('buildExportFiles', () => {
+  it('retains pinned custom sources, reports unknown mass and refuses automatic manufacturing output', () => {
+    const source = { kind: 'custom' as const, id: '507f1f77bcf86cd799439011', version: 1, updatedAt: '2026-09-07T00:00:00.000Z' }
+    const custom = { ...inst(`custom_${source.id}`, 'joint'), source }
+    const result = buildExportFiles({ ...design([custom]), buildMode: 'free' }, () => SQUARE, FIXED_NOW)
+    expect(result.generatedParts).toEqual([])
+    expect(result.pending2D).toEqual([custom.partId])
+    const manifest = JSON.parse(result.files.find(file => file.path === 'manifest.json')!.content)
+    expect(manifest.parts[0]).toMatchObject({ source, has2D: false, placement: 'unconnected' })
+    expect(result.files.find(file => file.path === 'BOM.csv')!.content).toContain('未核实')
+    expect(result.files.find(file => file.path === 'assembly.md')!.content).toContain('未连接')
+    const nextSource = { ...source, updatedAt: '2026-09-07T00:00:01.000Z' }
+    const mixed = buildExportFiles({ ...design([custom, { ...custom, instanceId: 'new-revision', source: nextSource }]), buildMode: 'free' })
+    const variants = JSON.parse(mixed.files.find(file => file.path === 'manifest.json')!.content).parts
+    expect(variants).toHaveLength(2)
+    expect(variants.map((part: { source: typeof source }) => part.source)).toEqual([source, nextSource])
+  })
   // 一件有 2D 轮廓（走注入解析器），一件官方件无 2D（进 pending2D）。
   const d = design([inst('user_square', 'guard'), inst('core_hub_01', 'mainboard'), inst('core_hub_01', 'mainboard')])
   const resolver: GeometryResolver = (part) => (part.partId === 'user_square' ? SQUARE : null)

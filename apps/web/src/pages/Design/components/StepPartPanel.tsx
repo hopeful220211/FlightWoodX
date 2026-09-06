@@ -107,7 +107,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart, pendi
         </div>
       )}
 
-      {filteredParts.length === 0 && currentStep !== 'REVIEW' && (
+      {filteredParts.length === 0 && (
         <div className="p-4 text-center text-xs text-gray-400">此步骤暂无可选零件</div>
       )}
     </div>

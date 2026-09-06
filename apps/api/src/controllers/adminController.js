@@ -4,6 +4,7 @@ const User = require('../models/User')
 const Part = require('../models/Part')
 const AuditLog = require('../models/AuditLog')
 const { toAuditLogDTO } = require('../lib/audit')
+const { AdminAuditQuerySchema } = require('@fwx/shared/runtime-cjs')
 
 // 概览仪表盘聚合（RFC-014 §5.1）。对齐 @fwx/shared 的 AdminOverview 形态：
 //   users:{total,students,teachers,admins} / courses:{total,published}
@@ -11,8 +12,8 @@ const { toAuditLogDTO } = require('../lib/audit')
 //
 // 按根 AGENTS.md 的事实规则，不用占位数据伪装已接入能力：
 // - 用户数：从 User 集合真实聚合。
-// - 课程数：Course 模型尚未落地（课程仍前端硬编码），如实返回 0，待课程 CMS 轮次接通。
-// - 零件数：Part 集合（采购/BOM 视图）真实计数；可拼装零件的"待审核"队列尚未持久化，pendingReview 暂 0。
+// - 课程数与待审核数：尚无正式来源，返回 null，不把未接入冒充零记录。
+// - 零件数：Part 集合（采购/BOM 视图）真实计数，并非官方拼装 registry 数量。
 // - 最近审计：从 AuditLog 真实读取（上一轮已落地）。
 exports.getOverview = async (req, res) => {
   try {
@@ -26,11 +27,11 @@ exports.getOverview = async (req, res) => {
     }, {})
     const usersTotal = roleCounts.reduce((sum, r) => sum + r.count, 0)
 
-    // 零件（采购/BOM 视图）真实计数；可拼装零件审核队列未落地，暂 0。
+    // 零件（采购/BOM 视图）真实计数。
     const partsTotal = await Part.countDocuments()
 
     // 最近审计（倒序 10 条）。
-    const recent = await AuditLog.find().sort({ createdAt: -1 }).limit(10)
+    const recent = await AuditLog.find().select('actor action target createdAt').sort({ createdAt: -1, _id: -1 }).limit(10)
 
     // 信封对齐 RFC-014a 的 ApiResponse：{ success, data }。
     // 前端 realClient 期待 res.data = AdminOverview；裸对象会被 apiFetch 的
@@ -44,9 +45,8 @@ exports.getOverview = async (req, res) => {
           teachers: byRole.teacher || 0,
           admins: byRole.admin || 0,
         },
-        // Course 模型尚未落地，如实置 0（待课程 CMS 轮次）。
-        courses: { total: 0, published: 0 },
-        parts: { total: partsTotal, pendingReview: 0 },
+        courses: { total: null, published: null },
+        parts: { total: partsTotal, pendingReview: null },
         recentAudit: recent.map(toAuditLogDTO),
       },
     })
@@ -60,16 +60,15 @@ exports.getOverview = async (req, res) => {
 }
 
 // User 文档 → @fwx/shared 的 AdminUserListItem（列表脱敏：不含 email/明文密码）。
-// status/school 字段 User 模型尚未扩展（属 A-M1 用户模型增量），暂按 'active'/undefined 处理。
+// 不返回未落地的停用状态，也不包含 email、学号或密码等无关个人字段。
 function toAdminUserListItem(u) {
   return {
     id: String(u._id),
     username: u.username,
     nickname: u.profile && u.profile.displayName ? u.profile.displayName : undefined,
     role: u.role,
-    status: 'active', // User 模型暂无 status 字段，统一 active（停用功能见 A-M1）
     grade: u.profile && u.profile.grade ? u.profile.grade : undefined,
-    school: undefined, // User 模型暂无 school 字段（A-M1 增量）
+    school: u.profile && u.profile.school ? u.profile.school : undefined,
     createdAt: (u.createdAt instanceof Date ? u.createdAt : new Date(u.createdAt)).toISOString(),
     lastLogin: u.lastLogin ? new Date(u.lastLogin).toISOString() : undefined,
   }
@@ -94,8 +93,8 @@ exports.getUsers = async (req, res) => {
 
     const total = await User.countDocuments(filter)
     const docs = await User.find(filter)
-      .select('-password')
-      .sort({ createdAt: -1 })
+      .select('username role profile.displayName profile.grade profile.school createdAt lastLogin')
+      .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize)
 
@@ -114,5 +113,23 @@ exports.getUsers = async (req, res) => {
       error: '获取用户列表失败',
       details: req.app.locals.config.nodeEnv === 'development' ? error.message : undefined,
     })
+  }
+}
+
+// GET /api/admin/audit — only existing persisted audit metadata, never before/after payloads.
+exports.getAudit = async (req, res) => {
+  const parsed = AdminAuditQuerySchema.safeParse(req.query)
+  if (!parsed.success) return res.status(400).json({ error: '审计分页参数无效：每页最多 100 条，页码最多 10000' })
+  const { page, pageSize } = parsed.data
+  try {
+    const [total, documents] = await Promise.all([
+      AuditLog.countDocuments(),
+      AuditLog.find().select('actor action target createdAt')
+        .sort({ createdAt: -1, _id: -1 }).skip((page - 1) * pageSize).limit(pageSize),
+    ])
+    return res.json({ success: true, data: { items: documents.map(toAuditLogDTO), total, page, pageSize } })
+  } catch (error) {
+    console.error('AdminAudit read failed:', error.message)
+    return res.status(500).json({ error: '获取审计日志失败，请重试' })
   }
 }

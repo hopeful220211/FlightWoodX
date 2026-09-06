@@ -23,7 +23,7 @@ function pidOf(p: ProjectData): string {
 export function useUpdateProject() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<{ name: string; visibility: string; coverUrl: string }> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Pick<ProjectData, 'name' | 'visibility' | 'coverUrl'>> }) => {
       const res = await updateProject(id, data)
       if (!res.success) throw new Error(res.error || '更新项目失败')
       return res.data!

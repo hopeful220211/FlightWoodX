@@ -16,9 +16,10 @@ const CATEGORY_LABEL: Record<string, string> = {
 interface MyPartsStripProps {
   parts: UserPartDTO[]
   onDelete: (id: string) => void
+  onUse: (part: UserPartDTO) => void
 }
 
-export function MyPartsStrip({ parts, onDelete }: MyPartsStripProps) {
+export function MyPartsStrip({ parts, onDelete, onUse }: MyPartsStripProps) {
   return (
     <section className="shrink-0 border-t border-[#E2ECF7] bg-white px-5 py-3">
       <h2 className="mb-2 text-sm font-semibold text-slate-700">
@@ -29,7 +30,7 @@ export function MyPartsStrip({ parts, onDelete }: MyPartsStripProps) {
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-1">
           {parts.map((p) => (
-            <PartChip key={p.id} part={p} onDelete={onDelete} />
+            <PartChip key={p.id} part={p} onDelete={onDelete} onUse={onUse} />
           ))}
         </div>
       )}
@@ -37,7 +38,7 @@ export function MyPartsStrip({ parts, onDelete }: MyPartsStripProps) {
   )
 }
 
-function PartChip({ part, onDelete }: { part: UserPartDTO; onDelete: (id: string) => void }) {
+function PartChip({ part, onDelete, onUse }: { part: UserPartDTO; onDelete: (id: string) => void; onUse: (part: UserPartDTO) => void }) {
   const { contour, bboxMm } = part.geometry
   const w = bboxMm?.w || 1
   const h = bboxMm?.h || 1
@@ -62,6 +63,7 @@ function PartChip({ part, onDelete }: { part: UserPartDTO; onDelete: (id: string
       <p className="text-center text-[10px] text-slate-400">
         {CATEGORY_LABEL[part.category] ?? part.category}
       </p>
+      <button type="button" onClick={() => onUse(part)} className="mt-2 w-full rounded bg-sky-100 px-1 py-2 text-xs text-sky-800" aria-label={`放入自由拼装：${part.name}`}>放入自由拼装</button>
       <button
         type="button"
         onClick={() => onDelete(part.id)}

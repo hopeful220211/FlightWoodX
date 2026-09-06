@@ -9,6 +9,12 @@ const { publicProjectStages } = require('../lib/communityVisibility')
 
 const router = express.Router()
 
+// Keep Project covers distinct from DroneDesign and legacy unscoped covers.
+// The namespace is derived only from a stored, ownership-checked document.
+function coverPrefix(project) {
+  return `covers/projects/${String(project._id)}`
+}
+
 function coverUploadLimit(req, res, next) {
   return req.app.locals.rateLimits.coverUpload(req, res, next)
 }
@@ -204,11 +210,11 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: '项目不存在' })
     }
 
-    await bestEffortDeleteObject(project.coverUrl, req.app.locals.config)
+    await bestEffortDeleteObject(project.coverUrl, req.app.locals.config, coverPrefix(project))
 
     res.json({ message: '已删除' })
   } catch (error) {
-    console.error('[projects] Delete error:', error)
+    console.error('[projects] Delete failed')
     res.status(500).json({ error: '删除项目失败' })
   }
 })
@@ -224,6 +230,7 @@ router.post(
   parseCoverBody,
   async (req, res) => {
     let uploadedUrl = null
+    let ownedPrefix = null
     try {
       if (!req.body || !req.body.length) {
         return res.status(400).json({ error: '未收到图片数据' })
@@ -233,16 +240,17 @@ router.post(
 
       const previousUrl = project.coverUrl
       const contentType = req.headers['content-type'] || 'image/png'
-      uploadedUrl = await putObject('covers', req.body, contentType, req.app.locals.config)
+      ownedPrefix = coverPrefix(project)
+      uploadedUrl = await putObject(ownedPrefix, req.body, contentType, req.app.locals.config)
 
       project.coverUrl = uploadedUrl
       await project.save()
-      await bestEffortDeleteObject(previousUrl, req.app.locals.config)
+      await bestEffortDeleteObject(previousUrl, req.app.locals.config, ownedPrefix)
 
       res.json({ coverUrl: uploadedUrl })
     } catch (error) {
-      if (uploadedUrl) await bestEffortDeleteObject(uploadedUrl, req.app.locals.config)
-      console.error('[projects] Cover upload error:', error)
+      if (uploadedUrl) await bestEffortDeleteObject(uploadedUrl, req.app.locals.config, ownedPrefix)
+      console.error('[projects] Cover upload failed')
       if (error.status === 413) return res.status(413).json({ error: '上传内容过大' })
       res.status(500).json({ error: '封面上传失败' })
     }

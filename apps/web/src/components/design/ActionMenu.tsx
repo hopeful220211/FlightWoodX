@@ -171,13 +171,13 @@ export function ActionMenu() {
         >
           <FlipVertical2 size={18} />
         </button>
-        <button
+        {!instance.source && <button
           onClick={handleSwitchConnector}
           className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-amber-50 text-gray-600 hover:text-amber-600 transition-colors"
           title="更换连接点"
         >
           <Repeat size={18} />
-        </button>
+        </button>}
       </div>
     </Html>
   )

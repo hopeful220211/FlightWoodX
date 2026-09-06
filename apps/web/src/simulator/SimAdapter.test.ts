@@ -66,7 +66,7 @@ describe('SimAdapter elapsed time under delayed browser callbacks', () => {
     const execution = adapter.execute(makeProgram([
       { type: 'takeoff', params: { altitudeCm: 100 } },
       { type: 'move', params: { direction: 'forward', distanceCm: 100, speedCmS: 30 } },
-      { type: 'land', params: {} },
+      { type: 'land' },
     ]), { onFinish: finished })
     try {
       await vi.advanceTimersByTimeAsync(11_000)

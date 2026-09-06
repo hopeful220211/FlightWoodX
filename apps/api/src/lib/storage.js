@@ -78,6 +78,7 @@ async function putOss(config, key, buffer, contentType) {
       accessKeyId: config.storage.oss.accessKeyId,
       accessKeySecret: config.storage.oss.secret,
       bucket: config.storage.oss.assetsBucket,
+      secure: true,
     })
   }
   await state.oss.put(key, buffer, { headers: { 'Content-Type': contentType } })
@@ -96,16 +97,19 @@ async function putObject(prefix, buffer, contentType, config) {
   return `${publicBase(config)}/${key}`
 }
 
-function managedKey(url, config) {
+function managedKey(url, config, expectedPrefix) {
   if (typeof url !== 'string') return null
+  // URL fields are client-editable: a matching storage host is not ownership proof.
+  // Require a server-established resource directory; preserve legacy unscoped files.
+  if (typeof expectedPrefix !== 'string' || !/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)+$/.test(expectedPrefix)) return null
   const prefix = `${publicBase(config)}/`
   if (!url.startsWith(prefix)) return null
   const key = url.slice(prefix.length)
-  return key && !key.includes('..') && !key.startsWith('/') ? key : null
+  return key.startsWith(`${expectedPrefix}/`) && !key.includes('..') ? key : null
 }
 
-async function deleteObject(url, config) {
-  const key = managedKey(url, config)
+async function deleteObject(url, config, expectedPrefix) {
+  const key = managedKey(url, config, expectedPrefix)
   if (!key) return false
 
   if (config.storage.driver === 'disk') {
@@ -142,6 +146,7 @@ async function deleteObject(url, config) {
         accessKeyId: config.storage.oss.accessKeyId,
         accessKeySecret: config.storage.oss.secret,
         bucket: config.storage.oss.assetsBucket,
+        secure: true,
       })
     }
     await state.oss.delete(key)
@@ -149,11 +154,12 @@ async function deleteObject(url, config) {
   return true
 }
 
-async function bestEffortDeleteObject(url, config) {
+async function bestEffortDeleteObject(url, config, expectedPrefix) {
   try {
-    return await deleteObject(url, config)
-  } catch (error) {
-    console.warn('[storage] cleanup failed:', error.message)
+    return await deleteObject(url, config, expectedPrefix)
+  } catch {
+    // Storage SDK errors can contain signed URLs and authorization headers.
+    console.warn('[storage] cleanup failed')
     return false
   }
 }

@@ -5,6 +5,8 @@ import { Html, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Design } from '../../types/design'
 import { partsData } from '../../data/parts'
+import { CustomAssemblyPart } from '../../features/partStudio/CustomAssemblyPart'
+import { PartErrorBoundary } from './PartErrorBoundary'
 
 /** Resource failures stay visible in previews and can be retried without losing the design. */
 class PartMeshBoundary extends Component<{ children: ReactNode; partId: string; modelUrl: string }, { hasError: boolean }> {
@@ -84,6 +86,7 @@ export const AssembledDrone = forwardRef<AssembledDroneRef, AssembledDroneProps>
     return (
       <group ref={groupRef} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave}>
         {parts.map(inst => {
+          if (inst.source) return <PartErrorBoundary key={inst.instanceId} partId={inst.partId}><CustomAssemblyPart instance={inst} /></PartErrorBoundary>
           const partData = partsData.find(p => p.id === inst.partId)
           if (!partData) return <Html center key={inst.instanceId}><p role="alert" className="rounded bg-white p-2 text-xs text-red-700">无法读取零件：{inst.partId}</p></Html>
           return (
@@ -92,7 +95,7 @@ export const AssembledDrone = forwardRef<AssembledDroneRef, AssembledDroneProps>
                 modelUrl={partData.modelUrl}
                 position={inst.position}
                 rotation={inst.rotation}
-                scale={inst.scale}
+                scale={inst.scale ?? [1, 1, 1]}
               />
             </PartMeshBoundary>
           )

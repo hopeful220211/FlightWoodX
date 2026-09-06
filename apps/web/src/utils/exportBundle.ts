@@ -102,7 +102,7 @@ interface BomRow {
   category: PartCategory
   role: '结构件' | '电子件'
   count: number
-  unitWeightG: number
+  unitWeightG: number | null
 }
 
 /** MOTOR/PROP 属电子件，其余（主板/起落架/保护板/装饰件/用户结构件）属结构件。 */
@@ -110,25 +110,30 @@ function roleOf(category: PartCategory): BomRow['role'] {
   return category === 'MOTOR' || category === 'PROP' ? '电子件' : '结构件'
 }
 
+function sourceKey(part: PartInstance): string {
+  return part.source ? `${part.partId}:${part.source.version}:${part.source.updatedAt}` : part.partId
+}
+
 /** 按 partId 归并设计里的零件实例，产出物料行（含数量、单重）。 */
 function collectBom(design: Design): BomRow[] {
   const map = new Map<string, BomRow>()
   for (const inst of design.parts) {
-    const hit = map.get(inst.partId)
+    const key = sourceKey(inst)
+    const hit = map.get(key)
     if (hit) {
       hit.count += 1
       continue
     }
     const def = getPartById(inst.partId)
     const category = (def?.category ?? inst.category) as PartCategory
-    map.set(inst.partId, {
+    map.set(key, {
       partId: inst.partId,
       partNumber: def?.partNumber ?? '—',
-      name: def?.name ?? inst.partId,
+      name: inst.source ? `自制零件 ${inst.source.id} v${inst.source.version} ${inst.source.updatedAt}（未连接）` : def?.name ?? inst.partId,
       category,
       role: roleOf(category),
       count: 1,
-      unitWeightG: def?.weight ?? 0,
+      unitWeightG: def?.weight ?? null,
     })
   }
   return [...map.values()]
@@ -139,17 +144,18 @@ function buildBomCsv(rows: BomRow[]): string {
   const lines = [header.map(csvCell).join(',')]
   let totalWeight = 0
   let totalCount = 0
+  const weightKnown = rows.every(row => row.unitWeightG !== null)
   for (const r of rows) {
-    const subtotal = +(r.unitWeightG * r.count).toFixed(1)
-    totalWeight += subtotal
+    const subtotal = r.unitWeightG === null ? null : +(r.unitWeightG * r.count).toFixed(1)
+    totalWeight += subtotal ?? 0
     totalCount += r.count
     lines.push(
-      [r.partNumber, r.name, CATEGORY_LABELS[r.category].zh, r.role, r.count, r.unitWeightG, subtotal]
+      [r.partNumber, r.name, CATEGORY_LABELS[r.category].zh, r.role, r.count, r.unitWeightG ?? '未核实', subtotal ?? '未核实']
         .map(csvCell)
         .join(','),
     )
   }
-  lines.push(['合计', '', '', '', totalCount, '', +totalWeight.toFixed(1)].map(csvCell).join(','))
+  lines.push(['合计', '', '', '', totalCount, '', weightKnown ? +totalWeight.toFixed(1) : '未核实'].map(csvCell).join(','))
   lines.push('')
   lines.push('# 当前清单只包含设计中可确认的结构件；电机、电调、螺旋桨和电池需按经确认的硬件清单另行核对。')
   // 前缀 UTF-8 BOM，方便 Excel 正确识别中文
@@ -169,6 +175,11 @@ function buildAssemblyMd(design: Design, rows: BomRow[]): string {
   const out: string[] = []
   out.push(`# ${design.name || '未命名无人机'} · 装配说明`)
   out.push('')
+  if (design.parts.some(part => part.source)) {
+    out.push('自制零件仅自由摆放，未连接；本作品尚无可执行的制造或装配说明。')
+    out.push('来源和版本保留在 manifest.json，摆放位置保留在 design.json；不得据此推定卡扣兼容、结构或飞行安全。')
+    return out.join('\n') + '\n'
+  }
   out.push('> 由 FlightWoodX 工作台自动生成 · 单位 mm · 板厚 2mm')
   out.push('> 对照零件清单 `BOM.csv` 与切割件目录 `parts/`，按下面 5 步组装。')
   out.push('')
@@ -222,14 +233,16 @@ export function buildExportFiles(
   const seen = new Set<string>()
   const manifestParts: Array<Record<string, unknown>> = []
   const countByPart = new Map<string, number>()
-  for (const inst of design.parts) countByPart.set(inst.partId, (countByPart.get(inst.partId) ?? 0) + 1)
+  for (const inst of design.parts) countByPart.set(sourceKey(inst), (countByPart.get(sourceKey(inst)) ?? 0) + 1)
 
   for (const inst of design.parts) {
-    if (seen.has(inst.partId)) continue
-    seen.add(inst.partId)
-    const count = countByPart.get(inst.partId) ?? 1
+    const key = sourceKey(inst)
+    if (seen.has(key)) continue
+    seen.add(key)
+    const count = countByPart.get(key) ?? 1
 
-    const geom = resolveGeometry(inst)
+    // 当前来源引用没有历史几何/制造验证，不把显示轮廓自动当作可生产切割图。
+    const geom = inst.source ? null : resolveGeometry(inst)
     const part2d = geom ? geometryToPart2D(geom) : null
 
     if (part2d) {
@@ -255,11 +268,12 @@ export function buildExportFiles(
       }
     }
     pending2D.push(inst.partId)
-    manifestParts.push({ partId: inst.partId, count, has2D: false })
+    manifestParts.push({ partId: inst.partId, count, has2D: false, ...(inst.source ? { source: inst.source, placement: 'unconnected', reason: '自制件制造与连接未验证' } : {}) })
   }
 
   files.push({ path: 'BOM.csv', content: buildBomCsv(bom) })
   files.push({ path: 'assembly.md', content: buildAssemblyMd(design, bom) })
+  if (design.parts.some(part => part.source)) files.push({ path: 'design.json', content: JSON.stringify(design, null, 2) + '\n' })
 
   const manifest = {
     schemaVersion: 1,
@@ -293,6 +307,7 @@ function buildReadme(design: Design, generated: string[], pending2D: string[]): 
   out.push('  manifest.json 机器可读清单（版本 / 单位 / 厚度 / 零件数 / 每件指纹）。')
   out.push('')
   out.push(`已生成切割图的零件：${generated.length} 种`)
+  if (design.parts.some(part => part.source)) out.push('自制件仍是未连接摆放；来源版本和位置已保留。缺失、改版或无权限的源记录不会被导出器替换，制造图与重量尚未核实。')
   if (pending2D.length > 0) {
     out.push('')
     out.push('以下零件暂无 2D 轮廓，当前导出不完整：')

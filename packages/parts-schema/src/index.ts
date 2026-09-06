@@ -236,10 +236,21 @@ const FiniteVector3Schema = z.tuple([
   z.number().finite().min(-100_000).max(100_000),
 ]);
 
+// 自制件仅保留来源引用；几何/所有者/审核状态由鉴权后的原始记录提供，不能复制进作品。
+// updatedAt 与 version 一并固定：现有编辑接口尚未提供历史版本，不能静默换成最新轮廓。
+export const CustomPartSourceSchema = z.object({
+  kind: z.literal('custom'),
+  id: z.string().regex(/^[a-f0-9]{24}$/i),
+  version: z.number().int().positive(),
+  updatedAt: z.string().datetime({ offset: true }),
+}).strict();
+export type CustomPartSource = z.infer<typeof CustomPartSourceSchema>;
+
 export const DesignPartInstanceSchema = z.object({
   instanceId: z.string().trim().min(1).max(120),
   partId: z.string().trim().min(1).max(120),
   category: PartCategoryEnum,
+  source: CustomPartSourceSchema.optional(),
   position: FiniteVector3Schema,
   rotation: FiniteVector3Schema,
   scale: z.tuple([
@@ -291,6 +302,14 @@ export const DroneDesignSnapshotSchema = z.object({
       });
     }
     ids.add(part.instanceId);
+    if (part.source) {
+      if (snapshot.buildMode !== 'free' || part.partId !== `custom_${part.source.id}` ||
+          !['landing', 'guard', 'joint'].includes(part.category) || part.activeConnectorId || part.attachedTo) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['parts', index], message: '自制件仅支持保留来源的自由摆放，不能声明连接或作为官方件' });
+      }
+    } else if (part.partId.startsWith('custom_')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['parts', index, 'source'], message: '自制件缺少来源引用' });
+    }
   }
 
   const parentByChild = new Map<string, string>();
@@ -298,6 +317,9 @@ export const DroneDesignSnapshotSchema = z.object({
     const part = snapshot.parts[index];
     const parentId = part?.attachedTo?.parentInstanceId;
     if (!part || !parentId) continue;
+    if (snapshot.parts.some(parent => parent.instanceId === parentId && parent.source)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['parts', index, 'attachedTo'], message: '自制件尚不支持连接，不能作为连接父件' });
+    }
     if (!ids.has(parentId) || parentId === part.instanceId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

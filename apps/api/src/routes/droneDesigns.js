@@ -24,6 +24,9 @@ function parseCoverBody(req, res, next) {
 /** 归一化：lean/toObject 的文档只有 _id，补一个字符串 id，供前端发布/封面按 id 调用（防 undefined id）。 */
 const withId = (d) => (d && d._id ? { ...d, id: String(d._id) } : d)
 
+// Only call after the database query has established this design's owner.
+const coverPrefix = (design) => `covers/${String(design._id)}`
+
 /**
  * GET /api/drone-designs/public
  * 公开作品画廊（作品库合一后取代 /api/projects/public）：匿名访客可读，
@@ -297,6 +300,7 @@ router.post(
   parseCoverBody,
   async (req, res) => {
     let uploadedUrl = null
+    let ownedPrefix = null
     try {
       if (!req.body || !req.body.length) {
         return res.status(400).json({ error: '未收到图片数据' })
@@ -306,16 +310,18 @@ router.post(
 
       const previousUrl = design.coverUrl
       const contentType = req.headers['content-type'] || 'image/png'
-      uploadedUrl = await putObject('covers', req.body, contentType, req.app.locals.config)
+      ownedPrefix = coverPrefix(design)
+      uploadedUrl = await putObject(ownedPrefix, req.body, contentType, req.app.locals.config)
 
       design.coverUrl = uploadedUrl
       await design.save()
-      await bestEffortDeleteObject(previousUrl, req.app.locals.config)
+      await bestEffortDeleteObject(previousUrl, req.app.locals.config, ownedPrefix)
 
       res.json({ coverUrl: uploadedUrl })
     } catch (error) {
-      if (uploadedUrl) await bestEffortDeleteObject(uploadedUrl, req.app.locals.config)
-      console.error('[drone-designs] Cover upload error:', error)
+      if (uploadedUrl) await bestEffortDeleteObject(uploadedUrl, req.app.locals.config, ownedPrefix)
+      // Do not log SDK/database error objects: they may contain credentials or data.
+      console.error('[drone-designs] Cover upload failed')
       if (error.status === 413) return res.status(413).json({ error: '上传内容过大' })
       res.status(500).json({ error: '封面上传失败' })
     }
@@ -333,7 +339,7 @@ router.delete('/by-local/:localId', async (req, res) => {
       ownerId: req.userId,
       localId: req.params.localId,
     })
-    if (design) await bestEffortDeleteObject(design.coverUrl, req.app.locals.config)
+    if (design) await bestEffortDeleteObject(design.coverUrl, req.app.locals.config, coverPrefix(design))
     res.json({ message: '已删除' })
   } catch (error) {
     console.error('[drone-designs] Delete by localId error:', error)
@@ -355,7 +361,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: '设计不存在' })
     }
 
-    await bestEffortDeleteObject(design.coverUrl, req.app.locals.config)
+    await bestEffortDeleteObject(design.coverUrl, req.app.locals.config, coverPrefix(design))
 
     res.json({ message: '已删除' })
   } catch (error) {

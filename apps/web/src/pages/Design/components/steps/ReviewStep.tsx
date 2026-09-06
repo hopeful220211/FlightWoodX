@@ -4,6 +4,7 @@ import { useDesignStore } from '../../../../stores/designStore'
 import {
   calculateStats,
   getWeightLabel,
+  getThrustLabel,
   getSymmetryLabel,
   getFlightTimeLabel,
 } from '../../../../utils/designStats'
@@ -25,7 +26,7 @@ function MetricCard({
   name: string
   sci?: string
   value: string
-  fillPct: number
+  fillPct?: number
   label: string
   ok: boolean
 }) {
@@ -37,7 +38,7 @@ function MetricCard({
         {sci && <span className="text-[10px] text-gray-400">{sci}</span>}
         <span className="ml-auto text-sm font-bold text-ink-900 tabular-nums">{value}</span>
       </div>
-      <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+      {fillPct !== undefined && <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
         <div
           className="h-full rounded-full transition-[width] duration-500"
           style={{
@@ -45,7 +46,7 @@ function MetricCard({
             backgroundColor: ok ? '#22C55E' : CORAL,
           }}
         />
-      </div>
+      </div>}
       <p className="mt-1.5 text-xs font-medium" style={{ color: ok ? '#16A34A' : CORAL }}>
         {label}
       </p>
@@ -66,7 +67,7 @@ export function ReviewStep() {
     const stats = calculateStats(p)
     return {
       stats,
-      weight: getWeightLabel(stats.totalWeightG),
+      weight: getWeightLabel(stats.totalWeightG, stats.weightMissingCount),
       symmetry: getSymmetryLabel(stats.symmetryPercent),
       flight: getFlightTimeLabel(stats.estimatedFlightMinutes),
       readiness: flightReadiness(p),
@@ -87,17 +88,7 @@ export function ReviewStep() {
   }
 
   const ratio = stats.thrustWeightRatio
-  const powerOk = ratio !== null && ratio >= 2
-  const powerLabel =
-    ratio === null
-      ? readiness.motorPlan.motorCount < 4
-        ? '还没有足够动力点，先装 4 个起落架'
-        : '起落架已装配，缺少动力实测数据'
-      : ratio >= 2
-        ? '动力够强'
-        : ratio >= 1.5
-          ? '快够了，再轻一点'
-          : '动力不够'
+  const power = getThrustLabel(ratio)
 
   return (
     <div className="p-4 space-y-3">
@@ -132,10 +123,9 @@ export function ReviewStep() {
       <div className="space-y-2.5">
         <MetricCard
           icon={<Weight size={15} />}
-          name="身体轻不轻"
-          sci="重量"
-          value={`${stats.totalWeightG.toFixed(1)}g`}
-          fillPct={(stats.totalWeightG / 35) * 100}
+          name="目录质量小计"
+          sci="估算"
+          value={stats.weightKnownCount > 0 ? `${stats.totalWeightG.toFixed(1)}g` : '—'}
           label={weight.text}
           ok={weight.ok}
         />
@@ -144,14 +134,12 @@ export function ReviewStep() {
           name="动力数据"
           sci="实测推重比"
           value={ratio !== null ? `${ratio}` : '—'}
-          fillPct={ratio !== null ? (ratio / 2) * 100 : 0}
-          label={powerLabel}
-          ok={powerOk}
+          label={power.text}
+          ok={power.ok}
         />
         <MetricCard
           icon={<Scaling size={15} />}
-          name="左右平不平"
-          sci="对称性"
+          name="坐标镜像匹配率"
           value={`${stats.symmetryPercent}%`}
           fillPct={stats.symmetryPercent}
           label={symmetry.text}
@@ -162,7 +150,6 @@ export function ReviewStep() {
           name="续航数据"
           sci="实测续航"
           value={stats.estimatedFlightMinutes !== null ? `${stats.estimatedFlightMinutes} 分钟` : '—'}
-          fillPct={stats.estimatedFlightMinutes !== null ? (stats.estimatedFlightMinutes / 12) * 100 : 0}
           label={stats.estimatedFlightMinutes !== null ? flight.text : '缺少电池和动力实测数据'}
           ok={flight.ok && stats.estimatedFlightMinutes !== null}
         />

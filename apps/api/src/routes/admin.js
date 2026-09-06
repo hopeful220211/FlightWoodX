@@ -22,5 +22,6 @@ router.get('/overview', adminController.getOverview)
 // GET /api/admin/users — 强制分页用户列表（RFC-014 §5.2 / M2）
 // 替换原 authController.getAllUsers 全量返回，复用 @fwx/shared 的 Paginated 契约。
 router.get('/users', adminController.getUsers)
+router.get('/audit', adminController.getAudit)
 
 module.exports = router

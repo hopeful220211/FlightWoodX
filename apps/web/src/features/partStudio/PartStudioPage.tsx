@@ -7,9 +7,9 @@
 
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
-import type { UserPartCategory, UserPartDTO } from '@fwx/parts-schema'
+import { UserPartSchema, type UserPartCategory, type UserPartDTO } from '@fwx/parts-schema'
 import { useToast } from '../../components/common/Toast'
 import { Modal } from '../../components/common/Modal'
 import { useAuthStore } from '../../stores/authStore'
@@ -22,6 +22,7 @@ import { snapClose } from './canvas/closePathDetect'
 import { ExtrudePreview } from './preview3d/ExtrudePreview'
 import { buildUserPartDef } from './buildUserPartDef'
 import { MyPartsStrip } from './MyPartsStrip'
+import { PlaceCustomPartDialog } from './PlaceCustomPartDialog'
 
 // 首尾吸合容差（px）。②建议 ~画布对角线 2~3%，M1 先用固定值，后续按画布尺寸自适应。
 const CLOSE_THRESHOLD = 24
@@ -48,6 +49,8 @@ export function PartStudioPage() {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<UserPartDTO | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [placeTarget, setPlaceTarget] = useState<UserPartDTO | null>(null)
+  const queryClient = useQueryClient()
 
   // 「我的零件」列表走 TanStack Query（§4.1 服务端数据规范）：进页面拉一次，
   // 保存/删除后 refetch 刷新。游客无服务端数据，enabled=false 不发请求。
@@ -56,7 +59,7 @@ export function PartStudioPage() {
     queryFn: async (): Promise<UserPartDTO[]> => {
       const res = await listCustomParts(1, 50)
       if (!res.success) throw new Error(res.error || '获取零件失败')
-      return res.data?.items ?? []
+      return UserPartSchema.array().parse(res.data?.items ?? [])
     },
     enabled: !!token,
   })
@@ -139,11 +142,12 @@ export function PartStudioPage() {
         setDeleteTarget(null)
         toast.push('success', '已删除')
         await refetchMyParts()
+        await queryClient.invalidateQueries({ queryKey: ['custom-assembly-part', userId] })
       } else {
         toast.push('error', res.error || '删除失败')
       }
     },
-    [toast, refetchMyParts, deleting],
+    [toast, refetchMyParts, deleting, queryClient, userId],
   )
 
   const canRaise = !!sketch?.closed
@@ -257,9 +261,10 @@ export function PartStudioPage() {
       </div>
 
       {/* 底部：我的零件（已保存的自制件，刷新后仍在 = 真落库） */}
-      <MyPartsStrip parts={myParts} onDelete={(id) => setDeleteTarget(myParts.find(part => part.id === id) ?? null)} />
+      <MyPartsStrip parts={myParts} onDelete={(id) => setDeleteTarget(myParts.find(part => part.id === id) ?? null)} onUse={setPlaceTarget} />
+      {placeTarget && <PlaceCustomPartDialog part={placeTarget} onClose={() => setPlaceTarget(null)} />}
       <Modal open={!!deleteTarget} title="删除零件" onClose={() => { if (!deleting) setDeleteTarget(null) }}>
-        <p className="text-sm text-slate-600">确定删除「{deleteTarget?.name}」吗？删除后无法恢复。</p>
+        <p className="text-sm text-slate-600">确定删除「{deleteTarget?.name}」吗？删除后无法恢复。引用它的作品将保留引用，但无法再显示该零件。</p>
         <div className="mt-5 flex justify-end gap-3">
           <button type="button" disabled={deleting} onClick={() => setDeleteTarget(null)} className="rounded-full border px-4 py-2 text-sm">取消</button>
           <button type="button" disabled={deleting} onClick={() => { if (deleteTarget) void handleDelete(deleteTarget.id) }} className="rounded-full bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-50">{deleting ? '删除中…' : '确认删除'}</button>

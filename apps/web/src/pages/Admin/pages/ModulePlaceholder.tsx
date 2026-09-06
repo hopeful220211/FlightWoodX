@@ -14,6 +14,6 @@ export function ModulePlaceholder({ title, desc }: { title: string; desc: string
   )
 }
 
-export const AdminCoursesPage = () => <ModulePlaceholder title="课程管理" desc="课程树、发布/回滚、课时与资产管理将在 Phase 2 落地。" />
-export const AdminPartsPage = () => <ModulePlaceholder title="零件管理" desc="可拼装零件列表、审核/发布、采购 BOM 将在 Phase 3 落地。" />
-export const AdminAuditPage = () => <ModulePlaceholder title="审计日志" desc="操作审计的分页查询将在 Phase 4 落地。" />
+export const AdminCoursesPage = () => <ModulePlaceholder title="课程管理" desc="课程树、发布/回滚、课时与资产管理尚未接入正式服务，当前不能编辑课程。" />
+export const AdminPartsPage = () => <ModulePlaceholder title="零件管理" desc="官方零件可在设计工作台使用；后台审核、发布和采购 BOM 管理尚未接入正式服务。" />
+export { AdminAuditPage } from './AuditPage'

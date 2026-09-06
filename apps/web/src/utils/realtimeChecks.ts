@@ -14,7 +14,7 @@ export interface Violation {
 }
 
 function countByCategory(parts: PartInstance[], cat: PartCategory): number {
-  return parts.filter(p => p.category === cat).length
+  return parts.filter(p => !p.source && p.category === cat).length
 }
 
 /**
@@ -24,7 +24,7 @@ function countByCategory(parts: PartInstance[], cat: PartCategory): number {
  */
 export function checkBeforeAdd(
   partCategory: PartCategory,
-  partId: string,
+  _partId: string,
   currentParts: PartInstance[],
 ): Violation | null {
   // Mainboard: max 2
@@ -39,7 +39,7 @@ export function checkBeforeAdd(
   if (partCategory === 'landing') {
     const count = countByCategory(currentParts, 'landing')
     if (count >= 8) {
-      return { id: 'landing-max', level: 'error', message: '最多 8 个起落架！', hint: '再多飞机就太重了' }
+      return { id: 'landing-max', level: 'error', message: '最多 8 个起落架！', hint: '当前装配模式的数量限制，不是实物飞行结论' }
     }
   }
 
@@ -51,23 +51,7 @@ export function checkBeforeAdd(
     }
   }
 
-  // Weight check: would adding this part exceed 35g?
-  const entry = getPartById(partId)
-  const addWeight = entry?.weightG ?? 2
-  const currentWeight = currentParts.reduce((sum, p) => {
-    const e = getPartById(p.partId)
-    return sum + (e?.weightG ?? 2)
-  }, 0)
-
-  if (currentWeight + addWeight > 35) {
-    return {
-      id: 'weight-over',
-      level: 'error',
-      message: `超重了！加上这个零件会到 ${(currentWeight + addWeight).toFixed(1)}g`,
-      hint: '上限 35g，试试拆掉一些零件',
-    }
-  }
-
+  // No verified hardware mass limit is available. Catalogue estimates cannot block software placement.
   return null
 }
 
@@ -107,31 +91,30 @@ export function checkDualMainboard(parts: PartInstance[]): Violation | null {
   return null
 }
 
-/**
- * Calculate current assembly weight from registry data.
- */
-export function calculateWeight(parts: PartInstance[]): number {
-  return parts.reduce((sum, p) => {
-    const entry = getPartById(p.partId)
-    return sum + (entry?.weightG ?? 2)
-  }, 0)
+/** Known catalogue estimates only; missing/custom data is counted, never filled with a default mass. */
+export function summarizeCatalogueWeight(parts: PartInstance[]) {
+  let knownWeightG = 0
+  let knownCount = 0
+  for (const part of parts) {
+    const entry = part.source ? undefined : getPartById(part.partId)
+    if (entry && Number.isFinite(entry.weightG) && entry.weightG >= 0) {
+      knownWeightG += entry.weightG
+      knownCount += 1
+    }
+  }
+  return { knownWeightG, knownCount, missingCount: parts.length - knownCount }
 }
 
-/**
- * Get weight bar color class based on percentage of 35g limit.
- */
+/** Compatibility helper: returns the known catalogue subtotal, not measured whole-aircraft mass. */
+export function calculateWeight(parts: PartInstance[]): number {
+  return summarizeCatalogueWeight(parts).knownWeightG
+}
+
+/** Neutral colors indicate an estimate, not a physical safety verdict. */
 export function getWeightColor(weight: number): string {
-  const pct = weight / 35
-  if (pct <= 0.7) return 'bg-accent-leaf'
-  if (pct <= 0.9) return 'bg-accent-gold'
-  if (pct <= 1.0) return 'bg-wood-500'
-  return 'bg-[#E04545]'
+  return Number.isFinite(weight) ? 'bg-sky-400' : 'bg-gray-300'
 }
 
 export function getWeightTextColor(weight: number): string {
-  const pct = weight / 35
-  if (pct <= 0.7) return 'text-accent-leaf'
-  if (pct <= 0.9) return 'text-accent-gold'
-  if (pct <= 1.0) return 'text-wood-500'
-  return 'text-[#E04545]'
+  return Number.isFinite(weight) ? 'text-sky-700' : 'text-gray-500'
 }

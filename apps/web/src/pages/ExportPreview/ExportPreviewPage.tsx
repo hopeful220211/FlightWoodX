@@ -16,6 +16,7 @@ export function ExportPreviewPage() {
   const { designId } = useParams<{ designId: string }>()
   const navigate = useNavigate()
   const design = useDesignStore(s => s.designs.find(d => d.id === designId))
+  const hasCustomParts = design?.parts.some(part => part.source) ?? false
 
   const checks = useMemo(() => design ? runAllChecks(design.parts) : [], [design])
   const stats = useMemo(() => design ? calculateStats(design.parts) : null, [design])
@@ -55,16 +56,16 @@ export function ExportPreviewPage() {
       <ExportHeroSection design={design} />
 
       {/* Section 2: Flight check report */}
-      <FlightCheckReport checks={checks} />
+      {hasCustomParts ? <p className="mx-auto max-w-5xl px-4 py-8 text-amber-900">自制零件仅自由摆放，未连接。原始记录由账号权限和版本核验；本页不提供自制件的整机重量、材料、制造或飞行结论。可以返回工作台导出含来源引用的设计 JSON。</p> : <FlightCheckReport checks={checks} />}
 
       {/* Section 3: Flight stats */}
-      {stats && <FlightStats stats={stats} />}
+      {!hasCustomParts && stats && <FlightStats stats={stats} />}
 
       {/* Section 4: Parts list */}
       <PartsList parts={design.parts} />
 
       {/* Section 5: Material preparation */}
-      {materialEst && <MaterialPreparation estimate={materialEst} />}
+      {!hasCustomParts && materialEst && <MaterialPreparation estimate={materialEst} />}
 
       {/* Section 6: Bottom CTA */}
       <ExportActions checks={checks} design={design} />

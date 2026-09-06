@@ -10,7 +10,7 @@ export interface AdminUserListItem {
   username: string;
   nickname?: string;
   role: 'student' | 'teacher' | 'parent' | 'admin';
-  status: 'active' | 'disabled';
+  status?: 'active' | 'disabled'; // 未接入账号停用时不伪造 active
   grade?: string;
   school?: string;
   createdAt: string;
@@ -124,8 +124,8 @@ export interface AuditLogDTO {
 // RFC 仅写"概览统计"，此处定一个具体形态供前端落地。
 export interface AdminOverview {
   users: { total: number; students: number; teachers: number; admins: number };
-  courses: { total: number; published: number };
-  parts: { total: number; pendingReview: number };
+  courses: { total: number | null; published: number | null };
+  parts: { total: number; pendingReview: number | null };
   recentAudit: AuditLogDTO[];
 }
 
@@ -155,3 +155,28 @@ export const PartReviewPayloadSchema = z.object({
   comment: z.string().max(500).optional(),
 });
 export type PartReviewPayload = z.infer<typeof PartReviewPayloadSchema>;
+
+// 只读契约：新增 nullable 统计表示正式数据源未接入；现有数值响应仍可读取。
+// 不涉及数据库迁移，Web/API 同步发布；未知字段在客户端边界剔除。
+const CountSchema = z.number().int().nonnegative();
+const PageFields = { total: CountSchema, page: z.number().int().positive(), pageSize: z.number().int().min(1).max(100) };
+export const AdminUserListItemSchema: z.ZodType<AdminUserListItem> = z.object({
+  id: z.string().min(1), username: z.string(), nickname: z.string().optional(), role: UserRoleEnum,
+  status: UserStatusEnum.optional(), grade: z.string().optional(), school: z.string().optional(),
+  createdAt: z.string().datetime(), lastLogin: z.string().datetime().optional(),
+});
+export const AdminUserListSchema = z.object({ items: z.array(AdminUserListItemSchema), ...PageFields });
+export const AuditLogDTOSchema: z.ZodType<AuditLogDTO> = z.object({
+  id: z.string().min(1), actor: z.string(), action: z.string(), target: z.string(), at: z.string().datetime(), diffSummary: z.string().optional(),
+});
+export const AdminAuditListSchema = z.object({ items: z.array(AuditLogDTOSchema), ...PageFields });
+export const AdminAuditQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+}).strict();
+export const AdminOverviewSchema: z.ZodType<AdminOverview> = z.object({
+  users: z.object({ total: CountSchema, students: CountSchema, teachers: CountSchema, admins: CountSchema }),
+  courses: z.object({ total: CountSchema.nullable(), published: CountSchema.nullable() }),
+  parts: z.object({ total: CountSchema, pendingReview: CountSchema.nullable() }),
+  recentAudit: z.array(AuditLogDTOSchema),
+});

@@ -62,20 +62,21 @@ export function AdminUsersPage() {
       </div>
       : data && <div className="overflow-hidden rounded-xl border border-sky-100 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <caption className="sr-only">用户账号列表</caption>
             <thead className="border-b border-sky-100 bg-sky-50/60 text-slate-600"><tr>
-              {['用户', '角色', '年级', '注册日期', '最近登录'].map(label => <th key={label} scope="col" className="px-4 py-3 font-medium">{label}</th>)}
+              {['用户', '角色', '学校', '年级', '注册日期', '最近登录'].map(label => <th key={label} scope="col" className="px-4 py-3 font-medium">{label}</th>)}
             </tr></thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {data.items.map(user => <tr key={user.id} className="hover:bg-sky-50/40">
                 <td className="max-w-64 px-4 py-3"><span className="block break-all font-medium">{user.username}</span>{user.nickname && <span className="mt-0.5 block break-all text-xs text-slate-500">{user.nickname}</span>}</td>
                 <td className="whitespace-nowrap px-4 py-3"><span className="rounded-full bg-sky-50 px-2 py-1 text-xs text-sky-800">{ROLES[user.role] || user.role}</span></td>
+                <td className="max-w-48 break-words px-4 py-3">{user.school || '未填写'}</td>
                 <td className="px-4 py-3">{user.grade || '未填写'}</td>
                 <td className="whitespace-nowrap px-4 py-3">{formatDate(user.createdAt)}</td>
                 <td className="whitespace-nowrap px-4 py-3">{formatDate(user.lastLogin)}</td>
               </tr>)}
-              {!data.items.length && <tr><td colSpan={5} className="py-16 text-center text-slate-500">没有符合条件的用户</td></tr>}
+              {!data.items.length && <tr><td colSpan={6} className="py-16 text-center text-slate-500">没有符合条件的用户</td></tr>}
             </tbody>
           </table>
         </div>

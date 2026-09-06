@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
-import type { BrowserContext, Locator, Page } from '@playwright/test'
+import type { BrowserContext, Locator, Page, Response } from '@playwright/test'
 import { DroneDesignSnapshotSchema, PART_REGISTRY } from '@fwx/parts-schema'
 import type { DroneDesignSnapshot } from '@fwx/parts-schema'
 
@@ -22,11 +23,11 @@ async function guardLocalNetwork(context: BrowserContext) {
   })
 }
 
-function observeBrowser(page: Page) {
+function observeBrowser(page: Page, expectedFailure?: (response: Response) => boolean) {
   const failures: string[] = []
   page.on('pageerror', error => failures.push(error.message))
   page.on('response', response => {
-    if (response.status() >= 400) {
+    if (response.status() >= 400 && !expectedFailure?.(response)) {
       failures.push(`${response.status()} ${response.request().method()} ${new URL(response.url()).pathname}`)
     }
   })
@@ -257,4 +258,125 @@ test('read-only: every registered official model and thumbnail is served as a va
       }
     })
   }
+})
+
+test('custom part: draw, place without invented connectors, save, restore, and retain broken references', async ({ page, browser, baseURL }, testInfo) => {
+  let deletedSourcePath: string | null = null
+  // Both open contexts may revalidate on focus after the test deliberately deletes its source.
+  const expectedDeletedSource = (response: Response) => response.status() === 404 && new URL(response.url()).pathname === deletedSourcePath
+  const errors = observeBrowser(page, expectedDeletedSource)
+  const name = await registerDedicatedAccount(page)
+  await page.goto('/part-studio')
+  const canvas = page.locator('canvas').first()
+  const box = await canvas.boundingBox()
+  if (!box) throw new Error('The drawing canvas is not visible.')
+  const start = { x: box.x + 70, y: box.y + 80 }
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  await page.mouse.move(start.x + 160, start.y, { steps: 16 })
+  await page.mouse.move(start.x + 160, start.y + 100, { steps: 10 })
+  await page.mouse.move(start.x, start.y + 100, { steps: 16 })
+  await page.mouse.move(start.x, start.y, { steps: 10 })
+  await page.mouse.up()
+  await page.getByLabel('零件名称', { exact: true }).fill(name)
+  await page.getByRole('button', { name: '立起来 →', exact: true }).click()
+  const creation = page.waitForResponse(response => new URL(response.url()).pathname === '/api/custom-parts' && response.request().method() === 'POST')
+  await page.getByRole('button', { name: '保存', exact: true }).click()
+  expect((await creation).status()).toBe(201)
+  await page.getByRole('button', { name: `放入自由拼装：${name}`, exact: true }).click()
+  await page.getByLabel('自由作品名称', { exact: true }).fill(`${name} free`)
+  await page.getByRole('button', { name: '确认放入', exact: true }).click()
+  await expect(page).toHaveURL(/\/design\/design-[^/]+$/)
+  await expect(page.getByText('已保存到账号', { exact: true }).first()).toBeVisible()
+  const original = (await readDesign(page))!
+  expect(original.buildMode).toBe('free')
+  expect(original.parts).toHaveLength(1)
+  const source = original.parts[0]!.source!
+  expect(source.kind).toBe('custom')
+  expect(original.parts[0]!.attachedTo).toBeNull()
+  expect(original.parts[0]).not.toHaveProperty('activeConnectorId')
+  expect(original.parts[0]).not.toHaveProperty('geometry')
+
+  await page.getByRole('button', { name: '零件详情：主板件01', exact: true }).click()
+  await page.getByRole('button', { name: '添加到设计', exact: true }).click()
+  await expect.poll(async () => (await readDesign(page))?.parts.length).toBe(2)
+  await page.getByRole('button', { name: '机臂', exact: true }).click()
+  await page.getByRole('button', { name: '零件详情：起落架01', exact: true }).click()
+  await page.getByRole('button', { name: '添加到设计', exact: true }).click()
+  await expect.poll(async () => (await readDesign(page))?.parts.length).toBe(3)
+  const mixed = (await readDesign(page))!
+  expect(mixed.parts.find(part => part.partId === 'arm_01')!.attachedTo?.parentInstanceId).toBe(mixed.parts.find(part => part.partId === 'core_hub_01')!.instanceId)
+  expect(mixed.parts[0]!.attachedTo).toBeNull()
+
+  await page.getByLabel('自制零件 X 位置（毫米）').fill('25')
+  await page.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(page.getByText('已保存到账号', { exact: true }).first()).toBeVisible()
+  const auth = await page.evaluate(() => localStorage.getItem('auth-storage'))
+  if (!auth || !baseURL) throw new Error('The test session is unavailable.')
+  const restored = await browser.newContext({ baseURL, viewport: { width: 1440, height: 900 }, serviceWorkers: 'block', storageState: { cookies: [], origins: [{ origin: new URL(baseURL).origin, localStorage: [{ name: 'auth-storage', value: auth }] }] } })
+  await guardLocalNetwork(restored)
+  try {
+    const reopened = await restored.newPage()
+    const restoredErrors = observeBrowser(reopened, expectedDeletedSource)
+    await reopened.goto(`/design/${original.id}`)
+    await expect(reopened.getByLabel('自制零件 X 位置（毫米）')).toHaveValue('25')
+    expect((await readDesign(reopened))!.parts[0]!.source).toEqual(source)
+    await expect(reopened.getByRole('button', { name, exact: true })).toBeVisible()
+    for (const viewport of [{ width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
+      await reopened.setViewportSize(viewport)
+      await expect(reopened.getByRole('button', { name: '展开零件库', exact: true })).toBeVisible()
+      await expectInsideViewport(reopened, reopened.getByLabel('自制零件 X 位置（毫米）'))
+      await expectInsideViewport(reopened, reopened.getByRole('button', { name: '保存', exact: true }))
+      await reopened.getByRole('button', { name: '保存', exact: true }).click()
+      await expect(reopened.getByText('已保存到账号', { exact: true }).first()).toBeVisible()
+      expect(await reopened.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      await reopened.screenshot({ path: testInfo.outputPath(`custom-free-${viewport.width}.png`) })
+    }
+    const downloading = reopened.waitForEvent('download')
+    await reopened.getByRole('button', { name: '导出', exact: true }).click()
+    const downloaded = await (await downloading).path()
+    if (!downloaded) throw new Error('The design JSON download failed.')
+    const exported = DroneDesignSnapshotSchema.parse(JSON.parse(await readFile(downloaded, 'utf8')))
+    expect(exported.parts[0]!.source).toEqual(source)
+    expect(exported.parts[0]!.position[0]).toBe(0.025)
+    await reopened.getByRole('button', { name: '预览', exact: true }).click()
+    await expect(reopened.getByRole('dialog', { name: '预览', exact: true })).toBeVisible()
+    await expect(reopened.getByText('自制零件仅自由摆放，未连接，未验证制造与飞行。', { exact: true })).toBeVisible()
+    await reopened.getByRole('button', { name: '我知道了', exact: true }).click()
+    await reopened.goto(`/code/${original.id}`)
+    await reopened.getByRole('button', { name: '从示例开始', exact: true }).click()
+    await reopened.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(reopened.getByText('已与账号同步', { exact: true })).toBeVisible()
+    await runSimulation(reopened)
+
+    // Mutate only this dedicated test user's new source, never unrelated records.
+    const authorization = { Authorization: `Bearer ${JSON.parse(auth).state.token as string}` }
+    const detail = await restored.request.get(`/api/custom-parts/${source.id}`, { headers: authorization, maxRedirects: 0 })
+    expect(detail.status()).toBe(200)
+    const originalSource = (await detail.json()).data
+    const otherContext = await browser.newContext({ baseURL, serviceWorkers: 'block' })
+    await guardLocalNetwork(otherContext)
+    try {
+      const otherPage = await otherContext.newPage()
+      await registerDedicatedAccount(otherPage)
+      const foreignToken = await otherPage.evaluate(() => JSON.parse(localStorage.getItem('auth-storage')!).state.token as string)
+      const denied = await otherContext.request.get(`/api/custom-parts/${source.id}`, { headers: { Authorization: `Bearer ${foreignToken}` }, maxRedirects: 0 })
+      expect(denied.status(), 'Other accounts cannot resolve a private source').toBe(404)
+    } finally { await otherContext.close() }
+    const update = await restored.request.put(`/api/custom-parts/${source.id}`, { headers: authorization, maxRedirects: 0, data: { ...originalSource, name: `${name} changed` } })
+    expect(update.status()).toBe(200)
+    await reopened.goto(`/design/${original.id}`)
+    await expect(reopened.getByText(/原零件已修改/).first()).toBeVisible()
+    expect((await readDesign(reopened))!.parts[0]!.source).toEqual(source)
+    deletedSourcePath = `/api/custom-parts/${source.id}`
+    const deleted = await restored.request.delete(deletedSourcePath, { headers: authorization, maxRedirects: 0 })
+    expect(deleted.status()).toBe(200)
+    await reopened.reload()
+    await expect(reopened.getByText(/自制零件不可用/).first()).toBeVisible()
+    expect((await readDesign(reopened))!.parts).toHaveLength(3)
+    await reopened.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(reopened.getByText('已保存到账号', { exact: true }).first()).toBeVisible()
+    expect(restoredErrors).toEqual([])
+    expect(errors).toEqual([])
+  } finally { await restored.close() }
 })

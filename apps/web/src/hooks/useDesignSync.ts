@@ -19,7 +19,7 @@ import { DroneDesignSnapshotSchema } from '@fwx/parts-schema'
 export function useDesignSync() {
   const token = useAuthStore(s => s.token)
   const isGuest = useAuthStore(s => s.user?.isGuest)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const requestVersionRef = useRef(0)
   const mountedRef = useRef(true)
   const pendingRef = useRef<Design | null>(null)

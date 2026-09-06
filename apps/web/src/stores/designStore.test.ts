@@ -66,6 +66,22 @@ describe('designStore addPartSmart result', () => {
     expect(useDesignStore.getState().getDesignById(designId)?.parts).toHaveLength(1)
   })
 
+  it('keeps custom references only in free placement and round-trips their positions', () => {
+    const store = activate([])
+    const custom = { partId: 'custom_507f1f77bcf86cd799439011', category: 'joint' as const, position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number], source: { kind: 'custom' as const, id: '507f1f77bcf86cd799439011', version: 1, updatedAt: '2026-09-07T00:00:00.000Z' } }
+    expect(store.addPartToActiveDesign(custom)).toBe(false)
+    const id = store.createDesign('自由', 'free')
+    store.setActiveDesignId(id)
+    expect(store.addPartToActiveDesign(custom)).toBe(true)
+    const instance = store.getActiveDesign()!.parts[0]!
+    store.updatePartInActiveDesign(instance.instanceId, { position: [0.01, 0.02, 0.03] })
+    const saved = JSON.parse(JSON.stringify(store.getActiveDesign()))
+    store.clearAll()
+    store.importServerDesigns([saved])
+    store.setActiveDesignId(id)
+    expect(store.getActiveDesign()!.parts[0]).toMatchObject({ source: custom.source, position: [0.01, 0.02, 0.03] })
+  })
+
   it('creates unique design and part ids for actions in the same millisecond', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1000)
     const store = activate([])
@@ -139,7 +155,7 @@ describe('designStore addPartSmart result', () => {
   })
 
   it('rechecks quantity when simultaneous model loads complete', async () => {
-    const store = activate([part('hub', 'mainboard'), part('arm', 'landing', 'hub'), ...Array.from({ length: 3 }, (_, i) => part(`guard-${i}`, 'guard', `other-${i}`))])
+    const store = activate([part('hub', 'mainboard'), part('arm', 'landing', 'hub'), ...Array.from({ length: 3 }, (_, i) => part(`guard-${i}`, 'guard'))])
     let release!: () => void
     const loaded = new Promise<void>(resolve => { release = resolve })
     connectorMocks.load.mockReturnValue(loaded)

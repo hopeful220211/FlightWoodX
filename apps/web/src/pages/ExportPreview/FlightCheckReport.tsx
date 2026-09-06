@@ -30,7 +30,8 @@ export function FlightCheckReport({ checks }: FlightCheckReportProps) {
     <section className="py-12 lg:py-16 bg-white">
       <div className="mx-auto max-w-5xl px-4">
         <ScrollReveal>
-          <h2 className="font-display text-3xl lg:text-[40px] font-semibold text-ink-900">飞行检查报告</h2>
+          <h2 className="font-display text-3xl lg:text-[40px] font-semibold text-ink-900">结构检查报告</h2>
+          <p className="mt-3 text-sm text-ink-600">仅核对设计记录；分数不代表制造或飞行安全，文件可导出也不代表可以实物制造或起飞。</p>
         </ScrollReveal>
 
         {/* Score */}

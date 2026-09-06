@@ -209,6 +209,7 @@ function SimulatorWorkspace({ designId: id }: { designId?: string }) {
       </div>
 
       {/* 3D Scene */}
+      {design?.parts.some(part => part.source) && <p className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">自制零件仅自由摆放，未连接；此处只检查程序指令，不验证自制件的制造、结构或飞行。</p>}
       <div className="relative min-h-0 flex-1">
         <FlightScene telemetry={telemetry} obstacles={DEFAULT_OBSTACLES} trail={trail} ledColor={ledColor} parts={design?.parts} />
         {(loading || loadError || !draft?.commandProgram?.commands.length) && !running && (

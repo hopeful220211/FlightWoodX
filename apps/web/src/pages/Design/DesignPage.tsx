@@ -33,9 +33,20 @@ import { DragPreview } from '../../components/design/DragPreview'
 import { PartPreview3D } from '../../components/design/PartPreview3D'
 import { getCachedPartConnectors, prefetchAndExtractConnectors } from '../../hooks/usePartConnectors'
 import type { CameraView } from '../../components/design/CameraController'
+import { Canvas } from '@react-three/fiber'
+import { Bounds, OrbitControls, Html } from '@react-three/drei'
+import { Suspense } from 'react'
+import { AssembledDrone } from '../../components/design/AssembledDrone'
+import { SceneLighting } from '../../components/design/SceneLighting'
+import { useDesignSync } from '../../hooks/useDesignSync'
+import { useAuthStore } from '../../stores/authStore'
+import { CustomPartsLibrary } from '../../features/partStudio/CustomPartsLibrary'
+import { CustomPartInspector } from '../../features/partStudio/CustomAssemblyPart'
 
 export function DesignPage() {
   const toast = useToast()
+  const { saveToServer, saveNow, saveStatus } = useDesignSync()
+  const token = useAuthStore(state => state.token)
   const threeMountRef = useRef<HTMLDivElement | null>(null)
 
   const activeDesignId = useDesignStore((s) => s.activeDesignId)
@@ -50,8 +61,8 @@ export function DesignPage() {
   const [query, setQuery] = useState('')
   const [partDetail, setPartDetail] = useState<Part | null>(null)
   const [previewHintOpen, setPreviewHintOpen] = useState(false)
-  const [isPartsLibraryOpen, setIsPartsLibraryOpen] = useState(true)
-  const [isInspectorOpen, setIsInspectorOpen] = useState(true)
+  const [isPartsLibraryOpen, setIsPartsLibraryOpen] = useState(() => window.innerWidth >= 1024)
+  const [isInspectorOpen, setIsInspectorOpen] = useState(() => window.innerWidth >= 1024)
   const [cameraView, setCameraView] = useState<CameraView | null>(null)
 
   // 拖拽预览状态
@@ -62,10 +73,18 @@ export function DesignPage() {
 
   useEffect(() => {
     if (!activeDesignId) {
-      const id = createDesign('我的第一架无人机')
+      const id = createDesign('我的第一架无人机', 'free')
       setActiveDesignId(id)
     }
   }, [activeDesignId, createDesign, setActiveDesignId])
+
+  useEffect(() => { if (activeDesign) saveToServer(activeDesign) }, [activeDesign, saveToServer])
+  useEffect(() => {
+    const narrow = window.matchMedia('(max-width: 1023px)')
+    const onResize = () => { if (narrow.matches) setIsPartsLibraryOpen(false) }
+    narrow.addEventListener('change', onResize)
+    return () => narrow.removeEventListener('change', onResize)
+  }, [])
 
   // 触控拖拽状态
   const [isTouchDragging, setIsTouchDragging] = useState(false)
@@ -175,6 +194,7 @@ export function DesignPage() {
   const partById = useMemo(() => new Map(parts.map((p) => [p.id, p])), [parts])
   const usedParts = useMemo(() => activeDesign?.parts ?? [], [activeDesign?.parts])
   const usedCount = usedParts.length
+  const hasCustomParts = usedParts.some(part => part.source)
 
   const totalWeight = useMemo(() => {
     let sum = 0
@@ -202,17 +222,17 @@ export function DesignPage() {
     const issues: Array<{ level: 'warning' | 'error' | 'info'; text: string }> = []
     if (!usedParts.some((p) => (partById.get(p.partId)?.category ?? 'other') === 'mainboard'))
       issues.push({ level: 'error', text: '缺少主板：建议至少选择一个主板零件。' })
+    if (usedParts.some(part => part.source)) issues.push({ level: 'warning', text: '自制零件仅自由摆放，尚未连接；未验证制造、结构或飞行。' })
     if (issues.length === 0) issues.push({ level: 'info', text: '基础装配检查通过：可以继续检查连接与左右对称。' })
     return issues
   }, [partById, usedCount, usedParts])
 
   const categoryItems = [
     { value: 'mainboard', label: '主板' },
-    { value: 'ARM', label: '机臂' },
-    { value: 'PLATE', label: '保护罩·一体' },
-    { value: 'JOINT', label: '保护罩·分体' },
-    { value: 'LAND', label: '保护罩·半体' },
+    { value: 'landing', label: '机臂' },
+    { value: 'guard', label: '保护罩' },
     { value: 'joint', label: '连接件' },
+    { value: 'custom', label: '自制零件' },
   ] as const
 
   const onExport = () => {
@@ -221,8 +241,10 @@ export function DesignPage() {
     toast.push('success', '已导出设计文件（JSON）')
   }
 
-  const onSave = () => {
-    toast.push('success', '已自动保存到本地（persist）')
+  const onSave = async () => {
+    if (!activeDesign) return
+    const saved = await saveNow(activeDesign)
+    toast.push(saved ? 'success' : 'error', saved ? token ? '已保存到账号' : '已保存到本机草稿' : '账号保存失败，本机草稿保留，请重试保存')
   }
 
   const categoryIcon: Record<string, React.ReactNode> = {
@@ -268,12 +290,13 @@ export function DesignPage() {
 
       {/* 顶部：标题与操作栏（浮动） */}
       <div className="absolute left-1/2 top-4 z-40 w-[min(900px,calc(100vw-2rem))] -translate-x-1/2">
-        <Card hoverable={false} className="px-4 py-3">
+        <Card hoverable={false}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="truncate text-sm font-extrabold text-ink-900 dark:text-white">{activeDesign?.name ?? '我的第一架无人机'}</div>
               <div className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
-                已使用 {usedCount} 个零件 · 预估重量 {totalWeight}g
+                已使用 {usedCount} 个零件 · {hasCustomParts ? `官方件预估 ${totalWeight}g（不含自制件）` : `预估重量 ${totalWeight}g`}
+                <span className="ml-2" role={saveStatus === 'error' ? 'alert' : 'status'}>{saveStatus === 'error' ? '账号保存失败，请重试' : saveStatus === 'saving' ? '正在保存…' : token ? '已保存到账号' : '本机草稿'}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -342,9 +365,9 @@ export function DesignPage() {
       </div>
 
       {/* 左侧：零件库浮动面板（可收起） */}
-      <div className={cn('absolute left-4 top-1/2 z-40 -translate-y-1/2 transition-transform duration-300', isPartsLibraryOpen ? 'w-80' : 'w-12')}>
+      <div className={cn('absolute left-4 top-44 sm:top-28 bottom-16 z-40 transition-transform duration-300', isPartsLibraryOpen ? 'w-[min(320px,calc(100vw-2rem))]' : 'w-12')}>
         {isPartsLibraryOpen ? (
-          <Card hoverable={false} className="p-3">
+          <Card hoverable={false} className="max-h-full overflow-y-auto">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-extrabold">零件库</div>
               <button
@@ -357,7 +380,7 @@ export function DesignPage() {
               </button>
             </div>
 
-            <div className="mt-3 flex flex-col gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               {categoryItems.map((it) => {
                 const active = category === it.value
                 return (
@@ -380,7 +403,7 @@ export function DesignPage() {
               })}
             </div>
 
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-black/10 bg-white/70 px-3 py-2 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
+            {category !== 'custom' && <div className="mt-3 flex items-center gap-2 rounded-lg border border-black/10 bg-white/70 px-3 py-2 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
               <Search size={16} className="text-slate-500" />
               <input
                 value={query}
@@ -398,9 +421,10 @@ export function DesignPage() {
                   <X size={16} />
                 </button>
               ) : null}
-            </div>
+            </div>}
 
-            <div className="mt-3 max-h-[calc(100vh-28rem)] overflow-y-auto overflow-x-hidden pr-1">
+            <div className="mt-3 overflow-x-hidden pr-1">
+              {category === 'custom' ? <CustomPartsLibrary /> :
               <div className="grid grid-cols-2 gap-4 justify-items-center">
                 {filteredParts.length ? (
                   filteredParts.map(renderPartThumb)
@@ -409,7 +433,7 @@ export function DesignPage() {
                     <EmptyState icon={<Box size={18} />} title="没有找到零件" description="换个关键词试试，或切换分类。" />
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
           </Card>
         ) : (
@@ -417,7 +441,7 @@ export function DesignPage() {
             type="button"
             className="flex h-20 w-12 items-center justify-center rounded-lg bg-white/70 shadow-sm backdrop-blur hover:bg-white/90 dark:bg-slate-950/60 dark:hover:bg-slate-950/80"
             aria-label="展开零件库"
-            onClick={() => setIsPartsLibraryOpen(true)}
+            onClick={() => { setIsPartsLibraryOpen(true); if (window.innerWidth < 1024) setIsInspectorOpen(false) }}
           >
             <PanelLeftOpen size={20} />
           </button>
@@ -425,9 +449,9 @@ export function DesignPage() {
       </div>
 
       {/* 右侧：检查浮动面板（可收起） */}
-      <div className={cn('absolute right-4 top-1/2 z-40 -translate-y-1/2 transition-transform duration-300', isInspectorOpen ? 'w-72' : 'w-12')}>
+      <div className={cn('absolute right-4 top-44 sm:top-28 bottom-16 z-40 transition-transform duration-300', isInspectorOpen ? 'w-[min(288px,calc(100vw-2rem))]' : 'w-12')}>
         {isInspectorOpen ? (
-          <Card hoverable={false} className="p-3">
+          <Card hoverable={false} className="max-h-full overflow-y-auto">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-extrabold">检查</div>
               <button
@@ -474,14 +498,14 @@ export function DesignPage() {
                           key={inst.instanceId}
                           className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-sky-50 dark:hover:bg-slate-900"
                         >
-                          <div className="min-w-0 flex-1">
+                          {inst.source ? <CustomPartInspector instance={inst} /> : <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-bold">{part?.name ?? '未知零件'}</div>
                             <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                               <span>{part?.weight ?? 0}g</span>
                               <span>·</span>
                               <span>{connectorCount} 个连接点</span>
                             </div>
-                          </div>
+                          </div>}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -506,7 +530,7 @@ export function DesignPage() {
             type="button"
             className="flex h-20 w-12 items-center justify-center rounded-lg bg-white/70 shadow-sm backdrop-blur hover:bg-white/90 dark:bg-slate-950/60 dark:hover:bg-slate-950/80"
             aria-label="展开检查面板"
-            onClick={() => setIsInspectorOpen(true)}
+            onClick={() => { setIsInspectorOpen(true); if (window.innerWidth < 1024) setIsPartsLibraryOpen(false) }}
           >
             <PanelRightOpen size={20} />
           </button>
@@ -551,10 +575,10 @@ export function DesignPage() {
         ) : null}
       </Modal>
 
-      <Modal open={previewHintOpen} onClose={() => setPreviewHintOpen(false)} title="预览（占位）">
+      <Modal open={previewHintOpen} onClose={() => setPreviewHintOpen(false)} title="预览">
         <div className="space-y-3 text-sm text-slate-700 dark:text-slate-200">
-          <p>预览功能后续会跳转到独立的 3D 预览页面。</p>
-          <p>当前阶段：已为 Three.js 场景挂载预留了画布容器 ref。</p>
+          {hasCustomParts && <p>自制零件仅自由摆放，未连接，未验证制造与飞行。</p>}
+          <div className="h-80 rounded bg-slate-50"><Canvas aria-label="自由作品三维预览" camera={{ position: [0.3, 0.3, 0.4], near: 0.001 }}><SceneLighting /><OrbitControls makeDefault /><Suspense fallback={<Html center>正在加载零件…</Html>}><Bounds fit clip observe margin={1.5}><AssembledDrone parts={usedParts} autoRotate={false} /></Bounds></Suspense></Canvas></div>
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => setPreviewHintOpen(false)}>
               我知道了

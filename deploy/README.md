@@ -3,7 +3,7 @@
 零密码骨架：所有凭证走 `deploy/.env`（已被 `.gitignore` 忽略），仓库不含任何真实 AK/SK/连接串。
 目标机：阿里云 ECS 成都 · Ubuntu 22.04 · 2C2G · 3Mbps。当前发布默认把官方模型、缩略图、纹理和优化图片同源托管；OSS 可用性与权限通过实际验证后再启用。用户上传由独立的 `STORAGE_DRIVER` 控制。
 
-> 2026-09-07：线上 OSS 资产请求返回 403，不能沿用未经复核的 CDN 配置。本轮本地修复不等于已经发布到正式域名。
+> 2026-09-07：线上 OSS 返回 403，当前登录账号控制台显示未开通。此次已有 ECS 升级采用磁盘覆盖配置，原凭据不改、不新购服务。备份恢复已验证；实际发布结果见 `CURRENT_STATUS.md`。
 
 ## 架构
 ```
@@ -43,6 +43,7 @@
 | 文件 | 作用 |
 |---|---|
 | `docker-compose.yml` | api / mongo(内网) / nginx 三服务，`restart: unless-stopped` |
+| `docker-compose.disk.yml` | 现站磁盘发布覆盖配置：显式已验证 API 镜像、上传驱动和原 Certbot webroot |
 | `../apps/api/Dockerfile` | 多阶段、仅生产依赖、省内存 |
 | `nginx/nginx.conf` + `nginx/templates/default.conf.template` | 静态托管 + 反代 /api + HTTPS（envsubst 注入域名/证书路径）|
 | `deploy.sh` | 拉码 → 构建前端 → `compose up -d --build` |
@@ -64,7 +65,41 @@
 
 ### 备份范围
 
-现有 `backup-daily.sh` 只执行 MongoDB 归档，不能作为全站恢复副本。发布前还必须分别保护 `api-uploads` 命名卷或旧容器上传目录、OSS 用户对象、部署配置和证书，并核对数据库引用与文件可读性。上传卷应另设受限、可恢复的备份流程；数据库归档成功不代表图片已备份。这些生产备份与恢复演练目前未执行。
+现有 `backup-daily.sh` 只执行 MongoDB 归档，不能作为全站恢复副本。发布前还必须分别保护 `api-uploads` 命名卷或旧容器上传目录、OSS 用户对象、部署配置和证书，并核对数据库引用与文件可读性。上传卷应另设受限、可恢复的备份流程；数据库归档成功不代表图片已备份。2026-09-07 已完成一次全站本机备份和数据库恢复演练，尚不等于每日自动、异机或 OSS 备份已可用。
+
+### 现有服务器此次发布
+
+原目录 `/root/flightwoodx` 不是 Git 仓库，必须保留。新目录 `/root/flightwoodx-release-20260907` 拉取已验证分支；不要在原目录强行初始化、覆盖或删除。服务器没有 Node，使用 `node:22-slim` 容器安装固定 pnpm 9.12.0、冻结依赖并构建 Web，`VITE_ASSET_BASE` 留空，`VITE_API_URL=/api`。API 使用仓库 Dockerfile 构建独立提交标签。预构建标签不代表最终修复已经发布。
+
+- 受限备份：`/root/flightwoodx-backup-20260907-wJW7He`，包含原站、证书、MongoDB 归档、API 镜像、上传文件和容器配置；约 434 MB，归档与哈希可核验。容器配置和 `.env` 含密钥，不得上传 GitHub或粘贴到对话。
+- 恢复演练：无网络临时 Mongo 容器恢复成功，20 个集合计数与正式库一致；临时容器和其临时卷已清理，正式 Mongo 卷未删除。
+- 上传卷 `flightwoodx_api-uploads` 已填入旧 API 的 6 个文件，146,928 字节，逐字节一致；切换前再次核对增量。
+- 复制原 `.env` 到新发布目录，权限 600，不输出值。环境覆盖只修改上传驱动和公开基址；保留 JWT、管理密钥、数据库与其他服务配置。
+- Certbot 当前使用 `/root/flightwoodx/deploy/nginx/certbot-www`。覆盖文件强制设置 `FWX_CERTBOT_WEBROOT` 并挂载到相同容器目标，不能随着代码目录迁移而换成空 webroot。`deploy/scripts/reload-nginx-certificate.sh` 可安装为 deploy hook；只在验证配置后 reload，不删除或重签现有证书。
+
+从新发布目录执行（把镜像标签替换为实际通过验证的提交，以下仅说明命令）：
+
+```bash
+export FWX_API_IMAGE=flightwoodx-api:<verified-commit>
+export FWX_CERTBOT_WEBROOT=/root/flightwoodx/deploy/nginx/certbot-www
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml config --quiet
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml run --rm --no-deps nginx nginx -t
+docker compose --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml up -d --no-deps --no-build api nginx
+```
+
+保留 Compose 项目名 `flightwoodx`，不更新 Mongo 服务、不运行 `down -v`、迁移或 wipe。更新 API/nginx 会有短暂停机，不称零停机。正式业务测试后还要验证一次 API 重建不会丢失专用测试作品及新上传。
+
+### 已确认的历史 localhost 封面修复
+
+生产 Project 的 3 个 `coverUrl` 指向 localhost，3 个对应文件都存在。维护脚本 `apps/api/scripts/repair-localhost-covers.js` 只接受该旧格式和已存在的普通文件，拒绝外部地址、查询参数、路径穿越、符号链接和缺失文件，转为同源 `/uploads/covers/...`。默认只读，执行需要明确数据库、精确条数和全新受限备份文件；条件更新不覆盖期间被用户改动的值。
+
+```bash
+node scripts/repair-localhost-covers.js --database=flightwoodx
+# 确认只读结果为已核对的 3 条，且外部归档已经备份后才应用：
+node scripts/repair-localhost-covers.js --database=flightwoodx --apply --expect-count=3 --backup=/protected-backup/project-covers.json
+```
+
+应用时在容器挂载服务器受限备份目录，不把备份放进公开 uploads。不会修改作品内容、所有者、公开范围、时间或删除文件。回滚按备份中每个 `_id` 和 `coverUrl === after` 条件，仅将 `coverUrl` 设回 `before`；先核对期间是否有用户更新，不恢复整个旧数据库覆盖新数据。本地真实 MongoDB 已验证备份、精确条数、重复运行拒绝、并发保护和条件回滚。
 
 ## 发布后验收与回滚
 

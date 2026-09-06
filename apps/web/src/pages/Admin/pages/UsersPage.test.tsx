@@ -32,12 +32,13 @@ function button(label: string) { return [...container.querySelectorAll('button')
 
 it('renders real response fields and sends pagination and role filters to the server', async () => {
   vi.mocked(realAdminApi.listUsers).mockImplementation(async (query = {}) => ({ success: true, data: {
-    items: [{ id: 'student-a', username: 'student_a', nickname: '绘图学生', role: 'student', status: 'active', grade: '五年级', createdAt: '2026-09-07T00:00:00Z' }],
+    items: [{ id: 'student-a', username: 'student_a', nickname: '绘图学生', role: 'student', grade: '五年级', school: '测试学校', createdAt: '2026-09-07T00:00:00Z' }],
     total: 21, page: query.page || 1, pageSize: 20,
   } }))
   await render()
   expect(container.textContent).toContain('student_a')
   expect(container.textContent).toContain('五年级')
+  expect(container.textContent).toContain('测试学校')
   expect(button('上一页').disabled).toBe(true)
   await act(async () => button('下一页').click())
   expect(realAdminApi.listUsers).toHaveBeenLastCalledWith({ page: 2, pageSize: 20, role: '', q: '' })

@@ -28,6 +28,16 @@ export interface ApiResponse<T = unknown> {
   error?: string
 }
 
+/** Do not re-label an envelope as a domain record, or treat missing data as saved. */
+function payloadFailure<T>(response: ApiResponse<unknown>): ApiResponse<T> {
+  return {
+    success: false,
+    status: response.status,
+    message: response.message,
+    error: response.error || '服务器返回的数据不完整，请重试',
+  }
+}
+
 export interface UserResponse {
   id: string
   username: string
@@ -409,7 +419,7 @@ export async function getProject(projectId: string): Promise<ApiResponse<Project
     const project = (res.data as unknown as { project?: ProjectData }).project ?? res.data
     return { ...res, data: project as ProjectData }
   }
-  return res as ApiResponse<ProjectData>
+  return payloadFailure<ProjectData>(res)
 }
 
 /** 创建新项目 */
@@ -427,7 +437,7 @@ export async function createProject(data: {
     const project = (res.data as unknown as { project?: ProjectData }).project ?? res.data
     return { ...res, data: project as ProjectData }
   }
-  return res as ApiResponse<ProjectData>
+  return payloadFailure<ProjectData>(res)
 }
 
 /** 更新项目 */
@@ -444,7 +454,7 @@ export async function updateProject(
     const project = (res.data as unknown as { project?: ProjectData }).project ?? res.data
     return { ...res, data: project as ProjectData }
   }
-  return res as ApiResponse<ProjectData>
+  return payloadFailure<ProjectData>(res)
 }
 
 /**
@@ -535,7 +545,7 @@ export async function createDroneDesign(data: {
     const design = (res.data as unknown as { design?: DroneDesignData }).design ?? res.data
     return { ...res, data: design as DroneDesignData }
   }
-  return res as ApiResponse<DroneDesignData>
+  return payloadFailure<DroneDesignData>(res)
 }
 
 /**
@@ -590,7 +600,7 @@ export async function putDroneDesign(data: {
       const design = (res.data as unknown as { design?: DroneDesignData }).design ?? res.data
       return { ...res, data: design as DroneDesignData }
     }
-    return res as ApiResponse<DroneDesignData>
+    return payloadFailure<DroneDesignData>(res)
   })
 }
 
@@ -627,7 +637,7 @@ export async function updateDroneDesign(
     const design = (res.data as unknown as { design?: DroneDesignData }).design ?? res.data
     return { ...res, data: design as DroneDesignData }
   }
-  return res as ApiResponse<DroneDesignData>
+  return payloadFailure<DroneDesignData>(res)
 }
 
 /** Delete a drone design */
@@ -684,7 +694,7 @@ export async function getProgram(programId: string): Promise<ApiResponse<Program
     const program = (res.data as unknown as { program?: ProgramRecord }).program ?? res.data
     return { ...res, data: normalizeProgram(program as ProgramRecord) }
   }
-  return res as ApiResponse<ProgramRecord>
+  return payloadFailure<ProgramRecord>(res)
 }
 
 /** Create (save) a program to backend */
@@ -701,7 +711,7 @@ export async function createProgram(data: {
     const program = (res.data as unknown as { program?: ProgramRecord }).program ?? res.data
     return { ...res, data: normalizeProgram(program as ProgramRecord) }
   }
-  return res as ApiResponse<ProgramRecord>
+  return payloadFailure<ProgramRecord>(res)
 }
 
 /** Update a program */
@@ -717,7 +727,7 @@ export async function updateProgram(
     const program = (res.data as unknown as { program?: ProgramRecord }).program ?? res.data
     return { ...res, data: normalizeProgram(program as ProgramRecord) }
   }
-  return res as ApiResponse<ProgramRecord>
+  return payloadFailure<ProgramRecord>(res)
 }
 
 /** Delete a program */
@@ -821,7 +831,7 @@ export async function getCommunityPost(id: string): Promise<ApiResponse<Communit
     const post = (res.data as unknown as { post?: CommunityPostDetail }).post ?? (res.data as unknown as CommunityPostDetail)
     return { ...res, data: post as CommunityPostDetail }
   }
-  return res as ApiResponse<CommunityPostDetail>
+  return payloadFailure<CommunityPostDetail>(res)
 }
 
 /**

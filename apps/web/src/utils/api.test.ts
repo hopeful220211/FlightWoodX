@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { apiFetch, deleteDroneDesignByLocal, getMe, login, putDroneDesign, updateProfile } from './api'
+import { apiFetch, deleteDroneDesignByLocal, getMe, getProject, login, putDroneDesign, updateProfile } from './api'
 
 beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
 afterEach(() => vi.unstubAllGlobals())
@@ -25,6 +25,20 @@ it('does not report an application-level failure as success', async () => {
 it('preserves falsy data returned by the service', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ data: 0 })))
   expect((await apiFetch('/me')).data).toBe(0)
+})
+
+it('does not claim a project was loaded when a successful HTTP response has no project data', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
+  const result = await getProject('missing-payload')
+  expect(result.success).toBe(false)
+  expect(result.status).toBe(204)
+  expect(result.error).toBeTruthy()
+  expect(result.data).toBeUndefined()
+})
+
+it('preserves the original failure without casting an error envelope to project data', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: '作品不存在' }, { status: 404 })))
+  expect(await getProject('not-found')).toMatchObject({ success: false, status: 404, error: '作品不存在' })
 })
 
 it('unwraps the real current-user and profile envelopes without discarding the login token', async () => {

@@ -1,0 +1,12 @@
+# Explicit disk-backed release overlay. Keep the original .env and MongoDB volume.
+# Build/tag the API image first; never point this variable at an unverified image.
+services:
+  api:
+    image: ${FWX_API_IMAGE:?Set FWX_API_IMAGE to the verified release image}
+    environment:
+      STORAGE_DRIVER: disk
+      PUBLIC_BASE_URL: ${FWX_PUBLIC_BASE_URL:-https://flightwoodx.com}
+  nginx:
+    volumes:
+      # Certbot's existing renewal configuration still writes to this webroot.
+      - ${FWX_CERTBOT_WEBROOT:?Set the existing Certbot webroot}:/var/www/certbot

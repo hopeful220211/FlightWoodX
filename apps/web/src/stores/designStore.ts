@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Design, PartInstance } from '../types/design'
 import type { BuildStep } from '@fwx/parts-schema'
-import { canAdvanceStep, getNextStep, getPrevStep, STEP_CATEGORIES, BUILD_STEPS } from '@fwx/parts-schema'
+import { canAdvanceStep, getNextStep, getPrevStep, STEP_CATEGORIES, BUILD_STEPS, DroneDesignSnapshotSchema } from '@fwx/parts-schema'
 import { STORAGE_KEYS } from '../constants/storageKeys'
 import { partsData } from '../data/parts'
 import { checkBeforeAdd } from '../utils/realtimeChecks'
@@ -87,7 +87,7 @@ interface DesignState {
   /** 从后端拉回的设计合并进本地（按 id upsert，本地较新则不覆盖）——跨设备还原 */
   importServerDesigns: (incoming: Design[]) => void
   // --- Part CRUD ---
-  addPartToActiveDesign: (part: Omit<PartInstance, 'instanceId'>) => void
+  addPartToActiveDesign: (part: Omit<PartInstance, 'instanceId'>) => boolean
   removePartFromActiveDesign: (instanceId: string) => void
   updatePartInActiveDesign: (instanceId: string, updates: Partial<PartInstance>) => void
   // --- Guided build flow ---
@@ -176,17 +176,12 @@ export const useDesignStore = create<DesignState>()(
           ...part,
           instanceId: `inst-${crypto.randomUUID()}`,
         }
-        set((state) => {
-          const activeId = state.activeDesignId
-          if (!activeId) return state
-          return {
-            designs: state.designs.map((d) =>
-              d.id === activeId
-                ? { ...d, parts: [...d.parts, newInstance], updatedAt: new Date().toISOString() }
-                : d,
-            ),
-          }
-        })
+        const design = get().getActiveDesign()
+        if (!design) return false
+        const parsed = DroneDesignSnapshotSchema.safeParse({ ...design, parts: [...design.parts, newInstance], updatedAt: new Date().toISOString() })
+        if (!parsed.success) return false
+        set(state => ({ designs: state.designs.map(d => d.id === design.id ? parsed.data : d) }))
+        return true
       },
       removePartFromActiveDesign: (instanceId) => {
         set((state) => {
@@ -231,7 +226,7 @@ export const useDesignStore = create<DesignState>()(
         const hubEntry = hubPart ? partsData.find(pd => pd.id === hubPart.partId) : undefined
         const hubLayer = hubEntry?.layer ?? 'single'
 
-        const next = getNextStep(design.currentStep, hubLayer)
+        const next = getNextStep(design.currentStep)
         if (!next) return false
 
         const buildState = {
@@ -362,13 +357,12 @@ export const useDesignStore = create<DesignState>()(
 
           if (!existingHub) {
             // 第一个机身独立放置，第二个机身继续走合法连接点匹配。
-            state.addPartToActiveDesign({
+            return state.addPartToActiveDesign({
               partId,
               category: partData.category,
               position: [0, 0, 0],
               rotation: [0, 0, 0],
             })
-            return true
           }
         }
 
@@ -530,7 +524,7 @@ export const useDesignStore = create<DesignState>()(
           plugLocalQuaternion: childConnectorLocalQuaternion,
         })
 
-        state.addPartToActiveDesign({
+        return state.addPartToActiveDesign({
           partId,
           category: partData.category,
           position: [newPosition.x, newPosition.y, newPosition.z],
@@ -541,7 +535,6 @@ export const useDesignStore = create<DesignState>()(
             parentConnectorId: targetSocketId,
           },
         })
-        return true
       },
     }),
     {

@@ -58,7 +58,7 @@ export function AdminLayout() {
       {/* 内容区 */}
       <main className="min-w-0 flex-1">
         {/* 移动端顶部导航 */}
-        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-sky-100 bg-white px-4 py-2.5 md:hidden">
+        <nav aria-label="后台移动导航" className="flex items-center gap-1.5 overflow-x-auto border-b border-sky-100 bg-white px-4 py-2.5 md:hidden">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -73,7 +73,8 @@ export function AdminLayout() {
               {item.label}
             </NavLink>
           ))}
-        </div>
+          <button type="button" onClick={exit} className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-pill px-4 py-1.5 text-sm text-sky-700"><LogOut size={14} />退出后台</button>
+        </nav>
         <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
           <Outlet />
         </div>
