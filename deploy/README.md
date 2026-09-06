@@ -101,6 +101,10 @@ docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.ym
 
 路由提交 `cc23746` 远端 CI 通过后，已执行上述真实 nginx 回环验证：两个工作台地址均 200、HTML 摘要一致、PNG/GLB 文件头正确、缺失资源 404、API 200。2026-09-07 04:13:24 只更新正式 nginx，公开网址再次验证通过；API/Mongo 未重建。
 
+最终前端为 `7c3fb21`：2026-09-07 04:21:19 已切换 `WEB_DIST_DIR=/root/flightwoodx-web-7c3fb21`，入口 `index-D9E4hbkC.js`，API 镜像仍为 `flightwoodx-api:f5b12b3`。候选独立构建 1 分 13 秒，权限 919 条目通过；切换前后首页 SHA-256 为 `0668366f192bcfeba2a82ff5760b4b6aec996c4018578cb62910c38814b053c8`，入口 JS 为 `89aed05c36572df9dd63c316c8f16b2217c13d421a327a9d8aa1309315a9efec`，与本机验证构建一致。两个工作台路径均 200/no-cache；244 个资源、5 类缺失资源、API 健康及私有数据回读通过。上一前端目录和原 dist 均保留，API/Mongo 未重建。
+
+验收使用强制刷新，或首次从带 `?release=7c3fb21` 的官网首页进入。实际曾遇到普通浏览器复用七月旧入口，它仍请求失效 OSS 并清空本地存储；当前 HTML 返回 no-cache，当前错误边界不会主动清空用户存储。不执行全站清缓存、重置账号或凭据来替代版本核对。
+
 实际切换：2026-09-07 02:33:58，提交 `f5b12b3`、镜像 `flightwoodx-api:f5b12b3`。原镜像另保留为 `flightwoodx-api:rollback-20260907`。03:17 左右服务器更新到 `a71e822`，日志与 0600 文件权限确认 403 根因后，仅整理生成 dist 的 919 个条目；244 个正式资源及 5 个缺失资源 404 检查通过。回滚必须继续保留新上传卷和 `/uploads` 反代，先验证旧镜像的 disk 支持；不能直接套回旧 OSS/无上传挂载的配置。旧版本不认识自制来源引用，禁止用整库旧备份覆盖新记录；必要时先暂停写入，避免旧客户端改写新格式作品。
 
 ### 已确认的历史 localhost 封面修复
