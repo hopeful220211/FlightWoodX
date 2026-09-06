@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/prepare-public-assets.mjs && vite",
-    "build": "node scripts/prepare-public-assets.mjs && vite build",
+    "build": "node scripts/prepare-public-assets.mjs && vite build && node scripts/finalize-public-assets.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
     "lint": "eslint .",
     "test": "vitest run",

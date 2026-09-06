@@ -76,18 +76,22 @@
 - 上传卷 `flightwoodx_api-uploads` 已填入旧 API 的 6 个文件，146,928 字节，逐字节一致；切换前再次核对增量。
 - 复制原 `.env` 到新发布目录，权限 600，不输出值。环境覆盖只修改上传驱动和公开基址；保留 JWT、管理密钥、数据库与其他服务配置。
 - Certbot 当前使用 `/root/flightwoodx/deploy/nginx/certbot-www`。覆盖文件强制设置 `FWX_CERTBOT_WEBROOT` 并挂载到相同容器目标，不能随着代码目录迁移而换成空 webroot。`deploy/scripts/reload-nginx-certificate.sh` 可安装为 deploy hook；只在验证配置后 reload，不删除或重签现有证书。
+- 公开文件权限：私有 umask 下拉取的静态文件可能以 0600/0700 被 Vite 复制，nginx 普通工作进程无法读取。构建末尾 `finalize-public-assets.mjs` 只整理生成的 dist：目录 0755、普通文件 0644，拒绝符号链接/硬链接；绝不能对源码根、`.env`、证书或备份执行宽泛 chmod。上线后必须用 HTTPS 实际验证模型，成功构建不证明 nginx 可读取。
 
 从新发布目录执行（把镜像标签替换为实际通过验证的提交，以下仅说明命令）：
 
 ```bash
 export FWX_API_IMAGE=flightwoodx-api:<verified-commit>
 export FWX_CERTBOT_WEBROOT=/root/flightwoodx/deploy/nginx/certbot-www
-docker compose --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml config --quiet
-docker compose --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml run --rm --no-deps nginx nginx -t
-docker compose --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml up -d --no-deps --no-build api nginx
+export WEB_DIST_DIR=/root/flightwoodx-release-20260907/apps/web/dist
+docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml config --quiet
+docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml run --rm --no-deps nginx nginx -t
+docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.yml -f deploy/docker-compose.disk.yml up -d --no-deps --no-build api nginx
 ```
 
 保留 Compose 项目名 `flightwoodx`，不更新 Mongo 服务、不运行 `down -v`、迁移或 wipe。更新 API/nginx 会有短暂停机，不称零停机。正式业务测试后还要验证一次 API 重建不会丢失专用测试作品及新上传。
+
+实际切换：2026-09-07 02:33:58，提交 `f5b12b3`、镜像 `flightwoodx-api:f5b12b3`。原镜像另保留为 `flightwoodx-api:rollback-20260907`。nginx 配置和证书 reload 成功，静态模型 403 尚待权限修复。回滚必须继续保留新上传卷和 `/uploads` 反代，先验证旧镜像的 disk 支持；不能直接套回旧 OSS/无上传挂载的配置。旧版本不认识自制来源引用，禁止用整库旧备份覆盖新记录；必要时先暂停写入，避免旧客户端改写新格式作品。
 
 ### 已确认的历史 localhost 封面修复
 
