@@ -12,9 +12,10 @@ interface StepPartPanelProps {
   currentStep: BuildStep
   onPartClick: (part: Part) => void
   onPartDragStart: (partId: string) => void
+  pendingPartId?: string | null
 }
 
-export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: StepPartPanelProps) {
+export function StepPartPanel({ currentStep, onPartClick, onPartDragStart, pendingPartId }: StepPartPanelProps) {
   const navigate = useNavigate()
   const info = STEP_INFO[currentStep]
   const categories = STEP_CATEGORIES[currentStep]
@@ -47,7 +48,7 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
 
       {filteredParts.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 md:grid-cols-2 gap-2">
             {/* 自己画一个 —— 现成零件不合意时，就地跳去绘制工坊（RFC-021） */}
             <button
               type="button"
@@ -60,10 +61,14 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
               <p className="mt-1.5 truncate text-center text-xs font-medium text-sky-600">自己画一个</p>
             </button>
             {filteredParts.map(part => (
-              <div
+              <button
+                type="button"
                 key={part.id}
                 onClick={() => onPartClick(part)}
-                className="group rounded-xl bg-white ring-1 ring-gray-100 p-2 cursor-pointer transition-all duration-200 hover:ring-sky-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                disabled={!!pendingPartId}
+                aria-label={`添加${part.name}`}
+                aria-busy={pendingPartId === part.id}
+                className="group rounded-xl bg-white ring-1 ring-gray-100 p-2 cursor-pointer transition-all duration-200 hover:ring-sky-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
               >
                 {part.thumbnailUrl ? (
                   <img
@@ -95,8 +100,8 @@ export function StepPartPanel({ currentStep, onPartClick, onPartDragStart }: Ste
                     3D
                   </div>
                 )}
-                <p className="text-xs text-gray-600 mt-1.5 truncate text-center group-hover:text-sky-700">{part.name}</p>
-              </div>
+                <p className="text-xs text-gray-600 mt-1.5 truncate text-center group-hover:text-sky-700">{pendingPartId === part.id ? '正在添加…' : part.name}</p>
+              </button>
             ))}
           </div>
         </div>

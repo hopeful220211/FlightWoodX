@@ -7,25 +7,25 @@ const awards = [
     name: 'Red Dot',
     subtitle: 'Best of the Best',
     year: '2024',
-    img: '/resource/picture/awards/red-dot-logo.31372310.png',
+    img: '/optimized/picture/awards/red-dot-logo.31372310.webp',
   },
   {
     name: 'iF Design',
     subtitle: 'Award',
     year: '2026',
-    img: '/resource/picture/awards/if.png',
+    img: '/optimized/picture/awards/if.webp',
   },
   {
     name: 'IDEA',
     subtitle: 'Award',
     year: '2025',
-    img: '/resource/picture/awards/IDEA.png',
+    img: '/optimized/picture/awards/IDEA.webp',
   },
   {
     name: 'G-Mark',
     subtitle: 'Award',
     year: '2025',
-    img: '/resource/picture/awards/gmark.png',
+    img: '/optimized/picture/awards/gmark.webp',
   },
 ]
 

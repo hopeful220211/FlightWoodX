@@ -1,0 +1,7 @@
+Blockly 12.5.1
+Project: https://github.com/RaspberryPiFoundation/blockly
+License source: https://github.com/RaspberryPiFoundation/blockly/blob/blockly-v12.5.1/LICENSE
+
+The /blockly-media/ files are copied without modification from the installed
+Blockly npm package so the editor does not depend on a remote media host.
+The Apache 2.0 license is included in blockly-LICENSE.txt and /blockly-media/LICENSE.

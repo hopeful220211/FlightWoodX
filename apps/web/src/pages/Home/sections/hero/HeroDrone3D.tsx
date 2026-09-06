@@ -6,21 +6,21 @@
 
 const drones = [
   {
-    src: '/resource/picture/UI/web_3.png',
+    src: '/optimized/picture/UI/web_3.webp',
     alt: '远处无人机',
     // Back: smallest, top-right, most blur
     className: 'absolute top-0 right-0 w-[35%] lg:right-[-10%] lg:w-[50%] opacity-50 blur-[1px]',
     style: { animation: 'droneFloat3 7s ease-in-out infinite' },
   },
   {
-    src: '/resource/picture/UI/web_2.png',
+    src: '/optimized/picture/UI/web_2.webp',
     alt: '中间无人机',
     // Middle: medium size, center-right
     className: 'absolute top-[10%] right-[-5%] w-[55%] lg:right-[-20%] lg:w-[75%] opacity-75',
     style: { animation: 'droneFloat2 6s ease-in-out infinite' },
   },
   {
-    src: '/resource/picture/UI/web_1.png',
+    src: '/optimized/picture/UI/web_1.webp',
     alt: '主无人机',
     // Front: largest, bottom-center-right, sharpest
     className: 'absolute bottom-[-10%] right-[-10%] w-[100%] lg:bottom-[-20%] lg:right-[-25%] lg:w-[160%] drone-front',
@@ -39,6 +39,8 @@ export function HeroDrone3D() {
           className={drone.className}
           style={drone.style}
           loading={i === 2 ? 'eager' : 'lazy'}
+          fetchPriority={i === 2 ? 'high' : 'low'}
+          decoding="async"
           draggable={false}
         />
       ))}

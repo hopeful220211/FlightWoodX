@@ -2,7 +2,7 @@
 // 积木程序按本地 designId 隔离持久化；同一浏览器可同时保留多架无人机的草稿。
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CommandProgram } from '@fwx/shared'
+import { CommandProgramSchema, type CommandProgram } from '@fwx/shared'
 import { STORAGE_KEYS } from '../constants/storageKeys'
 
 export interface ProgramDraft {
@@ -11,18 +11,21 @@ export interface ProgramDraft {
   updatedAt: string | null
   /** 与该作品绑定的后端 Program id。 */
   serverId: string | null
+  /** 最近一次已确认云端绑定的 XML；用于区分本地修改和缓存。 */
+  syncedXml?: string | null
 }
 
 interface PersistedProgramState {
   draftsByDesignId: Record<string, ProgramDraft>
-  /** 旧版只有一份、无法判断所属作品的草稿；首次进入具体作品时一次性认领。 */
+  /** 旧版无法判断所属作品的草稿；仅保留，不自动绑定到任何作品。 */
   legacyDraft: ProgramDraft | null
 }
 
 interface ProgramState extends PersistedProgramState {
   getDraft: (designId: string) => ProgramDraft | null
   claimLegacyDraft: (designId: string) => ProgramDraft | null
-  setProgram: (designId: string, blocklyXml: string, commandProgram: CommandProgram) => void
+  setProgram: (designId: string, blocklyXml: string, commandProgram: CommandProgram | null) => void
+  markSynced: (designId: string, blocklyXml: string) => void
   setServerId: (designId: string, serverId: string | null) => void
   clearProgram: (designId: string) => void
   clearAllPrograms: () => void
@@ -40,13 +43,13 @@ function asLegacyDraft(value: unknown): ProgramDraft | null {
   if (!hasData) return null
   return {
     blocklyXml: typeof legacy.blocklyXml === 'string' ? legacy.blocklyXml : '',
-    commandProgram: legacy.commandProgram ?? null,
+    commandProgram: CommandProgramSchema.safeParse(legacy.commandProgram).success ? legacy.commandProgram! : null,
     updatedAt: typeof legacy.updatedAt === 'string' ? legacy.updatedAt : null,
     serverId: typeof legacy.serverId === 'string' ? legacy.serverId : null,
   }
 }
 
-/** Zustand persist migration：旧顶层单程序先保留，待具体 designId 打开时再归属。 */
+/** Zustand persist migration：保留未绑定旧程序，禁止打开作品时自动推断归属。 */
 export function migrateProgramStoreState(
   persistedState: unknown,
   version: number,
@@ -54,8 +57,13 @@ export function migrateProgramStoreState(
   if (version >= PROGRAM_STORE_VERSION && persistedState && typeof persistedState === 'object') {
     const current = persistedState as Partial<PersistedProgramState>
     return {
-      draftsByDesignId: current.draftsByDesignId ?? {},
-      legacyDraft: current.legacyDraft ?? null,
+      draftsByDesignId: Object.fromEntries(
+        Object.entries(current.draftsByDesignId ?? {}).flatMap(([id, value]) => {
+          const draft = asLegacyDraft(value)
+          return draft ? [[id, { ...draft, syncedXml: typeof value?.syncedXml === 'string' ? value.syncedXml : null }]] : []
+        }),
+      ),
+      legacyDraft: asLegacyDraft(current.legacyDraft),
     }
   }
 
@@ -92,9 +100,16 @@ export const useProgramStore = create<ProgramState>()(
               commandProgram,
               updatedAt: new Date().toISOString(),
               serverId: state.draftsByDesignId[designId]?.serverId ?? null,
+              syncedXml: state.draftsByDesignId[designId]?.syncedXml ?? null,
             },
           },
         })),
+      markSynced: (designId, blocklyXml) => set((state) => {
+        const current = state.draftsByDesignId[designId]
+        return current ? { draftsByDesignId: {
+          ...state.draftsByDesignId, [designId]: { ...current, syncedXml: blocklyXml },
+        } } : {}
+      }),
       setServerId: (designId, serverId) =>
         set((state) => {
           const current = state.draftsByDesignId[designId]
@@ -106,6 +121,7 @@ export const useProgramStore = create<ProgramState>()(
                 commandProgram: current?.commandProgram ?? null,
                 updatedAt: current?.updatedAt ?? null,
                 serverId,
+                syncedXml: current?.syncedXml ?? null,
               },
             },
           }
@@ -122,6 +138,7 @@ export const useProgramStore = create<ProgramState>()(
       name: STORAGE_KEYS.PROGRAM_STORE,
       version: PROGRAM_STORE_VERSION,
       migrate: migrateProgramStoreState,
+      merge: (persisted, current) => ({ ...current, ...migrateProgramStoreState(persisted, PROGRAM_STORE_VERSION) }),
       partialize: (state) => ({
         draftsByDesignId: state.draftsByDesignId,
         legacyDraft: state.legacyDraft,

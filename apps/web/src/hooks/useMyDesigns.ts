@@ -29,10 +29,11 @@ export const MY_DESIGNS_KEY = ['myDesigns'] as const
 export function useMyDesigns() {
   const token = useAuthStore((s) => s.token)
   const isGuest = useAuthStore((s) => s.user?.isGuest)
+  const userId = useAuthStore((s) => s.user?.id)
   const loggedIn = !!token && !isGuest
 
   const query = useQuery({
-    queryKey: MY_DESIGNS_KEY,
+    queryKey: [...MY_DESIGNS_KEY, userId],
     queryFn: async (): Promise<DroneDesignData[]> => {
       const res = await getDroneDesigns()
       if (!res.success) throw new Error(res.error || '加载作品失败')
@@ -45,7 +46,7 @@ export function useMyDesigns() {
 
   // 合并服务器快照进本地（离线缓存）。放在 effect 里而非 queryFn，避免在渲染/请求期做副作用。
   useEffect(() => {
-    if (!records || records.length === 0) return
+    if (!loggedIn || !records || records.length === 0 || useAuthStore.getState().token !== token) return
     const designs = records.flatMap((record) => {
       const parsed = DroneDesignSnapshotSchema.safeParse(record.designData)
       return parsed.success ? [parsed.data] : []
@@ -53,7 +54,7 @@ export function useMyDesigns() {
     if (designs.length > 0) {
       useDesignStore.getState().importServerDesigns(designs)
     }
-  }, [records])
+  }, [records, loggedIn, token])
 
   // localId → 服务器记录（发布 / 封面靠它把本地作品对上服务器 id）
   const byLocalId = new Map<string, DroneDesignData>()

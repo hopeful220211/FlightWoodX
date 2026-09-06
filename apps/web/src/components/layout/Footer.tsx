@@ -6,9 +6,9 @@ const productLinks = [
 ]
 
 const companyLinks = [
-  { label: '关于我们', to: '#' },
-  { label: '联系我们', to: '#' },
-  { label: '加入我们', to: '#' },
+  { label: '关于我们' },
+  { label: '联系我们' },
+  { label: '加入我们' },
 ]
 
 export function Footer() {
@@ -45,9 +45,9 @@ export function Footer() {
             <ul className="space-y-2">
               {companyLinks.map(link => (
                 <li key={link.label}>
-                  <a href={link.to} className="text-sm text-sky-400/70 hover:text-white transition-colors">
+                  <span aria-disabled="true" title="页面暂未开放" className="text-sm text-sky-400/70">
                     {link.label}
-                  </a>
+                  </span>
                 </li>
               ))}
             </ul>

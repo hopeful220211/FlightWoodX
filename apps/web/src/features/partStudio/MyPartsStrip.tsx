@@ -65,7 +65,7 @@ function PartChip({ part, onDelete }: { part: UserPartDTO; onDelete: (id: string
       <button
         type="button"
         onClick={() => onDelete(part.id)}
-        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-slate-400 opacity-0 shadow transition hover:text-[#D34141] group-hover:opacity-100"
+        className="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-500 shadow transition hover:text-[#D34141]"
         aria-label={`删除 ${part.name}`}
       >
         <Trash2 size={12} />

@@ -10,7 +10,7 @@
 
 ## 当前计划
 
-本目录尚未登记进行中的计划。这只表示没有放入本索引的活动文件，不表示仓库没有待办或发布阻塞；当前优先级见 [`CURRENT_STATUS.md`](../../CURRENT_STATUS.md)。
+- [`active/2026-09-07-review-readiness.md`](./active/2026-09-07-review-readiness.md)：评审前现有官网功能、界面与线上验证修复。
 
 进行中的计划放在 `docs/exec-plans/active/`，结束后按实际结果移入 `completed/`。目录位置不能替代文档状态和验证证据。
 

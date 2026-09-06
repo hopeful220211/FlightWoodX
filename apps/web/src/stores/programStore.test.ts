@@ -55,6 +55,15 @@ describe('programStore design isolation', () => {
     })
   })
 
+  it('preserves an empty or unfinished edit and invalidates its previous executable program', () => {
+    useProgramStore.getState().setProgram('design-a', '<xml>A</xml>', makeProgram('A', 1))
+    useProgramStore.getState().setServerId('design-a', 'program-a')
+    useProgramStore.getState().setProgram('design-a', '<xml />', null)
+    expect(useProgramStore.getState().getDraft('design-a')).toMatchObject({
+      blocklyXml: '<xml />', commandProgram: null, serverId: 'program-a',
+    })
+  })
+
   it('preserves the old single-program state until one design claims it', () => {
     const legacyProgram = makeProgram('legacy', 8)
     const migrated = migrateProgramStoreState(

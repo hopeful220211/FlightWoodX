@@ -5,6 +5,7 @@ const User = require('../models/User')
 const { putObject, bestEffortDeleteObject } = require('../lib/storage')
 const { withStringId } = require('../lib/documentResponse')
 const { validateProjectReferences } = require('../lib/projectReferences')
+const { publicProjectStages } = require('../lib/communityVisibility')
 
 const router = express.Router()
 
@@ -29,13 +30,14 @@ router.get('/public', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1)
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 20))
 
-    const filter = { visibility: 'public' }
-    const total = await Project.countDocuments(filter)
-    const docs = await Project.find(filter)
-      .sort({ createdAt: 1, _id: 1 })
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .lean()
+    const [counts, docs] = await Promise.all([
+      Project.aggregate([...publicProjectStages(), { $count: 'total' }]),
+      Project.aggregate([
+        ...publicProjectStages(), { $sort: { createdAt: 1, _id: 1 } },
+        { $skip: (page - 1) * pageSize }, { $limit: pageSize },
+      ]),
+    ])
+    const total = counts[0]?.total || 0
 
     // 批量解析作者展示名：一次查出涉及的 User，避免 N+1。
     const ownerIds = [...new Set(docs.map((d) => String(d.ownerId)))]
@@ -52,7 +54,7 @@ router.get('/public', async (req, res) => {
       id: String(d._id),
       name: d.name,
       coverUrl: d.coverUrl,
-      visibility: d.visibility,
+      visibility: 'public',
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
       authorDisplayName: nameById.get(String(d.ownerId)) || 'FlightWoodX 用户',

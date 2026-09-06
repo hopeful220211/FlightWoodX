@@ -6,6 +6,8 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 import RoleRoute from './components/layout/RoleRoute'
 
 import { useAuthStore } from './stores/authStore'
+import { LoginModal } from './pages/Auth/components/LoginModal'
+import { useQueryClient } from '@tanstack/react-query'
 
 /* ── Route-level code splitting ── */
 const HomePage = lazy(() => import('./pages/Home/HomePage').then((m) => ({ default: m.HomePage })))
@@ -33,21 +35,29 @@ const ExportPreviewPage = lazy(() => import('./pages/ExportPreview/ExportPreview
 const ARFlightPage = lazy(() => import('./pages/ARFlight/ARFlightPage').then((m) => ({ default: m.ARFlightPage })))
 const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout').then((m) => ({ default: m.AdminLayout })))
 const AdminOverviewPage = lazy(() => import('./pages/Admin/pages/OverviewPage').then((m) => ({ default: m.AdminOverviewPage })))
-const AdminUsersPage = lazy(() => import('./pages/Admin/pages/ModulePlaceholder').then((m) => ({ default: m.AdminUsersPage })))
+const AdminUsersPage = lazy(() => import('./pages/Admin/pages/UsersPage').then((m) => ({ default: m.AdminUsersPage })))
 const AdminCoursesPage = lazy(() => import('./pages/Admin/pages/ModulePlaceholder').then((m) => ({ default: m.AdminCoursesPage })))
 const AdminPartsPage = lazy(() => import('./pages/Admin/pages/ModulePlaceholder').then((m) => ({ default: m.AdminPartsPage })))
 const AdminAuditPage = lazy(() => import('./pages/Admin/pages/ModulePlaceholder').then((m) => ({ default: m.AdminAuditPage })))
 
 function RouteLoadingFallback() {
-  return <div className="min-h-screen bg-slate-50" aria-hidden="true" />
+  return <div role="status" className="flex min-h-dvh items-center justify-center gap-3 bg-slate-50 text-sm text-sky-800"><span className="h-5 w-5 animate-spin rounded-full border-2 border-sky-200 border-t-sky-600" aria-hidden="true" />正在加载工作区…</div>
 }
 
 export default function App() {
+  const queryClient = useQueryClient()
   const restoreSession = useAuthStore((s) => s.restoreSession)
 
   useEffect(() => { restoreSession() }, [restoreSession])
+  useEffect(() => useAuthStore.subscribe((state, previous) => {
+    if (state.user?.id !== previous.user?.id) {
+      void queryClient.cancelQueries()
+      queryClient.clear()
+    }
+  }), [queryClient])
 
   return (
+    <>
     <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
       {/* ── Auth ── 登录走弹窗（回首页触发），注册保留全屏页 ── */}
@@ -106,5 +116,7 @@ export default function App() {
       </Route>
       </Routes>
     </Suspense>
+    <LoginModal />
+    </>
   )
 }

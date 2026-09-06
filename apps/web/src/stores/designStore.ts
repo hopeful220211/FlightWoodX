@@ -6,6 +6,7 @@ import type { BuildStep } from '@fwx/parts-schema'
 import { canAdvanceStep, getNextStep, getPrevStep, STEP_CATEGORIES, BUILD_STEPS } from '@fwx/parts-schema'
 import { STORAGE_KEYS } from '../constants/storageKeys'
 import { partsData } from '../data/parts'
+import { checkBeforeAdd } from '../utils/realtimeChecks'
 
 // RFC-022 兼容：搭建步骤由 6 步删成 5 步（移除 MOTOR）。删步之前存下的设计——无论来自
 // localStorage 还是后端快照——可能带着 currentStep='MOTOR' 或越界的 stepReached；原样读回会让
@@ -14,9 +15,17 @@ import { partsData } from '../data/parts'
 // 把 stepReached 夹回有效区间。这样旧存档永远不会带着失效的步骤进入渲染层。
 const LAST_STEP = BUILD_STEPS[BUILD_STEPS.length - 1]
 const MAX_STEP_REACHED = BUILD_STEPS.length - 1
+const migratedDesigns = new WeakMap<Design, Design>()
 
 function migrateDesign(d: Design): Design {
   if (!d) return d
+  const cached = migratedDesigns.get(d)
+  if (cached) return cached
+  if (!d.buildMode) {
+    const migrated = { ...d, schemaVersion: 1 as const, buildMode: 'free' as const, currentStep: 'HUB' as const, stepReached: MAX_STEP_REACHED }
+    migratedDesigns.set(d, migrated)
+    return migrated
+  }
   const stepValid = (BUILD_STEPS as readonly string[]).includes(d.currentStep as string)
   const currentStep = stepValid ? d.currentStep : LAST_STEP
   const currentIdx = BUILD_STEPS.indexOf(currentStep)
@@ -26,7 +35,42 @@ function migrateDesign(d: Design): Design {
   // 这样即使是被归一过的步骤，进度条也会一路点亮到当前步，不会出现「显示第5步但进度条锁着」。
   const stepReached = Math.min(Math.max(rawReached, currentIdx, 0), MAX_STEP_REACHED)
   if (d.schemaVersion === 1 && currentStep === d.currentStep && stepReached === d.stepReached) return d
-  return { ...d, schemaVersion: 1, currentStep, stepReached }
+  const migrated = { ...d, schemaVersion: 1 as const, currentStep, stepReached }
+  migratedDesigns.set(d, migrated)
+  return migrated
+}
+
+function dependentPartIds(parts: PartInstance[], removed: Set<string>): Set<string> {
+  const ids = new Set(removed)
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const part of parts) {
+      if (part.attachedTo && ids.has(part.attachedTo.parentInstanceId) && !ids.has(part.instanceId)) {
+        ids.add(part.instanceId)
+        changed = true
+      }
+    }
+  }
+  return ids
+}
+
+function afterPartsRemoved(design: Design, removed: Set<string>): Design {
+  const parts = design.parts.filter(p => !removed.has(p.instanceId))
+  if (design.buildMode !== 'guided') return { ...design, parts, updatedAt: new Date().toISOString() }
+  const firstIncomplete = BUILD_STEPS.findIndex(currentStep => !canAdvanceStep({
+    currentStep,
+    parts: parts.map(p => ({ partNumber: p.partId, category: p.category, position: p.position, rotation: p.rotation })),
+  }).canAdvance)
+  const stepReached = Math.min(design.stepReached, firstIncomplete < 0 ? MAX_STEP_REACHED : firstIncomplete)
+  const currentStep = BUILD_STEPS[Math.min(BUILD_STEPS.indexOf(design.currentStep), stepReached)]
+  return { ...design, parts, currentStep, stepReached, updatedAt: new Date().toISOString() }
+}
+
+export interface SnapTarget {
+  instanceId: string
+  socketId: string
+  plugId: string
 }
 
 interface DesignState {
@@ -64,7 +108,7 @@ interface DesignState {
   setHighlightedSocket: (socket: { instanceId: string; socketId: string; plugId: string } | null) => void
   setDraggingPartId: (partId: string | null) => void
   /** 成功写入当前设计时返回 true；约束、资源或连接点不满足时返回 false。 */
-  addPartSmart: (partId: string) => Promise<boolean>
+  addPartSmart: (partId: string, target?: SnapTarget) => Promise<boolean>
 }
 
 export const useDesignStore = create<DesignState>()(
@@ -79,7 +123,7 @@ export const useDesignStore = create<DesignState>()(
       draggingPartId: null,
       getDesignById: (id) => get().designs.find((d) => d.id === id),
       createDesign: (name, mode = 'guided') => {
-        const newId = `design-${Date.now()}`
+        const newId = `design-${crypto.randomUUID()}`
         const newDesign: Design = {
           schemaVersion: 1,
           id: newId,
@@ -123,16 +167,6 @@ export const useDesignStore = create<DesignState>()(
         if (!activeId) return undefined
         const design = get().designs.find((d) => d.id === activeId)
         if (!design) return undefined
-        // Backwards compat: old designs without buildMode default to free
-        if (!design.buildMode) {
-          return {
-            ...design,
-            schemaVersion: 1,
-            buildMode: 'free' as const,
-            currentStep: 'HUB' as const,
-            stepReached: MAX_STEP_REACHED,
-          }
-        }
         // RFC-022 兼容：渲染前再兜一次底，确保 currentStep/stepReached 始终有效（防旧存档崩溃）
         return migrateDesign(design)
       },
@@ -140,7 +174,7 @@ export const useDesignStore = create<DesignState>()(
       addPartToActiveDesign: (part) => {
         const newInstance: PartInstance = {
           ...part,
-          instanceId: `inst-${Date.now()}`,
+          instanceId: `inst-${crypto.randomUUID()}`,
         }
         set((state) => {
           const activeId = state.activeDesignId
@@ -158,14 +192,14 @@ export const useDesignStore = create<DesignState>()(
         set((state) => {
           const activeId = state.activeDesignId
           if (!activeId) return state
+          const design = state.designs.find(d => d.id === activeId)
+          if (!design) return state
+          const removed = dependentPartIds(design.parts, new Set([instanceId]))
           return {
+            selectedInstanceId: state.selectedInstanceId && removed.has(state.selectedInstanceId) ? null : state.selectedInstanceId,
             designs: state.designs.map((d) =>
               d.id === activeId
-                ? {
-                    ...d,
-                    parts: d.parts.filter((p) => p.instanceId !== instanceId),
-                    updatedAt: new Date().toISOString(),
-                  }
+                ? afterPartsRemoved(d, removed)
                 : d,
             ),
           }
@@ -211,7 +245,7 @@ export const useDesignStore = create<DesignState>()(
         set(state => ({
           designs: state.designs.map(d =>
             d.id === design.id
-              ? { ...d, currentStep: next, stepReached: Math.max(d.stepReached, design.stepReached + 1), updatedAt: new Date().toISOString() }
+              ? { ...d, currentStep: next, stepReached: Math.max(d.stepReached, BUILD_STEPS.indexOf(next)), updatedAt: new Date().toISOString() }
               : d
           ),
         }))
@@ -291,15 +325,13 @@ export const useDesignStore = create<DesignState>()(
         if (!design || design.buildMode !== 'guided') return
 
         const allowedCategories = STEP_CATEGORIES[design.currentStep] || []
+        const removed = dependentPartIds(design.parts, new Set(design.parts.filter(p => allowedCategories.includes(p.category)).map(p => p.instanceId)))
 
         set(state => ({
+          selectedInstanceId: state.selectedInstanceId && removed.has(state.selectedInstanceId) ? null : state.selectedInstanceId,
           designs: state.designs.map(d =>
             d.id === design.id
-              ? {
-                  ...d,
-                  parts: d.parts.filter(p => !allowedCategories.includes(p.category)),
-                  updatedAt: new Date().toISOString(),
-                }
+              ? afterPartsRemoved(d, removed)
               : d
           ),
         }))
@@ -309,7 +341,7 @@ export const useDesignStore = create<DesignState>()(
       setGhostPart: (ghost) => set({ ghostPart: ghost }),
       setHighlightedSocket: (socket) => set({ highlightedSocket: socket }),
       setDraggingPartId: (partId) => set({ draggingPartId: partId }),
-      addPartSmart: async (partId) => {
+      addPartSmart: async (partId, target) => {
         const state = get()
         let activeDesign = state.getActiveDesign()
         if (!activeDesign) return false
@@ -318,6 +350,7 @@ export const useDesignStore = create<DesignState>()(
         if (!partData) {
           return false
         }
+        if (checkBeforeAdd(partData.category, partId, activeDesign.parts)) return false
 
         // 规则 1：第一个机身可以独立放置，第二个机身必须连接到现有零件
         if (partData.category === 'mainboard') {
@@ -327,19 +360,16 @@ export const useDesignStore = create<DesignState>()(
             return p?.category === 'mainboard'
           })
 
-          if (existingHub) {
-            // 第二个机身必须连接到现有零件上，不能独立放置（前置规则已拦截，此处静默兜底）
-            return false
+          if (!existingHub) {
+            // 第一个机身独立放置，第二个机身继续走合法连接点匹配。
+            state.addPartToActiveDesign({
+              partId,
+              category: partData.category,
+              position: [0, 0, 0],
+              rotation: [0, 0, 0],
+            })
+            return true
           }
-
-          // 第一个机身：独立放置在场景中心
-          state.addPartToActiveDesign({
-            partId,
-            category: partData.category,
-            position: [0, 0, 0],
-            rotation: [0, 0, 0],
-          })
-          return true
         }
 
         // 规则 2：非 hub 必须先有机身
@@ -381,13 +411,17 @@ export const useDesignStore = create<DesignState>()(
         const latestDesign = get().getActiveDesign()
         if (!latestDesign || latestDesign.id !== designId) return false
         activeDesign = latestDesign
+        if (checkBeforeAdd(partData.category, partId, activeDesign.parts)) return false
+        if (!activeDesign.parts.some(p => p.category === 'mainboard')) return false
 
         // 寻找第一个空闲且合法的连接点（遍历所有零件）
         // 首先确定新零件的连接器（优先 plug，如果没有则用 socket）
         const childConns = getCachedPartConnectors(partData.modelUrl)
         const childPlugConnector = childConns.find((c) => c.type === 'plug')
         const childSocketConnector = childConns.find((c) => c.type === 'socket')
-        const childConnector = childPlugConnector || childSocketConnector
+        const childConnector = target
+          ? childConns.find(c => c.id === target.plugId)
+          : childPlugConnector || childSocketConnector
 
         if (!childConnector) {
           return false
@@ -400,7 +434,13 @@ export const useDesignStore = create<DesignState>()(
         let targetParent: PartInstance | null = null
         let targetSocketId: string | null = null
 
-        for (const inst of activeDesign.parts) {
+        const parentCandidates = [...activeDesign.parts]
+        if (!target && partData.category === 'guard') {
+          const guardCount = (parent: PartInstance) => activeDesign.parts.filter(p => p.category === 'guard' && p.attachedTo?.parentInstanceId === parent.instanceId).length
+          parentCandidates.sort((a, b) => guardCount(a) - guardCount(b))
+        }
+        for (const inst of parentCandidates) {
+          if (target && inst.instanceId !== target.instanceId) continue
           const instPartData = partsData.find((p) => p.id === inst.partId)
           if (!instPartData) continue
 
@@ -422,7 +462,23 @@ export const useDesignStore = create<DesignState>()(
             }
           })
 
+          // 自动放置起落架时优先远离已有安装点，避免按文件顺序连续占用同一侧。
+          // 只安排视觉布局；不作为结构强度或真实飞行安全判断。
+          if (!target && partData.category === 'landing') {
+            const used = activeDesign.parts
+              .filter(p => p.category === 'landing' && p.attachedTo?.parentInstanceId === inst.instanceId)
+              .flatMap(p => connectors.filter(c => c.id === p.attachedTo?.parentConnectorId))
+            if (used.length > 0) {
+              const spacing = (candidate: typeof connectors[number]) => Math.min(...used.map(c => c.position.distanceToSquared(candidate.position)))
+              availableConnectors.sort((a, b) => {
+                const difference = spacing(b) - spacing(a)
+                return Math.abs(difference) < 1e-10 ? 0 : difference
+              })
+            }
+          }
+
           for (const connector of availableConnectors) {
+            if (target && connector.id !== target.socketId) continue
             const key = `${inst.instanceId}::${connector.id}`
             if (!occupiedSockets.has(key)) {
               targetParent = inst
@@ -452,7 +508,7 @@ export const useDesignStore = create<DesignState>()(
         // 计算父连接器的世界坐标变换
         const parentPos = new THREE.Vector3(...targetParent.position)
         const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...targetParent.rotation))
-        const parentConnectorWorldPosition = parentConnector.position.clone().applyQuaternion(parentQuat).add(parentPos)
+        const parentConnectorWorldPosition = parentConnector.position.clone().multiply(new THREE.Vector3(...(targetParent.scale ?? [1, 1, 1]))).applyQuaternion(parentQuat).add(parentPos)
         let parentConnectorWorldQuaternion = parentQuat.clone().multiply(parentConnector.quaternion.clone())
 
         // Plug-to-plug fix: flip parent plug 180° around X to act as socket
@@ -490,12 +546,22 @@ export const useDesignStore = create<DesignState>()(
     }),
     {
       name: STORAGE_KEYS.DESIGN_STORE,
+      partialize: state => ({ designs: state.designs, activeDesignId: state.activeDesignId, deletedIds: state.deletedIds }),
       // 从 localStorage 还原时，把每份设计过一遍 migrateDesign：删步之前存的旧设计
       // （currentStep='MOTOR' 等）在进入内存前就被归一，从源头杜绝设计页崩溃。
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<DesignState>
         const designs = Array.isArray(p.designs) ? (p.designs as Design[]).map(migrateDesign) : current.designs
-        return { ...current, ...p, designs }
+        return {
+          ...current,
+          designs,
+          activeDesignId: typeof p.activeDesignId === 'string' ? p.activeDesignId : null,
+          deletedIds: Array.isArray(p.deletedIds) ? p.deletedIds.filter((id): id is string => typeof id === 'string') : [],
+          selectedInstanceId: null,
+          ghostPart: null,
+          highlightedSocket: null,
+          draggingPartId: null,
+        }
       },
     },
   ),

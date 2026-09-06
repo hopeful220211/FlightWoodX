@@ -17,6 +17,7 @@ interface StepActionsProps {
   onReset: () => void
   onSave?: () => void
   onExportList?: () => void
+  onContinueCoding?: () => void
   /** AR 试飞入口已从界面收起（路由 /design/ar-flight 与页面保留）；恢复时重新解构并渲染按钮。 */
   onArFlight?: () => void
   /** 最后一步的结构与证据检查。 */
@@ -34,6 +35,7 @@ export function StepActions({
   onReset,
   onSave,
   onExportList,
+  onContinueCoding,
   onRunFlightTest,
   flightPassed,
   flightSummary,
@@ -71,7 +73,7 @@ export function StepActions({
 
   // ── 最后一步：结构与证据检查 ──
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 bg-white border-t border-gray-100">
+    <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 md:px-4 md:py-3 bg-white border-t border-gray-100">
       {/* 左：返回修改 */}
       <button
         onClick={onGoBack}
@@ -81,7 +83,7 @@ export function StepActions({
       </button>
 
       {/* 中：状态摘要 / 阻塞提示 / 成功语 */}
-      <div className="min-w-0 flex-1 text-center">
+      <div className="order-first w-full min-w-0 text-center md:order-none md:w-auto md:flex-1">
         {flightPassed ? (
           <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600">
             <CheckCircle2 size={16} /> 已通过全部已验证条件
@@ -100,7 +102,7 @@ export function StepActions({
 
       {/* 右：主 + 次 动作 */}
       {flightPassed ? (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             onClick={onExportList}
             className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100"
@@ -115,7 +117,7 @@ export function StepActions({
           </button>
         </div>
       ) : (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             onClick={onSave}
             className="whitespace-nowrap rounded-full border border-sky-500 bg-white px-5 py-2 text-sm font-medium text-sky-600 hover:bg-sky-50"
@@ -124,12 +126,15 @@ export function StepActions({
           </button>
           <button
             onClick={onRunFlightTest}
-            className="inline-flex min-h-[54px] items-center gap-2 whitespace-nowrap rounded-full bg-sky-500 px-7 text-base font-semibold text-white shadow-sm transition-colors hover:bg-sky-600"
+            className="inline-flex min-h-[42px] items-center gap-2 whitespace-nowrap rounded-full bg-sky-500 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sky-600"
           >
             <Rocket size={18} /> 结构检查
           </button>
         </div>
       )}
+      <button type="button" onClick={onContinueCoding} className="inline-flex items-center justify-center gap-1 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+        继续积木编程 <ArrowRight size={16} />
+      </button>
     </div>
   )
 }

@@ -18,10 +18,16 @@ describe('restoreWorkspaceXml', () => {
     expect(workspace.getTopBlocks(false)).toHaveLength(1)
   })
 
-  it('reports malformed XML and leaves no partial blocks behind', () => {
-    workspace.newBlock('math_number')
+  it('rejects malformed XML without erasing the current workspace', () => {
+    const existing = workspace.newBlock('math_number')
 
     expect(restoreWorkspaceXml(workspace, '<xml><block')).toBe(false)
-    expect(workspace.getTopBlocks(false)).toHaveLength(0)
+    expect(workspace.getTopBlocks(false).map(block => block.id)).toEqual([existing.id])
+  })
+
+  it('rejects unknown blocks before replacing a valid workspace', () => {
+    const existing = workspace.newBlock('math_number')
+    expect(restoreWorkspaceXml(workspace, '<xml><block type="not_a_real_block" /></xml>')).toBe(false)
+    expect(workspace.getTopBlocks(false).map(block => block.id)).toEqual([existing.id])
   })
 })

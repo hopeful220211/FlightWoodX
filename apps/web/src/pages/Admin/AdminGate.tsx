@@ -24,7 +24,7 @@ export function AdminGate({ onVerified }: AdminGateProps) {
       sessionStorage.setItem('adminAccessKey', key.trim())
       onVerified()
     } else {
-      setError('密码错误')
+      setError(result.error || '验证失败，请稍后重试')
     }
 
     setLoading(false)
@@ -42,6 +42,7 @@ export function AdminGate({ onVerified }: AdminGateProps) {
           <div>
             <input
               type="password"
+              aria-label="管理密码"
               autoComplete="off"
               value={key}
               onChange={(e) => setKey(e.target.value)}
@@ -51,7 +52,7 @@ export function AdminGate({ onVerified }: AdminGateProps) {
           </div>
 
           {error && (
-            <p className="text-sm text-error">{error}</p>
+            <p role="alert" className="text-sm text-error">{error}</p>
           )}
 
           <PillButton

@@ -33,3 +33,5 @@ coverage/
 *.tmp
 *.bak
 apps/api/.env.backup
+apps/web/public/optimized/
+apps/web/public/blockly-media/

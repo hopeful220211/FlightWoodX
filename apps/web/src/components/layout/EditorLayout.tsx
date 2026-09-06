@@ -6,14 +6,13 @@
  *  - 右边每个打开的无人机项目是一个可关闭(✕)的标签，可同时打开多个、随意切换；
  *  - 进某个项目编辑器时自动把它登记成一个标签（无需各页各自登记）。
  *
- * 注：编程 / 仿真 模式（/code、/simulator）1.0 收起，不在界面上露入口，
- * 路由保留可直达（总纲 §3.5「收起但保留」）。
+ * 同一作品可以在拼装、积木编程和视觉仿真间切换。
  *
  * RFC-011 §4: 编辑器类页面使用全屏专注布局 + 顶部切换条。
  */
 import { useEffect, type MouseEvent } from 'react'
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router'
-import { LayoutGrid, Pencil, X } from 'lucide-react'
+import { LayoutGrid, Pencil, X, Blocks, Play } from 'lucide-react'
 import { useDesignStore } from '../../stores/designStore'
 import { useEditorTabsStore } from '../../stores/editorTabsStore'
 import type { Design } from '../../types/design'
@@ -83,13 +82,14 @@ export function EditorLayout() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50">
+    <div className="flex h-dvh flex-col bg-slate-50">
       {/* ── 顶部标签栏 + 模式切换 ── */}
-      <header className="flex h-12 shrink-0 items-stretch border-b border-sky-100 bg-white pr-3">
+      <header className="flex min-h-12 shrink-0 flex-wrap items-stretch border-b border-sky-100 bg-white">
         {/* 工作台标签（常驻最左，点它回工作台） */}
         <button
           type="button"
           onClick={() => navigate('/dashboard')}
+          aria-label="返回工作台"
           className="inline-flex shrink-0 items-center gap-1.5 border-r border-sky-100 px-4 text-sm font-medium text-sky-700 transition hover:bg-sky-50"
         >
           <LayoutGrid size={16} />
@@ -104,8 +104,10 @@ export function EditorLayout() {
               <div
                 key={d.id}
                 role="tab"
+                tabIndex={0}
                 aria-selected={isActive}
                 onClick={() => goToProject(d.id)}
+                onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); goToProject(d.id) } }}
                 className={`group inline-flex max-w-[12rem] shrink-0 cursor-pointer items-center gap-1.5 border-r border-sky-100 pl-3.5 pr-2 text-sm transition ${
                   isActive
                     ? 'border-b-2 border-b-sky-500 bg-sky-50/70 font-medium text-sky-700'
@@ -126,10 +128,25 @@ export function EditorLayout() {
             )
           })}
         </div>
+        {currentId && designs.some(design => design.id === currentId) && (
+          <nav aria-label="作品编辑模式" className="flex w-full shrink-0 justify-center gap-1 border-t border-sky-100 p-1 sm:w-auto sm:border-l sm:border-t-0">
+            {[
+              { value: 'design', label: '拼装', Icon: Pencil },
+              { value: 'code', label: '积木编程', Icon: Blocks },
+              { value: 'simulator', label: '视觉仿真', Icon: Play },
+            ].map(({ value, label, Icon }) => (
+              <button key={value} type="button" aria-current={mode === value ? 'page' : undefined}
+                onClick={() => navigate(`/${value}/${currentId}`)}
+                className={`inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition ${mode === value ? 'bg-sky-100 text-sky-800' : 'text-slate-500 hover:bg-sky-50 hover:text-sky-800'}`}>
+                <Icon size={14} />{label}
+              </button>
+            ))}
+          </nav>
+        )}
       </header>
 
       {/* ── Editor Canvas ── */}
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <Outlet />
       </div>
     </div>

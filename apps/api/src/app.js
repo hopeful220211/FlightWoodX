@@ -39,6 +39,7 @@ function createApp(config) {
 
   app.use('/api/auth/login', app.locals.rateLimits.auth)
   app.use('/api/auth/register', app.locals.rateLimits.auth)
+  app.use('/api/auth/change-password', app.locals.rateLimits.auth)
   app.use('/api/auth', require('./routes/auth'))
   app.use('/api/admin', require('./routes/admin'))
   app.use('/api/designs', require('./routes/designs'))

@@ -21,6 +21,14 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      mongo:
+        image: ${{ matrix.name == 'Tests' && 'mongo:7' || '' }}
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
     strategy:
       fail-fast: false
       matrix:
@@ -61,3 +69,56 @@ jobs:
         run: ${{ matrix.command }}
         env:
           CI: true
+          FWX_TEST_MONGO_URI: ${{ matrix.name == 'Tests' && 'mongodb://127.0.0.1:27017' || '' }}
+
+  browser:
+    name: Browser core flow
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies and browser
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter web exec playwright install --with-deps chromium
+      - name: Build production bundle and API dependencies
+        run: pnpm build && pnpm --filter api build:runtime-deps
+      - name: Start isolated application and verify core flow
+        env:
+          CI: true
+          MONGODB_URI: mongodb://127.0.0.1:27017/fwx_e2e
+          PORT: 3000
+          CORS_ORIGIN: http://127.0.0.1:4173
+          PUBLIC_BASE_URL: http://127.0.0.1:4173
+          STORAGE_DRIVER: disk
+          FWX_E2E_BASE_URL: http://127.0.0.1:4173
+        run: |
+          export JWT_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(48).toString("hex"))')"
+          export UPLOAD_DIR="$RUNNER_TEMP/fwx-e2e-uploads"
+          pnpm --filter api start > "$RUNNER_TEMP/fwx-api.log" 2>&1 &
+          pnpm --filter web preview --host 127.0.0.1 --port 4173 > "$RUNNER_TEMP/fwx-web.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/api/health
+          pnpm --filter web test:e2e

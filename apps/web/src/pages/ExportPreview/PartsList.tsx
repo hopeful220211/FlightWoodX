@@ -1,7 +1,7 @@
 import { ScrollReveal } from '../../components/common/ScrollReveal'
 import type { Design } from '../../types/design'
 import { partsData } from '../../data/parts'
-import { PART_REGISTRY } from '@fwx/parts-schema'
+import { PART_REGISTRY, CATEGORY_LABELS as PART_CATEGORY_LABELS, type PartCategory } from '@fwx/parts-schema'
 
 interface PartsListProps {
   parts: Design['parts']
@@ -27,6 +27,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   PROP: '螺旋桨',
 }
 
+function categoryLabel(category: string) {
+  return PART_CATEGORY_LABELS[category as PartCategory]?.zh ?? CATEGORY_LABELS[category] ?? category
+}
+
 function groupParts(parts: Design['parts']): Map<string, GroupedPart[]> {
   const countMap = new Map<string, { count: number; category: string }>()
   for (const p of parts) {
@@ -43,13 +47,13 @@ function groupParts(parts: Design['parts']): Map<string, GroupedPart[]> {
     const partData = partsData.find(p => p.id === partId)
     const registryEntry = PART_REGISTRY.find(r => r.id === partId)
     const name = registryEntry?.name.zh ?? partData?.name ?? partId
-    const categoryLabel = CATEGORY_LABELS[category] ?? category
+    const label = categoryLabel(category)
 
     const grouped: GroupedPart = {
       partId,
       name,
       category,
-      categoryLabel,
+      categoryLabel: label,
       thumbnailUrl: partData?.thumbnailUrl,
       count,
     }
@@ -82,7 +86,7 @@ export function PartsList({ parts }: PartsListProps) {
           {Array.from(grouped.entries()).map(([category, items], catIdx) => (
             <ScrollReveal key={category} delay={catIdx * 100}>
               <h3 className="font-display text-xl font-semibold text-ink-900">
-                {CATEGORY_LABELS[category] ?? category}
+                {categoryLabel(category)}
                 <span className="text-sm font-normal text-ink-400 ml-2">
                   ({items.reduce((s, i) => s + i.count, 0)} 个)
                 </span>

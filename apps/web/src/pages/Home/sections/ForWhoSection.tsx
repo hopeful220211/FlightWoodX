@@ -8,19 +8,19 @@ const personas = [
     title: '我是学生',
     subtitle: '从设计到飞行，自己做主',
     href: '/auth?type=student',
-    img: '/resource/picture/learning_kids/EX4A6285.png',
+    img: '/optimized/picture/learning_kids/EX4A6285.webp',
   },
   {
     title: '我是教师',
     subtitle: '教学套件 + 软件平台',
     href: '/auth?type=teacher',
-    img: '/resource/picture/learning_kids/EX4A6264 1.png',
+    img: '/optimized/picture/learning_kids/EX4A6264 1.webp',
   },
   {
     title: '我是学校',
     subtitle: '校本课程 + 师资培训 + 效果评估',
     href: '/auth?type=school',
-    img: '/resource/picture/learning_kids/EX4A6148.png',
+    img: '/optimized/picture/learning_kids/EX4A6148.webp',
   },
 ]
 

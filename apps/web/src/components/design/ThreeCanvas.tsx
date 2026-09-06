@@ -1,6 +1,6 @@
-import { Suspense, useEffect, useCallback } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useCallback } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Grid } from '@react-three/drei'
+import { OrbitControls, Grid, Html, Bounds, useBounds } from '@react-three/drei'
 import * as THREE from 'three'
 import { SceneContent } from './SceneContent'
 import { SceneLighting } from './SceneLighting'
@@ -10,7 +10,6 @@ import { SocketHighlights } from './SocketHighlights'
 import { CameraController, type CameraView } from './CameraController'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
-import { computePerpendicularSnap, quaternionToEuler } from './snap'
 import { checkBeforeAdd } from '../../utils/realtimeChecks'
 
 // 点击检测阈值（像素）
@@ -49,6 +48,7 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
 
   return (
     <Canvas
+      aria-label="无人机三维拼装画布"
       shadows
       camera={{
         position: [0.3, 0.3, 0.4],
@@ -67,7 +67,7 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
       <OrbitControls
         makeDefault
         enablePan={false}
-        minDistance={0.2}
+        minDistance={0.06}
         maxDistance={10}
         target={[0, 0, 0]}
         mouseButtons={{
@@ -81,20 +81,23 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
 
       {/* 参考网格地面 */}
       <Grid
-        position={[0, 0, 0]}
+        position={[0, -0.08, 0]}
         args={[10, 10]}
-        cellSize={0.1}
-        cellThickness={1}
-        cellColor={'#cccccc'}
-        sectionSize={1}
-        sectionThickness={1.5}
-        sectionColor={'#999999'}
-        fadeDistance={15}
+        cellSize={0.01}
+        cellThickness={0.5}
+        cellColor={'#e2e8f0'}
+        sectionSize={0.1}
+        sectionThickness={1}
+        sectionColor={'#cbd5e1'}
+        fadeDistance={2}
         infiniteGrid
       />
 
-      <Suspense fallback={null}>
-        <SceneContent />
+      <Suspense fallback={<Html center><div role="status" className="whitespace-nowrap rounded-xl bg-white/95 px-4 py-2 text-sm text-gray-600 shadow">正在加载零件…</div></Html>}>
+        <Bounds margin={1.5} maxDuration={0.25}>
+          <SceneContent />
+          <FitDesignView />
+        </Bounds>
         <DragHandler />
         <SocketHighlights />
         <CameraController view={cameraView} onViewChanged={onCameraViewChanged} />
@@ -105,6 +108,17 @@ export function ThreeCanvas({ cameraView = null, onCameraViewChanged }: ThreeCan
   )
 }
 
+function FitDesignView() {
+  const bounds = useBounds()
+  const { size } = useThree()
+  const designId = useDesignStore(state => state.activeDesignId)
+  const partCount = useDesignStore(state => state.getActiveDesign()?.parts.length ?? 0)
+  useLayoutEffect(() => {
+    if (partCount > 0) bounds.refresh().clip().fit()
+  }, [bounds, designId, partCount, size.width, size.height])
+  return null
+}
+
 // 距离阈值（屏幕像素），小于此距离时高亮插座
 const SOCKET_HIGHLIGHT_THRESHOLD = 80
 
@@ -113,7 +127,6 @@ function DragHandler() {
   const setGhostPart = useDesignStore((state) => state.setGhostPart)
   const setHighlightedSocket = useDesignStore((state) => state.setHighlightedSocket)
   const setDraggingPartId = useDesignStore((state) => state.setDraggingPartId)
-  const addPartToActiveDesign = useDesignStore((state) => state.addPartToActiveDesign)
   const addPartSmart = useDesignStore((state) => state.addPartSmart)
   const { camera, gl } = useThree()
 
@@ -220,7 +233,7 @@ function DragHandler() {
           const key = `${inst.instanceId}::${connector.id}`
           if (occupiedSockets.has(key)) continue
 
-          const worldPos = connector.position.clone().applyQuaternion(instQuat).add(instPos)
+          const worldPos = connector.position.clone().multiply(new THREE.Vector3(...(inst.scale ?? [1, 1, 1]))).applyQuaternion(instQuat).add(instPos)
           currentAvailableSockets.push({
             instanceId: inst.instanceId,
             socketId: connector.id,
@@ -267,96 +280,47 @@ function DragHandler() {
       }
     }
 
+    const clearDrag = () => {
+      setGhostPart(null)
+      setHighlightedSocket(null)
+      setDraggingPartId(null)
+    }
+
+    // 所有落点都经过与点击相同的连接/数量校验，防止拖拽绕过规则或覆盖已占用连接点。
+    const placePart = async (partId: string, x: number, y: number) => {
+      const rect = canvas.getBoundingClientRect()
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+        clearDrag()
+        return
+      }
+      const currentState = useDesignStore.getState()
+      const design = currentState.getActiveDesign()
+      const part = partsData.find(p => p.id === partId)
+      const target = currentState.highlightedSocket ?? undefined
+      clearDrag()
+      if (!design || !part) return
+      const violation = checkBeforeAdd(part.category, part.id, design.parts)
+      if (violation) {
+        window.dispatchEvent(new CustomEvent('fwx-violation', { detail: violation }))
+        return
+      }
+      try {
+        if (await addPartSmart(partId, target)) return
+      } catch {
+        // 网络或模型异常保留已有作品，并显示可恢复错误。
+      }
+      window.dispatchEvent(new CustomEvent('fwx-violation', { detail: {
+        id: 'placement-failed',
+        level: 'error',
+        message: '零件未添加，请重试',
+        hint: '检查网络或选择空闲连接点，也可以点击零件自动放置。',
+      } }))
+    }
+
     const handleDrop = (e: DragEvent) => {
       e.preventDefault()
       const partId = e.dataTransfer?.getData('text/plain')
-      if (partId) {
-        // 从 store 获取最新状态（避免闭包中的旧值）
-        const currentState = useDesignStore.getState()
-        const currentHighlightedSocket = currentState.highlightedSocket
-        const currentActiveDesign = currentState.getActiveDesign()
-
-        // Real-time constraint check before any placement
-        if (currentActiveDesign) {
-          const childPart = partsData.find((p) => p.id === partId)
-          if (childPart) {
-            const violation = checkBeforeAdd(childPart.category, childPart.id, currentActiveDesign.parts)
-            if (violation) {
-              console.warn(`[Drop] Blocked: ${violation.message}`)
-              setGhostPart(null)
-              setHighlightedSocket(null)
-              setDraggingPartId(null)
-              // Dispatch custom event for ViolationBubble
-              window.dispatchEvent(new CustomEvent('fwx-violation', { detail: violation }))
-              return
-            }
-          }
-        }
-
-        // 如果有高亮的插座，则精确吸附
-        if (currentHighlightedSocket && currentActiveDesign) {
-          const childPart = partsData.find((p) => p.id === partId)
-          const parentInst = currentActiveDesign.parts.find((p) => p.instanceId === currentHighlightedSocket.instanceId)
-          const parentPart = parentInst ? partsData.find((p) => p.id === parentInst.partId) : null
-
-          if (childPart && parentInst && parentPart) {
-            // 验证连接是否允许
-            if (!isConnectionAllowed(childPart.category, parentPart.category)) {
-              console.warn(`[Drop] Connection not allowed: ${childPart.category} -> ${parentPart.category}`)
-              // 回退到智能添加（会找到合法的插座）
-              addPartSmart(partId)
-              setGhostPart(null)
-              setHighlightedSocket(null)
-              setDraggingPartId(null)
-              return
-            }
-            const childConnectors = getCachedPartConnectors(childPart.modelUrl)
-            const parentConnectors = getCachedPartConnectors(parentPart.modelUrl)
-
-            const plug = childConnectors?.find((c) => c.id === currentHighlightedSocket.plugId) ?? null
-            const socket = parentConnectors?.find((c) => c.id === currentHighlightedSocket.socketId) ?? null
-
-            if (plug && socket) {
-              const parentPos = new THREE.Vector3(...parentInst.position)
-              const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
-              const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-              const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
-
-              const { position: newPosition, quaternion: newQuaternion } = computePerpendicularSnap({
-                socketWorldPosition,
-                socketWorldQuaternion,
-                plugLocalPosition: plug.position,
-                plugLocalQuaternion: plug.quaternion,
-              })
-
-              addPartToActiveDesign({
-                partId,
-                category: childPart.category,
-                position: [newPosition.x, newPosition.y, newPosition.z],
-                rotation: quaternionToEuler(newQuaternion),
-                activeConnectorId: currentHighlightedSocket.plugId,
-                attachedTo: {
-                  parentInstanceId: currentHighlightedSocket.instanceId,
-                  parentConnectorId: currentHighlightedSocket.socketId,
-                },
-              })
-            } else {
-              // plug 或 socket 未找到，回退到智能添加
-              addPartSmart(partId)
-            }
-          } else {
-            // 零件信息未找到，回退到智能添加
-            addPartSmart(partId)
-          }
-        } else {
-          // 没有高亮插座 — 可能松手瞬间鼠标移出了范围
-          console.warn('[Drop] No highlighted socket at drop time, falling back to addPartSmart')
-          addPartSmart(partId)
-        }
-        setGhostPart(null)
-        setHighlightedSocket(null)
-        setDraggingPartId(null)
-      }
+      if (partId) void placePart(partId, e.clientX, e.clientY)
     }
 
     const handleDragLeave = (e: DragEvent) => {
@@ -471,7 +435,7 @@ function DragHandler() {
           const key = `${inst.instanceId}::${connector.id}`
           if (occupiedSockets.has(key)) continue
 
-          const worldPos = connector.position.clone().applyQuaternion(instQuat).add(instPos)
+          const worldPos = connector.position.clone().multiply(new THREE.Vector3(...(inst.scale ?? [1, 1, 1]))).applyQuaternion(instQuat).add(instPos)
           currentAvailableSockets.push({
             instanceId: inst.instanceId,
             socketId: connector.id,
@@ -517,91 +481,11 @@ function DragHandler() {
 
     // 触控拖拽结束处理
     const handleTouchDragEnd = (e: Event) => {
-      const customEvent = e as CustomEvent<{ x: number; y: number; partId: string }>
-      const { partId } = customEvent.detail
-
-      // 从 store 获取最新状态
-      const currentState = useDesignStore.getState()
-      const currentHighlightedSocket = currentState.highlightedSocket
-      const currentActiveDesign = currentState.getActiveDesign()
-
-      // Real-time constraint check (touch path)
-      if (currentActiveDesign) {
-        const touchChildPart = partsData.find((p) => p.id === partId)
-        if (touchChildPart) {
-          const v = checkBeforeAdd(touchChildPart.category, touchChildPart.id, currentActiveDesign.parts)
-          if (v) {
-            console.warn(`[TouchDrop] Blocked: ${v.message}`)
-            setGhostPart(null)
-            setHighlightedSocket(null)
-            setDraggingPartId(null)
-            window.dispatchEvent(new CustomEvent('fwx-violation', { detail: v }))
-            return
-          }
-        }
-      }
-
-      if (currentHighlightedSocket && currentActiveDesign) {
-        const childPart = partsData.find((p) => p.id === partId)
-        const parentInst = currentActiveDesign.parts.find((p) => p.instanceId === currentHighlightedSocket.instanceId)
-        const parentPart = parentInst ? partsData.find((p) => p.id === parentInst.partId) : null
-
-        if (childPart && parentInst && parentPart) {
-          // 验证连接是否允许
-          if (!isConnectionAllowed(childPart.category, parentPart.category)) {
-            console.warn(`[Touch Drop] Connection not allowed: ${childPart.category} -> ${parentPart.category}`)
-            // 回退到智能添加（会找到合法的插座）
-            addPartSmart(partId)
-            setGhostPart(null)
-            setHighlightedSocket(null)
-            setDraggingPartId(null)
-            return
-          }
-          const childConnectors = getCachedPartConnectors(childPart.modelUrl)
-          const parentConnectors = getCachedPartConnectors(parentPart.modelUrl)
-
-          const plug = childConnectors?.find((c) => c.id === currentHighlightedSocket.plugId) ?? null
-          const socket = parentConnectors?.find((c) => c.id === currentHighlightedSocket.socketId) ?? null
-
-          if (plug && socket) {
-            const parentPos = new THREE.Vector3(...parentInst.position)
-            const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
-            const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-            const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
-
-            const { position: newPosition, quaternion: newQuaternion } = computePerpendicularSnap({
-              socketWorldPosition,
-              socketWorldQuaternion,
-              plugLocalPosition: plug.position,
-              plugLocalQuaternion: plug.quaternion,
-            })
-
-            addPartToActiveDesign({
-              partId,
-              category: childPart.category,
-              position: [newPosition.x, newPosition.y, newPosition.z],
-              rotation: quaternionToEuler(newQuaternion),
-              activeConnectorId: currentHighlightedSocket.plugId,
-              attachedTo: {
-                parentInstanceId: currentHighlightedSocket.instanceId,
-                parentConnectorId: currentHighlightedSocket.socketId,
-              },
-            })
-          } else {
-            addPartSmart(partId)
-          }
-        } else {
-          addPartSmart(partId)
-        }
-      } else {
-        addPartSmart(partId)
-      }
-
-      setGhostPart(null)
-      setHighlightedSocket(null)
-      setDraggingPartId(null)
+      const { partId, x, y } = (e as CustomEvent<{ x: number; y: number; partId: string }>).detail
+      void placePart(partId, x, y)
     }
 
+    window.addEventListener('dragend', clearDrag)
     canvas.addEventListener('dragover', handleDragOver)
     canvas.addEventListener('drop', handleDrop)
     canvas.addEventListener('dragleave', handleDragLeave)
@@ -609,13 +493,14 @@ function DragHandler() {
     window.addEventListener('touchDragEnd', handleTouchDragEnd)
 
     return () => {
+      window.removeEventListener('dragend', clearDrag)
       canvas.removeEventListener('dragover', handleDragOver)
       canvas.removeEventListener('drop', handleDrop)
       canvas.removeEventListener('dragleave', handleDragLeave)
       window.removeEventListener('touchDragMove', handleTouchDragMove)
       window.removeEventListener('touchDragEnd', handleTouchDragEnd)
     }
-  }, [camera, gl, setGhostPart, setHighlightedSocket, setDraggingPartId, addPartToActiveDesign, addPartSmart])
+  }, [camera, gl, setGhostPart, setHighlightedSocket, setDraggingPartId, addPartSmart])
 
   return null
 }

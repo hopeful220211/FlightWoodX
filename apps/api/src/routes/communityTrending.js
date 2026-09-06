@@ -2,6 +2,7 @@ const express = require('express')
 const { optionalAuthenticate } = require('../middleware/auth')
 const CommunityPost = require('../models/CommunityPost')
 const Reaction = require('../models/Reaction')
+const { publicPostStages, countPublicPosts } = require('../lib/communityVisibility')
 
 const router = express.Router()
 
@@ -87,17 +88,18 @@ router.get('/', optionalAuthenticate, async (req, res) => {
     // total：窗口内有 ≥1 个赞的作品数（window=all 时即全部作品）。
     let total
     if (window === 'all') {
-      total = await CommunityPost.countDocuments({})
+      total = await countPublicPosts()
     } else {
       const distinct = await Reaction.find({
         targetType: TARGET,
         type: 'like',
         createdAt: { $gte: since },
       }).distinct('targetId')
-      total = distinct.length
+      total = await countPublicPosts({ _id: { $in: distinct } })
     }
 
     const rows = await CommunityPost.aggregate([
+      ...publicPostStages(),
       // 每条 post 的窗口内点赞数
       {
         $lookup: {

@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { register as apiRegister, login as apiLogin } from '../utils/api'
+import { register as apiRegister, login as apiLogin, getMe, type UserResponse } from '../utils/api'
 import { clearDesignStore } from './designStore'
 import { clearProgramStore } from './programStore'
+import { useProfileStore } from './profileStore'
 import { createGuestSession, getGuestSession, clearGuestSession } from '../utils/guestSession'
 
 export interface User {
@@ -26,8 +27,19 @@ export interface AuthState {
   setUser: (user: User) => void
   enterGuestMode: () => void
   exitGuestMode: () => void
-  restoreSession: () => void
+  restoreSession: () => Promise<void>
 }
+
+function accountUser(u: UserResponse): User {
+  return {
+    id: u.id, username: u.username, email: u.email, role: u.role ?? 'student',
+    nickname: u.profile?.displayName || u.nickname || u.username,
+    avatarUrl: u.profile?.avatar || u.avatarUrl, lastLogin: u.lastLogin,
+  }
+}
+
+// A sign-out or newer sign-in invalidates every earlier authentication request.
+let sessionRequestVersion = 0
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -47,19 +59,18 @@ export const useAuthStore = create<AuthState>()(
           return { success: false, message: '密码至少需要6个字符' }
         }
 
+        const requestVersion = ++sessionRequestVersion
         const result = await apiRegister({ username, email, password })
+        if (requestVersion !== sessionRequestVersion) return { success: false, message: '登录状态已变化，请重试' }
 
         if (result.success && result.data) {
-          const u = result.data.user
-          const user: User = {
-            id: u.id,
-            username: u.username,
-            email: u.email,
-            role: u.role ?? 'student',
-            nickname: u.nickname,
-            avatarUrl: u.avatarUrl,
-            lastLogin: u.lastLogin,
+          const user = accountUser(result.data.user)
+          if (get().user?.id !== user.id) useProfileStore.getState().clear()
+          if (get().user && !get().user?.isGuest && get().user?.id !== user.id) {
+            clearDesignStore()
+            clearProgramStore()
           }
+          clearGuestSession()
           set({ user, token: result.data.token, isAuthenticated: true })
           return { success: true, message: '注册成功' }
         } else {
@@ -72,19 +83,18 @@ export const useAuthStore = create<AuthState>()(
           return { success: false, message: '请输入邮箱和密码' }
         }
 
+        const requestVersion = ++sessionRequestVersion
         const result = await apiLogin({ email, password })
+        if (requestVersion !== sessionRequestVersion) return { success: false, message: '登录状态已变化，请重试' }
 
         if (result.success && result.data) {
-          const u = result.data.user
-          const user: User = {
-            id: u.id,
-            username: u.username,
-            email: u.email,
-            role: u.role ?? 'student',
-            nickname: u.nickname,
-            avatarUrl: u.avatarUrl,
-            lastLogin: u.lastLogin,
+          const user = accountUser(result.data.user)
+          if (get().user?.id !== user.id) useProfileStore.getState().clear()
+          if (get().user && !get().user?.isGuest && get().user?.id !== user.id) {
+            clearDesignStore()
+            clearProgramStore()
           }
+          clearGuestSession()
           set({ user, token: result.data.token, isAuthenticated: true })
           return { success: true, message: '登录成功' }
         } else {
@@ -93,18 +103,24 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        const user = get().user
-        if (user?.isGuest) {
-          clearGuestSession()
-        }
+        sessionRequestVersion += 1
+        clearGuestSession()
+        useProfileStore.getState().clear()
+        sessionStorage.removeItem('adminAccessKey')
         set({ user: null, token: null, isAuthenticated: false })
         clearDesignStore()
         clearProgramStore()
       },
 
-      setUser: (user) => set((state) => ({ ...state, user })),
+      setUser: (user) => set((state) => state.user?.id === user.id ? { user } : state),
 
       enterGuestMode: () => {
+        sessionRequestVersion += 1
+        useProfileStore.getState().clear()
+        if (get().user && !get().user?.isGuest) {
+          clearDesignStore()
+          clearProgramStore()
+        }
         const session = createGuestSession()
         const guestUser: User = {
           id: session.guestId,
@@ -116,16 +132,30 @@ export const useAuthStore = create<AuthState>()(
       },
 
       exitGuestMode: () => {
+        sessionRequestVersion += 1
         clearGuestSession()
+        useProfileStore.getState().clear()
         set({ user: null, token: null, isAuthenticated: false })
         clearDesignStore()
         clearProgramStore()
       },
 
-      restoreSession: () => {
+      restoreSession: async () => {
         const state = get()
-        // Already authenticated (real user or guest restored by persist)
-        if (state.isAuthenticated && state.user) return
+        const requestVersion = sessionRequestVersion
+        if (state.token) {
+          const result = await getMe()
+          // A late restore must not overwrite a more recent sign-in or sign-out.
+          if (get().token !== state.token || requestVersion !== sessionRequestVersion) return
+          if (result.success && result.data) {
+            set({ user: accountUser(result.data), isAuthenticated: true })
+          } else if (result.status === 401 || result.status === 403) {
+            // Preserve the draft and account identity until reauthentication.
+            set({ token: null, isAuthenticated: false })
+          }
+          return
+        }
+        if (state.isAuthenticated && state.user?.isGuest) return
 
         // Try restoring guest session
         const guestSession = getGuestSession()

@@ -2,7 +2,7 @@
 
 > 状态：生效中的文档导航
 >
-> 更新时间：2026-08-17
+> 更新时间：2026-09-07
 >
 > 适用范围：仓库级事实、产品规格、质量要求、执行计划与历史资料的查找顺序
 >
@@ -48,6 +48,7 @@
 ## 执行计划
 
 - [`exec-plans/index.md`](./exec-plans/index.md)：计划格式、状态规则和索引。
+- [`exec-plans/active/2026-09-07-review-readiness.md`](./exec-plans/active/2026-09-07-review-readiness.md)：本轮官网、拼装、编程、保存、鉴权与生产部署验收记录；等待正式发布。
 - [`exec-plans/completed/2026-08-17-github-handoff.md`](./exec-plans/completed/2026-08-17-github-handoff.md)：详细手册、完整验证和安全 GitHub 快照交付记录。
 - [`exec-plans/completed/2026-08-15-harness-foundation.md`](./exec-plans/completed/2026-08-15-harness-foundation.md)：本轮 Harness 规则、文档、Skill、自动门禁与清理记录。
 

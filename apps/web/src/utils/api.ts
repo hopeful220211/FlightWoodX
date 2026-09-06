@@ -5,7 +5,7 @@ import type { PartInstance } from '../types/design'
 // API 基础配置
 const API_URL = (
   import.meta.env.VITE_API_URL
-  || (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api')
+  || '/api'
 ).replace(/\/+$/, '')
 
 // 类型定义
@@ -22,6 +22,7 @@ export interface LoginData {
 
 export interface ApiResponse<T = unknown> {
   success: boolean
+  status?: number
   data?: T
   message?: string
   error?: string
@@ -33,6 +34,10 @@ export interface UserResponse {
   nickname: string
   avatarUrl?: string
   createdAt: string
+  email?: string
+  role?: 'student' | 'teacher' | 'admin'
+  lastLogin?: string
+  profile?: { displayName?: string; avatar?: string; grade?: string; studentId?: string; school?: string }
 }
 
 export interface AuthResponse {
@@ -87,18 +92,21 @@ export async function apiFetch<T = unknown>(
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
+      signal: options.signal ?? AbortSignal.timeout(20000),
     })
 
-    const result = await response.json()
+    if (response.status === 204) return { success: true, status: response.status }
+    const result = await response.json().catch(() => null)
 
-    if (!response.ok) {
+    if (!response.ok || result?.success === false || result === null) {
       // Clear admin key on 401 for admin endpoints
       if (response.status === 401 && endpoint.startsWith('/admin')) {
         sessionStorage.removeItem('adminAccessKey')
       }
       return {
         success: false,
-        error: result.error || result.message || '请求失败',
+        status: response.status,
+        error: result?.error || result?.message || (response.status >= 500 ? '服务暂时不可用，请稍后重试' : '请求失败，请重试'),
       }
     }
 
@@ -106,18 +114,20 @@ export async function apiFetch<T = unknown>(
     // 1. { data: [...] }
     // 2. { users: [...] }
     // 3. 直接返回数组 [...]
-    const data = result.data || result.users || result
+    const data = result.data ?? result.users ?? result
 
     return {
       success: true,
+      status: response.status,
       data: data,
       message: result.message,
     }
   } catch (error) {
-    console.error('API fetch error:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : '网络请求失败',
+      error: error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
+        ? '请求超时，请重试；当前编辑内容仍保留在本机'
+        : '无法连接服务器，请检查网络后重试',
     }
   }
 }
@@ -148,7 +158,8 @@ export async function login(data: LoginData): Promise<ApiResponse<AuthResponse>>
  * 获取当前用户信息
  */
 export async function getMe(): Promise<ApiResponse<UserResponse>> {
-  return apiFetch<UserResponse>('/auth/me')
+  const result = await apiFetch<{ user: UserResponse }>('/auth/me')
+  return { ...result, data: result.data?.user }
 }
 
 /**
@@ -484,12 +495,13 @@ export async function completeLesson(
 /** 更新用户个人资料 */
 export async function updateProfile(data: {
   username?: string
-  profile?: { displayName?: string; avatar?: string; grade?: string }
-}): Promise<ApiResponse> {
-  return apiFetch('/auth/profile', {
+  profile?: { displayName?: string; avatar?: string; grade?: string; school?: string }
+}): Promise<ApiResponse<UserResponse>> {
+  const result = await apiFetch<{ user: UserResponse }>('/auth/profile', {
     method: 'PATCH',
     body: JSON.stringify(data),
   })
+  return { ...result, data: result.data?.user }
 }
 
 // ============= 无人机设计 (DroneDesign) API =============
@@ -530,6 +542,39 @@ export async function createDroneDesign(data: {
  * Idempotent upsert by localId（RFC-013 正路）——同一 localId 只对应一条记录，
  * 抗重复、抗弱网重试。存整份 designData 快照，支撑跨设备还原。
  */
+const designWriteQueues = new Map<string, Map<string, Promise<ApiResponse<unknown>>>>()
+
+function designQueueAccountKey(token: string): string {
+  try {
+    const id = JSON.parse(localStorage.getItem('auth-storage') || 'null')?.state?.user?.id
+    if (typeof id === 'string' && id) return `user:${id}`
+  } catch { /* Legacy sessions without a usable account id remain token-isolated. */ }
+  return `token:${token}`
+}
+
+// All callers (dashboard, publish dialog and editor) share ordering, including
+// across React unmounts. Recheck identity when a waiting write reaches the front.
+function enqueueDesignWrite<T>(localId: string, write: () => Promise<ApiResponse<T>>): Promise<ApiResponse<T>> {
+  const token = getToken()
+  if (!token) return Promise.resolve({ success: false, status: 401, error: '请登录后保存作品' })
+  // Account identity stays stable across reauthentication/token rotation.
+  const accountKey = designQueueAccountKey(token)
+  const queue = designWriteQueues.get(accountKey) ?? new Map<string, Promise<ApiResponse<unknown>>>()
+  designWriteQueues.set(accountKey, queue)
+  const previous = queue.get(localId)
+  const run = (): Promise<ApiResponse<T>> => getToken() === token
+    ? write()
+    : Promise.resolve({ success: false, status: 401, error: '账号已变化，本次操作未执行' })
+  const pending = (previous ?? Promise.resolve()).then(run, run)
+  queue.set(localId, pending)
+  const cleanUp = () => {
+    if (queue.get(localId) === pending) queue.delete(localId)
+    if (queue.size === 0) designWriteQueues.delete(accountKey)
+  }
+  void pending.then(cleanUp, cleanUp)
+  return pending
+}
+
 export async function putDroneDesign(data: {
   localId: string
   name: string
@@ -538,22 +583,22 @@ export async function putDroneDesign(data: {
   thumbnailUrl?: string
   status?: string
 }): Promise<ApiResponse<DroneDesignData>> {
-  const res = await apiFetch<{ design: DroneDesignData }>('/drone-designs', {
-    method: 'PUT',
-    body: JSON.stringify(data),
+  const body = JSON.stringify(data)
+  return enqueueDesignWrite(data.localId, async () => {
+    const res = await apiFetch<{ design: DroneDesignData }>('/drone-designs', { method: 'PUT', body })
+    if (res.success && res.data) {
+      const design = (res.data as unknown as { design?: DroneDesignData }).design ?? res.data
+      return { ...res, data: design as DroneDesignData }
+    }
+    return res as ApiResponse<DroneDesignData>
   })
-  if (res.success && res.data) {
-    const design = (res.data as unknown as { design?: DroneDesignData }).design ?? res.data
-    return { ...res, data: design as DroneDesignData }
-  }
-  return res as ApiResponse<DroneDesignData>
 }
 
 /** 按 localId 删除作品（与 putDroneDesign 的 upsert-by-localId 对称）。幂等：服务器没有该记录也返回成功。 */
 export async function deleteDroneDesignByLocal(localId: string): Promise<ApiResponse> {
-  return apiFetch(`/drone-designs/by-local/${encodeURIComponent(localId)}`, {
+  return enqueueDesignWrite(localId, () => apiFetch(`/drone-designs/by-local/${encodeURIComponent(localId)}`, {
     method: 'DELETE',
-  })
+  }))
 }
 
 /**

@@ -1,5 +1,7 @@
 import React, { Component } from 'react'
 import type { ReactNode } from 'react'
+import { Html, useGLTF } from '@react-three/drei'
+import { partsData } from '../../data/parts'
 
 interface PartErrorBoundaryProps {
   children: ReactNode
@@ -13,7 +15,7 @@ interface PartErrorBoundaryState {
 
 /**
  * 专门用于 GLBPart 的 ErrorBoundary
- * 当单个模型加载失败时，只渲染该模型为 null，不影响其他模型
+ * 单个模型失败时保留其他零件，提供可见错误和重新加载入口。
  */
 export class PartErrorBoundary extends Component<PartErrorBoundaryProps, PartErrorBoundaryState> {
   constructor(props: PartErrorBoundaryProps) {
@@ -31,9 +33,16 @@ export class PartErrorBoundary extends Component<PartErrorBoundaryProps, PartErr
 
   render() {
     if (this.state.hasError) {
-      // 静默失败：不渲染任何内容，让其他零件继续正常显示
-      console.warn(`[PartErrorBoundary] Part ${this.props.partId} failed to render, skipping...`)
-      return null
+      const part = partsData.find(p => p.id === this.props.partId)
+      return <Html center>
+        <div role="alert" className="w-56 rounded-xl border border-red-200 bg-white p-4 text-center text-sm shadow-lg">
+          <p className="text-gray-700">{part?.name ?? '零件'}加载失败</p>
+          <button type="button" className="mt-3 rounded-lg bg-sky-500 px-4 py-2 text-white" onClick={() => {
+            if (part) useGLTF.clear(part.modelUrl)
+            this.setState({ hasError: false, error: null })
+          }}>重新加载</button>
+        </div>
+      </Html>
     }
 
     return this.props.children

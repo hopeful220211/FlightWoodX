@@ -37,10 +37,10 @@ export function HeroSection() {
 
   return (
     <>
-      <section className="relative min-h-screen bg-sky-hero overflow-x-clip">
+      <section className="relative min-h-dvh bg-sky-hero overflow-x-clip">
         <CloudLayer />
         <div className="relative z-[1] mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid min-h-[calc(100vh-64px)] items-center gap-12 pt-[64px] pb-16 lg:grid-cols-[55%_45%] lg:gap-8">
+          <div className="grid min-h-[calc(100dvh-64px)] items-center gap-12 pt-[80px] pb-16 lg:grid-cols-[11fr_9fr] lg:gap-8">
 
             {/* Left column */}
             <div className="z-10 space-y-6">

@@ -32,7 +32,7 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    client_max_body_size 2m;   # 只收小 JSON/封面；大文件走 OSS 直传，不经这里
+    client_max_body_size 8m;   # API 继续执行 6 MB JSON / 5 MB 封面限额
 
     # API 反代到内网 api:3000
     location /api/ {
@@ -47,8 +47,26 @@ server {
 
     # 前端静态资源缓存（JS/CSS 带 hash，可长缓存）
     location /assets/ {
+        try_files $uri =404;
         expires 7d;
         add_header Cache-Control "public, immutable";
+    }
+
+    # 图片/模型缺失应返回 404，不能用 HTML 冒充二进制资源。
+    location ~* ^/(models|thumbnails|textures|optimized|resource|fonts|blockly-media)/ {
+        try_files $uri =404;
+        expires 1h;
+        add_header Cache-Control "public, must-revalidate";
+    }
+
+    location /uploads/ {
+        proxy_pass http://fwx_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache";
     }
 
     # SPA 路由回退

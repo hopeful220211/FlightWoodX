@@ -6,6 +6,7 @@ const User = require('../models/User')
 const { putObject, bestEffortDeleteObject } = require('../lib/storage')
 const { parseDesignPayload } = require('../lib/designSnapshot')
 const { validateProjectReferences } = require('../lib/projectReferences')
+const { isInvalidDocument } = require('../lib/persistenceErrors')
 
 const router = express.Router()
 
@@ -177,6 +178,8 @@ router.post('/', async (req, res) => {
     await design.save()
     res.status(201).json({ design: withId(design.toObject()) })
   } catch (error) {
+    if (isInvalidDocument(error)) return res.status(400).json({ error: '设计字段格式无效' })
+    if (error && error.code === 11000) return res.status(409).json({ error: '该作品已存在，请刷新后重试保存' })
     console.error('[drone-designs] Create error:', error)
     res.status(500).json({ error: '创建设计失败' })
   }
@@ -231,6 +234,7 @@ router.put('/', async (req, res) => {
       const existing = await DroneDesign.findOne({ ownerId: req.userId, localId: req.body.localId }).lean()
       if (existing) return res.json({ design: withId(existing) })
     }
+    if (isInvalidDocument(error)) return res.status(400).json({ error: '设计字段格式无效' })
     console.error('[drone-designs] Upsert error:', error)
     res.status(500).json({ error: '保存设计失败' })
   }
@@ -275,6 +279,7 @@ router.patch('/:id', async (req, res) => {
 
     res.json({ design: withId(design) })
   } catch (error) {
+    if (isInvalidDocument(error)) return res.status(400).json({ error: '设计字段格式无效' })
     console.error('[drone-designs] Update error:', error)
     res.status(500).json({ error: '更新设计失败' })
   }

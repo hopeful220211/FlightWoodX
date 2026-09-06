@@ -32,6 +32,7 @@ export function GuidedDesignPage() {
   const toast = useToast()
   const { saveToServer, saveNow, saveStatus } = useDesignSync()
   const [violation, setViolation] = useState<Violation | null>(null)
+  const [pendingPartId, setPendingPartId] = useState<string | null>(null)
   // 就地改名：null = 不在编辑；字符串 = 正在编辑的草稿
   const [nameDraft, setNameDraft] = useState<string | null>(null)
   // 记录通过完整证据检查时的设计快照。改动设计（parts 引用变化）后快照即失效，
@@ -81,7 +82,7 @@ export function GuidedDesignPage() {
   }, [])
 
   const handlePartClick = useCallback(async (part: Part) => {
-    if (!activeDesign) return
+    if (!activeDesign || pendingPartId) return
 
     // Real-time validation before adding
     const v = checkBeforeAdd(part.category, part.id, activeDesign.parts)
@@ -90,7 +91,16 @@ export function GuidedDesignPage() {
       return
     }
 
-    const added = await addPartSmart(part.id)
+    setPendingPartId(part.id)
+    let added = false
+    try {
+      added = await addPartSmart(part.id)
+    } catch {
+      toast.push('error', '零件加载失败，请检查网络后重试')
+      return
+    } finally {
+      setPendingPartId(null)
+    }
     if (!added) {
       toast.push('error', '未找到可用连接点，零件未添加')
       return
@@ -107,7 +117,7 @@ export function GuidedDesignPage() {
     }
 
     toast.push('success', `已添加 ${part.name}`)
-  }, [addPartSmart, toast, activeDesign])
+  }, [addPartSmart, toast, activeDesign, pendingPartId])
 
   const handlePartDragStart = useCallback((partId: string) => {
     setDraggingPartId(partId)
@@ -159,7 +169,7 @@ export function GuidedDesignPage() {
   const readiness = isReviewStep ? flightReadiness(activeDesign.parts) : null
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-gray-50">
       <div className="shrink-0">
         {/* 顶部栏：左边是当前无人机名（可点改名）+ 浅色「已自动保存」，右边是自动保存状态 */}
         <div className="flex items-center justify-between gap-3 px-4 py-2 bg-white border-b border-gray-100">
@@ -204,13 +214,14 @@ export function GuidedDesignPage() {
       <ViolationBubble violation={violation} />
 
       <>
-          <div className="flex-1 flex flex-col md:flex-row min-h-0">
-            <aside className="order-2 md:order-none w-full md:w-64 shrink-0 bg-white border-t md:border-t-0 md:border-r border-gray-100 flex flex-col min-h-0 max-h-[34vh] md:max-h-none">
+          <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-y-auto md:overflow-hidden">
+            <aside className={`${isReviewStep ? 'hidden md:flex' : 'flex'} order-2 md:order-none w-full md:w-64 shrink-0 bg-white border-t md:border-t-0 md:border-r border-gray-100 flex-col min-h-0 h-[34vh] md:h-auto`}>
               <div className="flex-1 overflow-y-auto">
                 <StepPartPanel
                   currentStep={currentStep}
                   onPartClick={handlePartClick}
                   onPartDragStart={handlePartDragStart}
+                  pendingPartId={pendingPartId}
                 />
               </div>
             </aside>
@@ -245,6 +256,7 @@ export function GuidedDesignPage() {
               onReset={handleReset}
               onSave={handleSave}
               onExportList={handleSaveAndExport}
+              onContinueCoding={() => navigate(`/code/${activeDesign.id}`)}
               onRunFlightTest={handleRunFlightTest}
               flightPassed={flightPassed}
               flightSummary={

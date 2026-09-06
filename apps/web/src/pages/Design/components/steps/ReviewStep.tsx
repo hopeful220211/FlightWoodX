@@ -90,7 +90,9 @@ export function ReviewStep() {
   const powerOk = ratio !== null && ratio >= 2
   const powerLabel =
     ratio === null
-      ? '还没有动力点，先装 4 个起落架'
+      ? readiness.motorPlan.motorCount < 4
+        ? '还没有足够动力点，先装 4 个起落架'
+        : '起落架已装配，缺少动力实测数据'
       : ratio >= 2
         ? '动力够强'
         : ratio >= 1.5

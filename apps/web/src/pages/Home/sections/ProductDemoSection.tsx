@@ -17,9 +17,9 @@ export function ProductDemoSection() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
   return (
-    <section className="bg-white py-24 lg:py-32">
+    <section className="overflow-x-clip bg-white py-24 lg:py-32">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="grid gap-12 lg:grid-cols-[60%_40%] items-center">
+        <div className="grid items-center gap-12 lg:grid-cols-[3fr_2fr]">
 
           {/* Left: screenshot */}
           <ScrollReveal direction="left" distance={30}>
@@ -28,10 +28,11 @@ export function ProductDemoSection() {
               style={{ transform: 'perspective(1400px) rotateY(-3deg) rotateX(1deg)' }}
             >
               <img
-                src="/resource/picture/UI/design_ui.jpg"
+                src="/optimized/picture/UI/design_ui.webp"
                 alt="FlightWoodX 设计工作台"
                 className="w-full h-auto"
                 loading="lazy"
+                decoding="async"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = `data:image/svg+xml;utf8,${encodeURIComponent(

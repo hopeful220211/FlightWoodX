@@ -1,8 +1,6 @@
 const User = require('../models/User')
 const jwt = require('jsonwebtoken')
-
-// 与注册逻辑保持一致的密码最小长度（与 User 模型 schema minlength 一致）
-const MIN_PASSWORD_LENGTH = 6
+const { toAuthUser, usernameError, passwordError, profileUpdates, accountWriteError } = require('../lib/authUser')
 
 // 生成 JWT Token；tokenVersion 用于改密后撤销此前会话。
 function generateToken(user, jwtSecret) {
@@ -20,7 +18,9 @@ function developmentDetails(req, error) {
 // 注册
 exports.register = async (req, res) => {
   try {
-    const { username, email, password } = req.body
+    const { password } = req.body
+    const username = typeof req.body.username === 'string' ? req.body.username.trim() : req.body.username
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : req.body.email
 
     if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string'
       || !username.trim() || !email.trim() || !password) {
@@ -29,11 +29,13 @@ exports.register = async (req, res) => {
       })
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        error: '密码至少6个字符'
-      })
+    const invalidName = usernameError(username)
+    if (invalidName) return res.status(400).json({ error: invalidName })
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: '请输入有效的邮箱地址' })
     }
+    const invalidPassword = passwordError(password)
+    if (invalidPassword) return res.status(400).json({ error: invalidPassword })
 
     const existingUser = await User.findOne({
       $or: [{ email }, { username }]
@@ -61,16 +63,12 @@ exports.register = async (req, res) => {
     res.status(201).json({
       message: '注册成功！',
       token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
-      }
+      user: toAuthUser(user)
     })
 
   } catch (error) {
+    const writeError = accountWriteError(error)
+    if (writeError) return res.status(400).json({ error: writeError })
     console.error('Register error:', error)
     res.status(500).json({
       error: '注册失败，请稍后再试',
@@ -82,7 +80,8 @@ exports.register = async (req, res) => {
 // 登录
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body
+    const { password } = req.body
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : req.body.email
 
     if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
       return res.status(400).json({
@@ -112,13 +111,7 @@ exports.login = async (req, res) => {
     res.json({
       message: '登录成功！',
       token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        lastLogin: user.lastLogin
-      }
+      user: toAuthUser(user)
     })
 
   } catch (error) {
@@ -139,7 +132,7 @@ exports.getMe = async (req, res) => {
       return res.status(404).json({ error: '用户不存在' })
     }
 
-    res.json({ user })
+    res.json({ user: toAuthUser(user) })
 
   } catch (error) {
     console.error('GetMe error:', error)
@@ -153,20 +146,10 @@ exports.getMe = async (req, res) => {
 // 更新个人资料
 exports.updateProfile = async (req, res) => {
   try {
-    const allowedFields = ['username', 'profile']
-    const updates = {}
+    const parsed = profileUpdates(req.body)
+    if (parsed.error) return res.status(400).json({ error: parsed.error })
 
-    for (const key of allowedFields) {
-      if (req.body[key] !== undefined) {
-        updates[key] = req.body[key]
-      }
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: '没有可更新的字段' })
-    }
-
-    const user = await User.findByIdAndUpdate(req.userId, updates, {
+    const user = await User.findByIdAndUpdate(req.userId, { $set: parsed.updates }, {
       new: true,
       runValidators: true,
     }).select('-password')
@@ -175,8 +158,10 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ error: '用户不存在' })
     }
 
-    res.json({ user })
+    res.json({ user: toAuthUser(user) })
   } catch (error) {
+    const writeError = accountWriteError(error)
+    if (writeError) return res.status(400).json({ error: writeError })
     console.error('UpdateProfile error:', error)
     res.status(500).json({
       error: '更新个人资料失败',
@@ -200,11 +185,8 @@ exports.changePassword = async (req, res) => {
       })
     }
 
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      return res.status(400).json({
-        error: `密码至少${MIN_PASSWORD_LENGTH}个字符`
-      })
-    }
+    const invalidPassword = passwordError(newPassword)
+    if (invalidPassword) return res.status(400).json({ error: invalidPassword })
 
     if (newPassword === oldPassword) {
       return res.status(400).json({

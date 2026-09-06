@@ -6,18 +6,20 @@
  */
 import { CheckCircle2, AlertTriangle, StopCircle, RotateCcw, type LucideIcon } from 'lucide-react'
 
-export type SimFinishKind = 'success' | 'collision' | 'stopped'
+export type SimFinishKind = 'success' | 'collision' | 'stopped' | 'error'
 
 const ICON: Record<SimFinishKind, LucideIcon> = {
   success: CheckCircle2,
   collision: AlertTriangle,
   stopped: StopCircle,
+  error: AlertTriangle,
 }
 
 const CONFIG: Record<SimFinishKind, { title: string; emoji: string; iconBg: string }> = {
   success: { title: '完成！', emoji: '🎉', iconBg: 'bg-success/15 text-success' },
   collision: { title: '撞到障碍了', emoji: '💥', iconBg: 'bg-error/15 text-error' },
   stopped: { title: '已停止', emoji: '⏹️', iconBg: 'bg-ink-100 text-ink-500' },
+  error: { title: '运行失败', emoji: '', iconBg: 'bg-error/15 text-error' },
 }
 
 export interface SimResultPanelProps {

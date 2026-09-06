@@ -256,7 +256,7 @@ export function DesignPage() {
   // 旧的“已使用零件”渲染函数已被新版浮动面板内联实现
 
   return (
-    <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-gradient-to-br from-sky-50 to-sky-100 dark:from-slate-950 dark:to-slate-900">
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-gradient-to-br from-sky-50 to-sky-100 dark:from-slate-950 dark:to-slate-900">
       {/* 3D 画布区域：最大化，铺满父容器 */}
       <div
         ref={threeMountRef}

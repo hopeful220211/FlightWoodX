@@ -22,14 +22,11 @@ export function useDesignSync() {
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
   const requestVersionRef = useRef(0)
   const mountedRef = useRef(true)
+  const pendingRef = useRef<Design | null>(null)
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'error'>('saved')
 
-  useEffect(() => () => {
-    mountedRef.current = false
-    if (timerRef.current) clearTimeout(timerRef.current)
-  }, [])
-
   const persist = useCallback(async (design: Design): Promise<boolean> => {
+    if (useAuthStore.getState().token !== token) return false
     // 游客和未登录用户的草稿由 designStore 同步保存在本机。
     if (isGuest || !token) {
       setSaveStatus('saved')
@@ -37,7 +34,7 @@ export function useDesignSync() {
     }
 
     const requestVersion = ++requestVersionRef.current
-    setSaveStatus('saving')
+    if (mountedRef.current) setSaveStatus('saving')
     try {
       const result = await putDroneDesign({
         localId: design.id, // design.id 稳定，跨设备同一份设计始终命中同一条后端记录
@@ -45,31 +42,46 @@ export function useDesignSync() {
         designData: design, // 整份快照，原样还原
         weightG: design.safetyCheck?.totalWeightG ?? 0,
       })
-      if (!result.success) throw new Error(result.message || '保存失败')
-      if (mountedRef.current && requestVersion === requestVersionRef.current) {
+      if (!result.success) throw new Error(result.error || result.message || '保存失败')
+      if (mountedRef.current && useAuthStore.getState().token === token && requestVersion === requestVersionRef.current) {
         setSaveStatus('saved')
       }
       return true
     } catch {
-      if (mountedRef.current && requestVersion === requestVersionRef.current) {
+      if (mountedRef.current && useAuthStore.getState().token === token && requestVersion === requestVersionRef.current) {
         setSaveStatus('error')
       }
       return false
     }
   }, [isGuest, token])
 
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (timerRef.current) clearTimeout(timerRef.current)
+      const pending = pendingRef.current
+      pendingRef.current = null
+      // Moving to coding or the dashboard must not discard a queued save.
+      if (pending) void persist(pending)
+    }
+  }, [persist])
+
   /** Debounced save — call this whenever the design changes. */
   const saveToServer = useCallback(
     (design: Design) => {
       if (timerRef.current) clearTimeout(timerRef.current)
+      if (pendingRef.current && pendingRef.current.id !== design.id) void persist(pendingRef.current)
       if (isGuest || !token) {
         setSaveStatus('saved')
         return
       }
 
       setSaveStatus('saving')
+      pendingRef.current = design
       timerRef.current = setTimeout(() => {
         timerRef.current = undefined
+        pendingRef.current = null
         void persist(design)
       }, 2000) // 2s debounce — don't spam the server while user is dragging parts
     },
@@ -82,6 +94,7 @@ export function useDesignSync() {
       clearTimeout(timerRef.current)
       timerRef.current = undefined
     }
+    pendingRef.current = null
     return persist(design)
   }, [persist])
 
@@ -89,6 +102,7 @@ export function useDesignSync() {
   const loadFromServer = useCallback(async () => {
     if (isGuest || !token) return
     const res = await getDroneDesigns()
+    if (useAuthStore.getState().token !== token) return
     if (!res.success || !res.data) return
     const designs = res.data.flatMap((record) => {
       const parsed = DroneDesignSnapshotSchema.safeParse(record.designData)

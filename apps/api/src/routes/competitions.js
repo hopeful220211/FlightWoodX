@@ -1,4 +1,5 @@
 const express = require('express')
+const mongoose = require('mongoose')
 const { authenticate, optionalAuth } = require('../middleware/auth')
 const Competition = require('../models/Competition')
 const Registration = require('../models/Registration')
@@ -7,6 +8,10 @@ const Score = require('../models/Score')
 const Project = require('../models/Project')
 
 const router = express.Router()
+router.param('id', (_req, res, next, id) => {
+  if (!mongoose.isObjectIdOrHexString(id)) return res.status(404).json({ error: '赛事不存在' })
+  return next()
+})
 
 // 可报名 / 可提交的赛事状态（草稿不公开，已结束不收新提交）
 const ACTIVE_STATUSES = ['open', 'running']
@@ -153,7 +158,7 @@ router.post('/:id/register', authenticate, async (req, res) => {
 router.post('/:id/submit', authenticate, async (req, res) => {
   try {
     const { projectId } = req.body
-    if (!projectId) {
+    if (!mongoose.isObjectIdOrHexString(projectId)) {
       return res.status(400).json({ error: '请选择要提交的作品' })
     }
 

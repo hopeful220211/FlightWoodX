@@ -5,6 +5,7 @@ const CommunityPost = require('../models/CommunityPost')
 const Reaction = require('../models/Reaction')
 const Follow = require('../models/Follow')
 const User = require('../models/User')
+const { publicPostStages, countPublicPosts } = require('../lib/communityVisibility')
 
 const router = express.Router()
 
@@ -54,10 +55,11 @@ async function likedSetFor(userId, ids) {
 // 复用 community.js 的列表聚合：按 authorId 集合过滤，附 author / project.cover / likeCount / favoriteCount。
 // 直接 COPY /posts 的 lookup 管线，仅把 $match 换成「指定作者集合」。
 async function paginatedPostCards(authorMatch, viewerId, page, pageSize) {
-  const total = await CommunityPost.countDocuments(authorMatch)
+  const total = await countPublicPosts(authorMatch)
 
   const rows = await CommunityPost.aggregate([
     { $match: authorMatch },
+    ...publicPostStages(),
     {
       $lookup: {
         from: 'reactions',

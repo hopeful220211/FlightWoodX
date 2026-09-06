@@ -115,7 +115,7 @@ function CommentRow({ comment, postId }: { comment: CommentDTO; postId: string }
           onClick={() => setMenuOpen((v) => !v)}
           className={cn(
             'rounded-full p-1.5 text-black/45 transition-all duration-300 hover:bg-white hover:text-sky-600 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40',
-            'opacity-0 group-hover:opacity-100 motion-reduce:opacity-100',
+            'opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 motion-reduce:opacity-100',
             menuOpen && 'opacity-100 bg-white text-sky-600 shadow-soft',
           )}
           aria-haspopup="menu"

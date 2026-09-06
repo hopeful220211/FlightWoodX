@@ -11,7 +11,9 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import type { UserPartCategory, UserPartDTO } from '@fwx/parts-schema'
 import { useToast } from '../../components/common/Toast'
+import { Modal } from '../../components/common/Modal'
 import { useAuthStore } from '../../stores/authStore'
+import { useUIStore } from '../../stores/uiStore'
 import { createCustomPart, listCustomParts, deleteCustomPart } from '../../utils/api'
 import type { Point2D, SketchState } from './types'
 import { DrawCanvas } from './canvas/DrawCanvas'
@@ -36,17 +38,21 @@ export function PartStudioPage() {
   const navigate = useNavigate()
   const toast = useToast()
   const token = useAuthStore((s) => s.token)
+  const userId = useAuthStore((s) => s.user?.id)
+  const openLogin = useUIStore((s) => s.openLoginModal)
   const [sketch, setSketch] = useState<SketchState | null>(null)
   const [history, setHistory] = useState<SketchState[]>([])
   const [raised, setRaised] = useState(false)
   const [actAs, setActAs] = useState<UserPartCategory>('landing')
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<UserPartDTO | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // 「我的零件」列表走 TanStack Query（§4.1 服务端数据规范）：进页面拉一次，
   // 保存/删除后 refetch 刷新。游客无服务端数据，enabled=false 不发请求。
-  const { data: myParts = [], refetch: refetchMyParts } = useQuery({
-    queryKey: ['custom-parts'],
+  const { data: myParts = [], refetch: refetchMyParts, isError: partsError } = useQuery({
+    queryKey: ['custom-parts', userId],
     queryFn: async (): Promise<UserPartDTO[]> => {
       const res = await listCustomParts(1, 50)
       if (!res.success) throw new Error(res.error || '获取零件失败')
@@ -91,6 +97,7 @@ export function PartStudioPage() {
     if (!sketch?.closed || saving) return
     if (!token) {
       toast.push('info', '先登录，就能把零件存进「我的零件」')
+      openLogin()
       return
     }
     setSaving(true)
@@ -102,6 +109,7 @@ export function PartStudioPage() {
         closed: sketch.closed,
       })
       const res = await createCustomPart(def)
+      if (useAuthStore.getState().token !== token) return
       if (res.success && res.data) {
         toast.push('success', `已保存「${res.data.name}」到我的零件`)
         setName('')
@@ -112,22 +120,30 @@ export function PartStudioPage() {
       } else {
         toast.push('error', res.error || '保存失败，再试一次')
       }
+    } catch {
+      toast.push('error', '零件保存失败，当前轮廓仍保留，请重试')
     } finally {
       setSaving(false)
     }
-  }, [sketch, saving, token, name, actAs, toast, refetchMyParts])
+  }, [sketch, saving, token, name, actAs, toast, refetchMyParts, openLogin])
 
   const handleDelete = useCallback(
     async (id: string) => {
+      if (deleting) return
+      const requestToken = useAuthStore.getState().token
+      setDeleting(true)
       const res = await deleteCustomPart(id)
+      setDeleting(false)
+      if (useAuthStore.getState().token !== requestToken) { setDeleteTarget(null); return }
       if (res.success) {
+        setDeleteTarget(null)
         toast.push('success', '已删除')
         await refetchMyParts()
       } else {
         toast.push('error', res.error || '删除失败')
       }
     },
-    [toast, refetchMyParts],
+    [toast, refetchMyParts, deleting],
   )
 
   const canRaise = !!sketch?.closed
@@ -141,7 +157,8 @@ export function PartStudioPage() {
   }, [navigate])
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-[#F5F9FF] text-slate-800">
+    <div className="flex min-h-[calc(100dvh-4rem)] flex-col bg-[#F5F9FF] text-slate-800">
+      {partsError && <div role="alert" className="flex items-center justify-between gap-3 bg-amber-50 px-5 py-3 text-sm text-amber-900">零件列表加载失败，画布内容仍保留。<button type="button" onClick={() => void refetchMyParts()} className="rounded border border-amber-300 px-3 py-1">重试</button></div>}
       {/* 顶部：当什么用 + 名字 + 保存 */}
       <header className="flex flex-wrap items-center gap-3 border-b border-[#E2ECF7] bg-white px-5 py-3">
         <button
@@ -167,6 +184,7 @@ export function PartStudioPage() {
           ))}
         </div>
         <input
+          aria-label="零件名称"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="给零件起个名字"
@@ -189,9 +207,9 @@ export function PartStudioPage() {
       </header>
 
       {/* 主体：左画布 + 右 3D */}
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="flex min-h-[640px] flex-1 flex-col md:min-h-[520px] md:flex-row">
         {/* 左：画布 */}
-        <section className="relative min-h-0 flex-1 border-b border-[#E2ECF7] md:border-b-0 md:border-r">
+        <section className="relative min-h-[360px] flex-1 border-b border-[#E2ECF7] md:border-b-0 md:border-r">
           <DrawCanvas outline={sketch?.points ?? null} closed={!!sketch?.closed} onStroke={handleStroke} />
           {!sketch && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -225,7 +243,7 @@ export function PartStudioPage() {
         </section>
 
         {/* 右：3D 预览 */}
-        <section className="relative min-h-0 flex-1">
+        <section className="relative min-h-[280px] flex-1">
           {raised && sketch?.closed ? (
             <ExtrudePreview outline={sketch.points} />
           ) : (
@@ -239,7 +257,14 @@ export function PartStudioPage() {
       </div>
 
       {/* 底部：我的零件（已保存的自制件，刷新后仍在 = 真落库） */}
-      <MyPartsStrip parts={myParts} onDelete={handleDelete} />
+      <MyPartsStrip parts={myParts} onDelete={(id) => setDeleteTarget(myParts.find(part => part.id === id) ?? null)} />
+      <Modal open={!!deleteTarget} title="删除零件" onClose={() => { if (!deleting) setDeleteTarget(null) }}>
+        <p className="text-sm text-slate-600">确定删除「{deleteTarget?.name}」吗？删除后无法恢复。</p>
+        <div className="mt-5 flex justify-end gap-3">
+          <button type="button" disabled={deleting} onClick={() => setDeleteTarget(null)} className="rounded-full border px-4 py-2 text-sm">取消</button>
+          <button type="button" disabled={deleting} onClick={() => { if (deleteTarget) void handleDelete(deleteTarget.id) }} className="rounded-full bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-50">{deleting ? '删除中…' : '确认删除'}</button>
+        </div>
+      </Modal>
     </div>
   )
 }

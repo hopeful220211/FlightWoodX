@@ -5,33 +5,41 @@
  * - 天空渐变背景
  * - 地面网格
  * - 障碍物（圆柱）
- * - 无人机模型（简化几何体 placeholder，M2 完善后替换为真实 GLB）
+ * - 当前作品的拼装零件；没有零件时显示指令预览模型
  * - 飞行轨迹线
  *
  * 由 SimAdapter 的 Telemetry 驱动无人机位置更新。
  */
-import { useRef, useMemo } from 'react'
+import { Suspense, useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Grid, Sky, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Telemetry } from '@fwx/shared'
 import type { SimObstacle } from './SimAdapter'
+import type { Design } from '../types/design'
+import { AssembledDrone } from '../components/design/AssembledDrone'
 
 interface FlightSceneProps {
   telemetry: Telemetry | null
   obstacles?: SimObstacle[]
   trail?: [number, number, number][]
   ledColor?: [number, number, number]
+  parts?: Design['parts']
 }
 
 /** Scale: 1 unit = 1 cm in scene */
 const CM_TO_UNIT = 0.01 // render at meter scale for better Three.js defaults
 
-function Drone({ telemetry, ledColor }: { telemetry: Telemetry | null; ledColor?: [number, number, number] }) {
+function Drone({ telemetry, ledColor, parts }: Pick<FlightSceneProps, 'telemetry' | 'ledColor' | 'parts'>) {
   const groupRef = useRef<THREE.Group>(null)
 
   useFrame(() => {
-    if (!groupRef.current || !telemetry) return
+    if (!groupRef.current) return
+    if (!telemetry) {
+      groupRef.current.position.set(0, 0, 0)
+      groupRef.current.rotation.set(0, 0, 0)
+      return
+    }
     groupRef.current.position.set(
       telemetry.posCm[0] * CM_TO_UNIT,
       telemetry.posCm[1] * CM_TO_UNIT,
@@ -46,6 +54,7 @@ function Drone({ telemetry, ledColor }: { telemetry: Telemetry | null; ledColor?
 
   return (
     <group ref={groupRef}>
+      {parts?.length ? <Suspense fallback={null}><AssembledDrone parts={parts} autoRotate={false} /></Suspense> : <>
       {/* Body */}
       <mesh castShadow>
         <boxGeometry args={[0.3, 0.08, 0.3]} />
@@ -70,6 +79,7 @@ function Drone({ telemetry, ledColor }: { telemetry: Telemetry | null; ledColor?
         <coneGeometry args={[0.03, 0.06, 8]} />
         <meshStandardMaterial color="#ef4444" />
       </mesh>
+      </>}
     </group>
   )
 }
@@ -110,7 +120,7 @@ function FlightTrail({ trail }: { trail: [number, number, number][] }) {
   )
 }
 
-function Scene({ telemetry, obstacles = [], trail = [], ledColor }: FlightSceneProps) {
+function Scene({ telemetry, obstacles = [], trail = [], ledColor, parts }: FlightSceneProps) {
   return (
     <>
       <ambientLight intensity={0.6} />
@@ -139,7 +149,7 @@ function Scene({ telemetry, obstacles = [], trail = [], ledColor }: FlightSceneP
 
       <Obstacles obstacles={obstacles} />
       <FlightTrail trail={trail} />
-      <Drone telemetry={telemetry} ledColor={ledColor} />
+      <Drone telemetry={telemetry} ledColor={ledColor} parts={parts} />
 
       <OrbitControls
         makeDefault

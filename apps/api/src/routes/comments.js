@@ -1,8 +1,8 @@
 const express = require('express')
+const { isPublicPost } = require('../lib/communityVisibility')
 const mongoose = require('mongoose')
 const { authenticate, optionalAuthenticate } = require('../middleware/auth')
 const Comment = require('../models/Comment')
-const CommunityPost = require('../models/CommunityPost')
 
 const router = express.Router()
 
@@ -83,6 +83,7 @@ router.get('/posts/:id/comments', optionalAuthenticate, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(404).json({ error: '作品不存在' })
     }
+    if (!await isPublicPost(id)) return res.status(404).json({ error: '作品不存在' })
 
     const page = Math.max(1, parseInt(req.query.page, 10) || 1)
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 20))
@@ -114,7 +115,7 @@ router.post('/posts/:id/comments', authenticate, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(404).json({ error: '作品不存在' })
     }
-    const exists = await CommunityPost.exists({ _id: id })
+    const exists = await isPublicPost(id)
     if (!exists) return res.status(404).json({ error: '作品不存在' })
 
     const body = (typeof req.body?.body === 'string' ? req.body.body : '').trim()

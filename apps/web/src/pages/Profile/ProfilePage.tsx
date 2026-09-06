@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Edit2, Save, X, Moon, Sun, Trash2, BookOpen, Palette, Calendar } from 'lucide-react'
 import { PageContainer } from '../../components/layout/PageContainer'
@@ -14,8 +14,15 @@ import { writeStorage } from '../../utils/localStorage'
 import { STORAGE_KEYS } from '../../constants/storageKeys'
 import { useToast } from '../../components/common/Toast'
 import type { Design } from '../../types/design'
+import { useAuthStore } from '../../stores/authStore'
+import { getMe, updateProfile, deleteDroneDesignByLocal } from '../../utils/api'
 
 export function ProfilePage() {
+  const accountId = useAuthStore(s => s.user?.id)
+  return <ProfileContent key={accountId ?? 'anonymous'} />
+}
+
+function ProfileContent() {
   const nav = useNavigate()
   const { profile, update } = useProfileStore()
   const { progress } = useLearningStore()
@@ -23,7 +30,23 @@ export function ProfilePage() {
   const setActiveDesignId = useDesignStore((s) => s.setActiveDesignId)
   const designs = useDesignStore((s) => s.designs)
   const deleteDesign = useDesignStore((s) => s.deleteDesign)
+  const createDesign = useDesignStore((s) => s.createDesign)
   const toast = useToast()
+  const { user, token, setUser } = useAuthStore()
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+    void getMe().then(result => {
+      if (cancelled || useAuthStore.getState().token !== token) return
+      if (result.success && result.data) {
+        const account = result.data
+        update({ nickname: account.profile?.displayName || account.nickname || account.username, avatarUrl: account.profile?.avatar || account.avatarUrl, school: account.profile?.school || '', grade: account.profile?.grade || '' })
+      } else toast.push('error', result.error || '账号资料加载失败，请重试')
+    })
+    return () => { cancelled = true }
+  }, [token, update, toast])
 
   const [editing, setEditing] = useState(false)
   const [editNickname, setEditNickname] = useState(profile.nickname)
@@ -33,8 +56,17 @@ export function ProfilePage() {
 
   const myProjects = useMemo<Design[]>(() => designs, [designs])
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!editNickname.trim() || saving) return
+    setSaving(true)
+    if (token && user && !user.isGuest) {
+      const result = await updateProfile({ profile: { displayName: editNickname.trim(), school: editSchool.trim(), grade: editGrade.trim() } })
+      if (useAuthStore.getState().token !== token || useAuthStore.getState().user?.id !== user.id) { setSaving(false); return }
+      if (!result.success || !result.data) { toast.push('error', result.error || '保存失败'); setSaving(false); return }
+      setUser({ ...user, nickname: editNickname.trim() })
+    }
     update({ nickname: editNickname, school: editSchool || undefined, grade: editGrade || undefined })
+    setSaving(false)
     setEditing(false)
     toast.push('success', '保存成功')
   }
@@ -54,9 +86,20 @@ export function ProfilePage() {
     window.location.reload()
   }
 
-  const handleDeleteProject = (id: string) => {
+  const handleDeleteProject = async (id: string) => {
+    if (token && !user?.isGuest) {
+      const result = await deleteDroneDesignByLocal(id)
+      if (useAuthStore.getState().token !== token || useAuthStore.getState().user?.id !== user?.id) return
+      if (!result.success) { toast.push('error', result.error || '删除失败'); return }
+    }
     deleteDesign(id)
     toast.push('success', '删除成功')
+  }
+
+  const handleCreateProject = () => {
+    const id = createDesign('未命名无人机', 'guided')
+    setActiveDesignId(id)
+    nav(`/design/${id}`)
   }
 
   return (
@@ -73,6 +116,7 @@ export function ProfilePage() {
                     <input
                       type="text"
                       value={editNickname}
+                      disabled={saving}
                       onChange={(e) => setEditNickname(e.target.value)}
                       className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-800 dark:text-white"
                       placeholder="请输入昵称"
@@ -83,6 +127,7 @@ export function ProfilePage() {
                     <input
                       type="text"
                       value={editSchool}
+                      disabled={saving}
                       onChange={(e) => setEditSchool(e.target.value)}
                       className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-800 dark:text-white"
                       placeholder="请输入学校（可选）"
@@ -93,16 +138,17 @@ export function ProfilePage() {
                     <input
                       type="text"
                       value={editGrade}
+                      disabled={saving}
                       onChange={(e) => setEditGrade(e.target.value)}
                       className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-slate-800 dark:text-white"
                       placeholder="请输入年级（可选）"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" leftIcon={<Save className="h-4 w-4" />} onClick={handleSave}>
+                    <Button size="sm" loading={saving} disabled={!editNickname.trim()} leftIcon={<Save className="h-4 w-4" />} onClick={handleSave}>
                       保存
                     </Button>
-                    <Button size="sm" variant="outline" leftIcon={<X className="h-4 w-4" />} onClick={handleCancel}>
+                    <Button size="sm" variant="outline" disabled={saving} leftIcon={<X className="h-4 w-4" />} onClick={handleCancel}>
                       取消
                     </Button>
                   </div>
@@ -125,8 +171,7 @@ export function ProfilePage() {
                       size="sm"
                       variant="outline"
                       leftIcon={<Edit2 className="h-4 w-4" />}
-                      className="opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => setEditing(true)}
+                      onClick={() => { setEditNickname(profile.nickname); setEditSchool(profile.school || ''); setEditGrade(profile.grade || ''); setEditing(true) }}
                     >
                       编辑
                     </Button>
@@ -177,7 +222,7 @@ export function ProfilePage() {
               size="sm"
               variant="primary"
               leftIcon={<Palette className="h-4 w-4" />}
-              onClick={() => nav('/design')}
+              onClick={handleCreateProject}
             >
               新建设计
             </Button>
@@ -187,7 +232,7 @@ export function ProfilePage() {
               icon={<Palette size={18} />}
               title="你还没有任何作品哦"
               description="从零件库开始拼装，完成你的第一架无人机！"
-              action={{ label: '新建设计', onClick: () => nav('/design'), buttonProps: { variant: 'primary' } }}
+              action={{ label: '新建设计', onClick: handleCreateProject, buttonProps: { variant: 'primary' } }}
             />
           ) : (
             <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible lg:grid-cols-3">

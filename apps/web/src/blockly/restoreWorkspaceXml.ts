@@ -1,10 +1,11 @@
 import * as Blockly from 'blockly'
 
 /**
- * 把持久化的 XML 恢复进工作区。失败时清理可能已部分写入的积木，
- * 并把结果交给调用方决定是否保留原草稿。
+ * 先在临时工作区验证 XML，避免损坏数据清空用户当前画布。
  */
-export function restoreWorkspaceXml(workspace: Blockly.Workspace, xml: string): boolean {
+export function restoreWorkspaceXml(workspace: Blockly.Workspace, xml: string, validate?: (candidate: Blockly.Workspace) => void): boolean {
+  const validationWorkspace = new Blockly.Workspace()
+  let previous: Element | null = null
   try {
     // Blockly.textToDom 会在 XML 解析失败后用 HTML 解析器容错，例如未闭合标签也会被
     // 当成空工作区成功恢复。持久化草稿要严格验证，避免把损坏数据静默覆盖。
@@ -13,11 +14,19 @@ export function restoreWorkspaceXml(workspace: Blockly.Workspace, xml: string): 
     if (document.getElementsByTagName('parsererror').length > 0 || dom.nodeName.toLowerCase() !== 'xml') {
       throw new Error('Invalid Blockly XML')
     }
+    Blockly.Xml.domToWorkspace(dom, validationWorkspace)
+    validate?.(validationWorkspace)
+    previous = Blockly.Xml.workspaceToDom(workspace)
     workspace.clear()
     Blockly.Xml.domToWorkspace(dom, workspace)
     return true
   } catch {
-    workspace.clear()
+    if (previous) {
+      workspace.clear()
+      Blockly.Xml.domToWorkspace(previous, workspace)
+    }
     return false
+  } finally {
+    validationWorkspace.dispose()
   }
 }

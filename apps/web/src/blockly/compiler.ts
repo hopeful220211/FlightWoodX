@@ -59,7 +59,7 @@ function compileBlockChain(block: Blockly.Block | null): Command[] {
   const cmds: Command[] = []
   let current = block
   while (current) {
-    const cmd = compileBlock(current)
+    const cmd = current.isEnabled() ? compileBlock(current) : null
     if (cmd) cmds.push(cmd)
     current = current.getNextBlock()
   }
@@ -112,7 +112,6 @@ function compileBlock(block: Blockly.Block): Command | null {
 
     case 'drone_wait_until': {
       const condition = compileConditionInput(block, 'CONDITION')
-      if (!condition) return null
       return { type: 'waitUntil', params: { condition } }
     }
 
@@ -126,7 +125,6 @@ function compileBlock(block: Blockly.Block): Command | null {
 
     case 'drone_if_else': {
       const condition = compileConditionInput(block, 'CONDITION')
-      if (!condition) return null
       const thenBlock = block.getInputTargetBlock('THEN')
       const elseBlock = block.getInputTargetBlock('ELSE')
       return {
@@ -152,7 +150,6 @@ function compileBlock(block: Blockly.Block): Command | null {
 
     case 'drone_while': {
       const condition = compileConditionInput(block, 'CONDITION')
-      if (!condition) return null
       const bodyBlock = block.getInputTargetBlock('BODY')
       return {
         type: 'while',
@@ -163,16 +160,20 @@ function compileBlock(block: Blockly.Block): Command | null {
       }
     }
 
-    default:
-      console.warn(`[compiler] Unknown block type: ${block.type}`)
+    case 'drone_start':
+    case 'drone_condition':
       return null
+    default:
+      throw new Error(`无法识别积木：${block.type}`)
   }
 }
 
 /** Extract a Condition from a value input that expects a drone_condition block */
-function compileConditionInput(block: Blockly.Block, inputName: string): Condition | null {
+function compileConditionInput(block: Blockly.Block, inputName: string): Condition {
   const condBlock = block.getInputTargetBlock(inputName)
-  if (!condBlock || condBlock.type !== 'drone_condition') return null
+  if (!condBlock || condBlock.type !== 'drone_condition' || !condBlock.isEnabled()) {
+    throw new Error('请给逻辑或循环积木连接一个有效的条件积木')
+  }
 
   return {
     sensor: condBlock.getFieldValue('SENSOR') as Condition['sensor'],

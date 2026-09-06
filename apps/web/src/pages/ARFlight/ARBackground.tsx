@@ -33,19 +33,25 @@ export function ARBackground() {
 
   useEffect(() => {
     let stream: MediaStream | null = null
+    let cancelled = false
     const video = videoRef.current
 
     initCamera().then(s => {
+      if (cancelled) { s?.getTracks().forEach(track => track.stop()); return }
       if (s && video) {
         stream = s
         video.srcObject = s
-        video.play().catch(() => setUseFallback(true))
+        video.play().catch(() => {
+          s.getTracks().forEach(track => track.stop())
+          if (!cancelled) setUseFallback(true)
+        })
       } else {
         setUseFallback(true)
       }
     })
 
     return () => {
+      cancelled = true
       stream?.getTracks().forEach(t => t.stop())
       if (video) {
         video.srcObject = null
@@ -53,7 +59,7 @@ export function ARBackground() {
     }
   }, [])
 
-  if (useFallback) return <SkyBackground />
+  if (useFallback) return <><SkyBackground /><p role="status" className="fixed top-20 inset-x-4 z-20 text-center text-xs text-white">摄像头不可用，已切换为虚拟背景；当前为视觉仿真。</p></>
 
   return (
     <video

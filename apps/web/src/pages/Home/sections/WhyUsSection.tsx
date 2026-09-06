@@ -3,19 +3,19 @@ import { SectionHeading } from '../components/SectionHeading'
 
 const cards = [
   {
-    img: '/resource/picture/flight_png/untitled.160.png',
+    img: '/optimized/picture/flight_png/untitled.160.webp',
     title: '榫卯结构',
     subtitle: '传统工艺 × 现代科技',
     desc: '拼的是榫卯，不用一根钉子，全靠木头互相咬住。拼着拼着，孩子自己就摸清了结构怎么受力。',
   },
   {
-    img: '/resource/picture/learning_kids/EX4A6148.png',
+    img: '/optimized/picture/learning_kids/EX4A6148.webp',
     title: '真实飞行',
     subtitle: '不是模拟器，是真会飞',
     desc: '设计完就能试飞。一堆木片怎么变成真能飞起来的东西，孩子从头到尾自己走一遍。',
   },
   {
-    img: '/resource/picture/learning_kids/EX4A6264 1.png',
+    img: '/optimized/picture/learning_kids/EX4A6264 1.webp',
     title: '配套齐全',
     subtitle: '软件 + 硬件套件',
     desc: '设计软件、木质套件、电子件都由官方配齐，拿到就能上手做，不用东拼西凑。',

@@ -30,6 +30,7 @@ const UserSchema = new mongoose.Schema({
   profile: {
     displayName: String,
     avatar: String,
+    school: { type: String, maxlength: 100, trim: true },
     grade: String,
     studentId: String
   },

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { COMMAND_LIMITS } from '@fwx/shared'
 import type { Command, CommandProgram } from '@fwx/shared'
 import { SimAdapter } from './SimAdapter'
@@ -36,7 +36,7 @@ describe('SimAdapter while loop limits', () => {
     expect(started.filter((command) => command.type === 'led')).toHaveLength(2)
   })
 
-  it('caps unvalidated input at the protocol maximum', async () => {
+  it('rejects unvalidated input beyond the protocol maximum before execution', async () => {
     const started: Command[] = []
     const adapter = new SimAdapter()
 
@@ -44,8 +44,58 @@ describe('SimAdapter while loop limits', () => {
       onCommandStart: (_index, command) => started.push(command),
     })
 
-    expect(started.filter((command) => command.type === 'led')).toHaveLength(
-      COMMAND_LIMITS.maxWhileIterations,
-    )
+    expect(started).toHaveLength(0)
+  })
+})
+
+const makeProgram = (commands: Command[]): CommandProgram => ({ ...programWithWhile(2), commands })
+afterEach(() => vi.useRealTimers())
+
+describe('SimAdapter stop, reset and failure behavior', () => {
+  it('stops a rotation at its current heading instead of snapping to the target', async () => {
+    vi.useFakeTimers()
+    const adapter = new SimAdapter()
+    const finished = vi.fn()
+    const running = adapter.execute(makeProgram([{ type: 'rotate', params: { degrees: 180 } }]), { onFinish: finished })
+    adapter.stop()
+    await vi.runAllTimersAsync()
+    await running
+    expect(adapter.getState().heading).toBeLessThan(180)
+    expect(finished).toHaveBeenCalledTimes(1)
+    expect(finished.mock.calls[0][0]).toMatchObject({ success: false })
+    expect(finished.mock.calls[0][0].events).not.toContain('rotate 180deg')
+  })
+
+  it('clears the previous LED when the same adapter is run again', async () => {
+    const adapter = new SimAdapter()
+    await adapter.execute(makeProgram([{ type: 'led', params: { r: 255, g: 0, b: 0 } }]), {})
+    await adapter.execute(makeProgram([]), {})
+    expect(adapter.getState().ledColor).toEqual([0, 0, 0])
+  })
+
+  it('does not silently continue after an unmet wait condition times out', async () => {
+    vi.useFakeTimers()
+    const adapter = new SimAdapter()
+    const finished = vi.fn()
+    const execution = adapter.execute(makeProgram([
+      { type: 'waitUntil', params: { condition: { sensor: 'battery', op: '<', value: 0 } } },
+      { type: 'led', params: { r: 255, g: 0, b: 0 } },
+    ]), { onFinish: finished })
+    await vi.runAllTimersAsync()
+    await execution
+    expect(finished.mock.calls[0][0].success).toBe(false)
+    expect(adapter.getState().ledColor).toEqual([0, 0, 0])
+  })
+
+  it('treats takeoff altitude as an absolute height on repeated takeoff', async () => {
+    vi.useFakeTimers()
+    const adapter = new SimAdapter()
+    const running = adapter.execute(makeProgram([
+      { type: 'takeoff', params: { altitudeCm: 50 } },
+      { type: 'takeoff', params: { altitudeCm: 100 } },
+    ]), {})
+    await vi.runAllTimersAsync()
+    await running
+    expect(adapter.getState().pos[1]).toBeCloseTo(100)
   })
 })

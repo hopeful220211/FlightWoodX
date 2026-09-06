@@ -30,15 +30,15 @@ export function MePage() {
         {[
           { icon: FolderOpen, label: '我的作品', to: '/dashboard', color: 'bg-sky-100 text-sky-600' },
           { icon: Trophy, label: '我的奖项', to: '#', color: 'bg-accent-gold/20 text-accent-gold' },
-          { icon: Heart, label: '我的收藏', to: '#', color: 'bg-error/10 text-error' },
+          { icon: Heart, label: '我的收藏', to: '/collections', color: 'bg-error/10 text-error' },
           { icon: Settings, label: '账号设置', to: '/profile', color: 'bg-ink-100 text-ink-600' },
         ].map((item) => (
-          <Card key={item.label} className="cursor-pointer" onClick={() => nav(item.to)}>
+          <Card key={item.label} className={item.to === '#' ? 'opacity-60' : 'cursor-pointer'} onClick={item.to === '#' ? undefined : () => nav(item.to)}>
             <div className="flex items-center gap-3">
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.color}`}>
                 <item.icon size={18} />
               </div>
-              <span className="font-medium text-ink-900">{item.label}</span>
+              <span className="font-medium text-ink-900">{item.label}{item.to === '#' && <span className="ml-2 text-xs font-normal text-ink-400">暂无记录</span>}</span>
             </div>
           </Card>
         ))}

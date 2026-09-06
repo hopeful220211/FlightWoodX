@@ -87,8 +87,9 @@ export function AuthPage() {
           {/* 注册表单 */}
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className={labelCls}>用户名</label>
+              <label htmlFor="register-username" className={labelCls}>用户名</label>
               <input
+                id="register-username"
                 type="text"
                 required
                 minLength={3}
@@ -101,8 +102,9 @@ export function AuthPage() {
             </div>
 
             <div>
-              <label className={labelCls}>邮箱</label>
+              <label htmlFor="register-email" className={labelCls}>邮箱</label>
               <input
+                id="register-email"
                 type="email"
                 required
                 value={form.email}
@@ -114,8 +116,9 @@ export function AuthPage() {
             </div>
 
             <div>
-              <label className={labelCls}>密码</label>
+              <label htmlFor="register-password" className={labelCls}>密码</label>
               <input
+                id="register-password"
                 type="password"
                 required
                 minLength={6}

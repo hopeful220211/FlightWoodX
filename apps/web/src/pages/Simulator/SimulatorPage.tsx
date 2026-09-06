@@ -5,7 +5,7 @@
  * 运行/停止/重置、遥测 HUD、飞行轨迹、障碍物、结果面板（完成/撞机/停止 + 用时）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { Play, Pause, RotateCcw, Activity } from 'lucide-react'
 import { Button } from '../../components/common/Button'
 import { useToast } from '../../components/common/Toast'
@@ -13,6 +13,10 @@ import { FlightScene } from '../../simulator/FlightScene'
 import { SimAdapter, type SimObstacle } from '../../simulator/SimAdapter'
 import type { Telemetry, RunResult } from '@fwx/shared'
 import { useProgramStore } from '../../stores/programStore'
+import { useAuthStore } from '../../stores/authStore'
+import { useDesignStore } from '../../stores/designStore'
+import { loadDesignProgram } from '../../utils/designProgram'
+import { compileWorkspaceXml } from '../../blockly/compileWorkspaceXml'
 import { SimResultPanel, type SimFinishKind } from './SimResultPanel'
 
 /** 飞行轨迹最多保留点数（防止长飞累积拖慢渲染）。 */
@@ -27,11 +31,19 @@ const DEFAULT_OBSTACLES: SimObstacle[] = [
 
 export function SimulatorPage() {
   const { id } = useParams()
-  return <SimulatorWorkspace key={id ?? 'unbound'} designId={id} />
+  const userId = useAuthStore(state => state.user?.id)
+  return <SimulatorWorkspace key={`${id ?? 'unbound'}:${userId ?? 'guest'}`} designId={id} />
 }
 
 function SimulatorWorkspace({ designId: id }: { designId?: string }) {
   const toast = useToast()
+  const token = useAuthStore(state => state.token)
+  const user = useAuthStore(state => state.user)
+  const design = useDesignStore(state => state.designs.find(value => value.id === id))
+  const draft = useProgramStore(state => id ? state.draftsByDesignId[id] : undefined)
+  const [loading, setLoading] = useState(Boolean(token && !user?.isGuest))
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [retryKey, setRetryKey] = useState(0)
 
   const adapterRef = useRef<SimAdapter | null>(null)
   const runIdRef = useRef(0)
@@ -45,6 +57,32 @@ function SimulatorWorkspace({ designId: id }: { designId?: string }) {
   const [elapsedSec, setElapsedSec] = useState(0)
   const [currentCmdIndex, setCurrentCmdIndex] = useState(-1)
 
+  useEffect(() => {
+    if (!id || !token || user?.isGuest) return
+    let cancelled = false
+    void (async () => {
+      setLoading(true)
+      setLoadError(null)
+      try {
+        const localDraft = useProgramStore.getState().getDraft(id)
+        // Run the current intentional edit, including an incomplete or empty draft.
+        if (localDraft?.blocklyXml && localDraft.blocklyXml !== localDraft.syncedXml) return
+        const { program } = await loadDesignProgram(id)
+        if (cancelled || !program) return
+        const compiled = compileWorkspaceXml(program.blocklyXml, { name: program.name, author: user?.username || '设计师' })
+        const store = useProgramStore.getState()
+        store.setProgram(id, program.blocklyXml, compiled)
+        store.setServerId(id, program.id)
+        store.markSynced(id, program.blocklyXml)
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : '程序加载失败')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [id, token, user?.isGuest, user?.username, retryKey])
+
   useEffect(() => () => {
     runIdRef.current++
     adapterRef.current?.stop()
@@ -56,11 +94,14 @@ function SimulatorWorkspace({ designId: id }: { designId?: string }) {
       toast.push('error', '未找到该作品已保存的程序')
       return
     }
-    const programStore = useProgramStore.getState()
-    const draft = programStore.getDraft(id) ?? programStore.claimLegacyDraft(id)
-    const program = draft?.commandProgram
-    if (!program || program.commands.length === 0) {
-      toast.push('error', '未找到该作品已保存的程序')
+    const draft = useProgramStore.getState().getDraft(id)
+    let program
+    try {
+      if (!draft?.blocklyXml) throw new Error('未找到该作品已保存的程序')
+      program = compileWorkspaceXml(draft.blocklyXml, { name: draft.commandProgram?.metadata.name || '当前作品', author: user?.username || '设计师' })
+      if (!program.commands.length) throw new Error('请先在编程页连接可运行的积木')
+    } catch (error) {
+      toast.push('error', error instanceof Error ? error.message : '程序无法运行')
       return
     }
 
@@ -97,18 +138,18 @@ function SimulatorWorkspace({ designId: id }: { designId?: string }) {
       onFinish: (r) => {
         if (!live()) return
         // 三态：撞机 / 完成 / 手动停止。撞机优先于 success 判断。
-        const kind: SimFinishKind = adapter.hasCollided() ? 'collision' : r.success ? 'success' : 'stopped'
+        const kind: SimFinishKind = adapter.hasCollided() ? 'collision' : adapter.getFailureReason() ? 'error' : r.success ? 'success' : 'stopped'
         setResult(r)
         setFinishKind(kind)
         setElapsedSec((performance.now() - startTimeRef.current) / 1000)
         setRunning(false)
         toast.push(
-          kind === 'success' ? 'success' : kind === 'collision' ? 'error' : 'info',
-          kind === 'success' ? '飞行完成！' : kind === 'collision' ? '撞到障碍了' : '已停止',
+          kind === 'success' ? 'success' : kind === 'stopped' ? 'info' : 'error',
+          kind === 'success' ? '飞行完成！' : kind === 'collision' ? '撞到障碍了' : kind === 'error' ? adapter.getFailureReason()! : '已停止',
         )
       },
     })
-  }, [id, toast])
+  }, [id, toast, user])
 
   const handleStop = useCallback(() => {
     // 只停飞；最终结果（含用时）由 adapter 的 onFinish 回来统一产出，保证一致。
@@ -134,7 +175,7 @@ function SimulatorWorkspace({ designId: id }: { designId?: string }) {
       <div className="flex items-center justify-between border-b border-sky-100 bg-white px-4 py-2">
         <div className="flex items-center gap-2">
           {!running ? (
-            <Button size="sm" onClick={handleRun} leftIcon={<Play size={14} />}>
+            <Button size="sm" onClick={handleRun} disabled={loading || Boolean(loadError) || !draft?.commandProgram?.commands.length} leftIcon={<Play size={14} />}>
               {finishKind ? '重新运行' : '运行'}
             </Button>
           ) : (
@@ -162,10 +203,20 @@ function SimulatorWorkspace({ designId: id }: { designId?: string }) {
 
         <div className="w-px" aria-hidden="true" />
       </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 bg-sky-50/70 px-4 py-2 text-xs text-ink-600">
+        <span>视觉仿真 · 用于检查指令流程，不代表真实飞行结果{!design?.parts.length && ' · 未选择零件，显示指令预览模型'}</span>
+        <Link className="font-medium text-sky-700 underline" to={id ? `/code/${id}` : '/design'}>返回积木编程</Link>
+      </div>
 
       {/* 3D Scene */}
       <div className="relative min-h-0 flex-1">
-        <FlightScene telemetry={telemetry} obstacles={DEFAULT_OBSTACLES} trail={trail} ledColor={ledColor} />
+        <FlightScene telemetry={telemetry} obstacles={DEFAULT_OBSTACLES} trail={trail} ledColor={ledColor} parts={design?.parts} />
+        {(loading || loadError || !draft?.commandProgram?.commands.length) && !running && (
+          <div role="status" className="absolute inset-x-4 top-4 mx-auto max-w-md rounded-xl border border-sky-100 bg-white/95 p-4 text-center text-sm text-ink-700 shadow-soft">
+            {loading ? '正在加载当前作品程序…' : loadError || '当前作品还没有可运行的程序，请返回积木编程添加或修正积木。'}
+            {loadError && <button className="ml-2 text-sky-700 underline" onClick={() => setRetryKey(value => value + 1)}>重试</button>}
+          </div>
+        )}
 
         {/* 结果面板（完成/撞机/停止 + 用时 + 重新运行） */}
         {finishKind && !running && (

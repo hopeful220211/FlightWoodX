@@ -18,6 +18,18 @@ function chain(a: Blockly.Block, b: Blockly.Block): Blockly.Block {
 }
 
 describe('compileWorkspace —— 开始锚点语义', () => {
+  it('rejects an unfinished condition instead of silently skipping the command', () => {
+    ws.newBlock('drone_wait_until')
+    expect(() => compileWorkspace(ws, META)).toThrow('条件')
+  })
+
+  it('does not run disabled blocks', () => {
+    const takeoff = ws.newBlock('drone_takeoff')
+    const land = ws.newBlock('drone_land')
+    chain(takeoff, land)
+    takeoff.setDisabledReason(true, 'user')
+    expect(compileWorkspace(ws, META).commands.map(command => command.type)).toEqual(['land'])
+  })
   it('无 start：回退编译顶层链', () => {
     const tk = ws.newBlock('drone_takeoff')
     const land = ws.newBlock('drone_land')

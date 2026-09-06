@@ -1,6 +1,6 @@
 # FlightWoodX 国内部署编排（RFC-024 §4.8）。目标：阿里云 ECS 成都 2C2G / 3Mbps。
 # 三服务：api（Node/Express）· mongo（内网私有，绝不暴露公网）· nginx（前端静态页 + 反代 + HTTPS）。
-# 一切大文件（GLB/贴图/缩略图/DXF/zip）走 OSS，不经这台机器。所有凭证从 .env 注入，绝不写死。
+# 模型/图片默认同源托管；OSS 经权限和 CORS 验证后可通过环境变量启用。凭证从 .env 注入。
 #
 # 用法（在 deploy/ 目录）：
 #   cp .env.example .env && vim .env      # 填真实凭证
@@ -22,6 +22,10 @@ services:
       MONGODB_URI: mongodb://mongo:27017/flightwoodx
       PORT: "3000"
       NODE_ENV: production
+      TRUST_PROXY_HOPS: "1"
+      UPLOAD_DIR: /app/apps/api/uploads
+    volumes:
+      - api-uploads:/app/apps/api/uploads
     depends_on:
       - mongo
     expose:
@@ -66,6 +70,7 @@ services:
 
 volumes:
   mongo-data:
+  api-uploads:
 
 networks:
   fwxnet:

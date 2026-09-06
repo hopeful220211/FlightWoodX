@@ -32,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => [...prev, item])
     window.setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 2200)
+    }, type === 'error' ? 6500 : 3000)
   }, [])
 
   const value = useMemo(() => ({ push }), [push])
@@ -44,6 +44,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
+            role={t.type === 'error' ? 'alert' : 'status'}
             className={cn(
               'rounded-lg border p-3 text-sm font-semibold shadow-lift backdrop-blur',
               'bg-white/90 text-slate-900 dark:bg-slate-950/80 dark:text-slate-50',

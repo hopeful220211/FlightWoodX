@@ -5,6 +5,8 @@ const CommunityPost = require('../models/CommunityPost')
 const Project = require('../models/Project')
 const Reaction = require('../models/Reaction')
 const DroneDesign = require('../models/DroneDesign')
+const { publicPostStages, countPublicPosts, isPublicPost } = require('../lib/communityVisibility')
+const { isInvalidDocument } = require('../lib/persistenceErrors')
 
 const router = express.Router()
 
@@ -83,13 +85,14 @@ router.get('/posts', optionalAuthenticate, async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1)
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 20))
     const sort = req.query.sort === 'hot' ? 'hot' : 'new'
-    const q = (req.query.q || '').trim()
-    const match = q ? { title: { $regex: q, $options: 'i' } } : {}
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : ''
+    const match = q ? { title: { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } } : {}
 
-    const total = await CommunityPost.countDocuments(match)
+    const total = await countPublicPosts(match)
 
     const rows = await CommunityPost.aggregate([
       { $match: match },
+      ...publicPostStages(),
       // 每条 post 的点赞数（lookup reactions 计数）
       {
         $lookup: {
@@ -172,6 +175,7 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(404).json({ error: '作品不存在' })
     }
+    if (!await isPublicPost(id)) return res.status(404).json({ error: '作品不存在' })
 
     const post = await CommunityPost.findById(id)
       .populate('authorId', 'username avatar profile.avatar')
@@ -220,7 +224,7 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
 
     // fork 血缘（只读展示；fork 写入口属 P1）
     let forkFrom = null
-    if (post.forkFromId) {
+    if (post.forkFromId && await isPublicPost(post.forkFromId)) {
       const src = await CommunityPost.findById(post.forkFromId)
         .populate('authorId', 'username')
         .lean()
@@ -273,6 +277,10 @@ router.get('/posts/:id', optionalAuthenticate, async (req, res) => {
 router.post('/posts', authenticate, async (req, res) => {
   try {
     const { designId, projectId, title, description, reusable } = req.body
+    if ((title !== undefined && (typeof title !== 'string' || title.trim().length > 120))
+      || (description !== undefined && (typeof description !== 'string' || description.trim().length > 2000))) {
+      return res.status(400).json({ error: '作品标题或描述格式无效或过长' })
+    }
 
     // 作品库合一（RFC-024 方案 A）：新链路走 designId（作品=设计），可见性 / 复用权威在 design；
     // 兼容旧链路仍接受 projectId。无论哪条，最终都落到一个「桥接 Project」供 CommunityPost 指向。
@@ -347,6 +355,7 @@ router.post('/posts', authenticate, async (req, res) => {
       alreadyPublished: !created,
     })
   } catch (error) {
+    if (isInvalidDocument(error)) return res.status(400).json({ error: '作品发布内容格式无效' })
     console.error('[community] Publish error:', error)
     res.status(500).json({ error: '发布到社区失败' })
   }
@@ -361,7 +370,7 @@ router.post('/posts/:id/like', authenticate, async (req, res) => {
   try {
     const { id } = req.params
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).json({ error: '作品不存在' })
-    const exists = await CommunityPost.exists({ _id: id })
+    const exists = await isPublicPost(id)
     if (!exists) return res.status(404).json({ error: '作品不存在' })
 
     await Reaction.updateOne(

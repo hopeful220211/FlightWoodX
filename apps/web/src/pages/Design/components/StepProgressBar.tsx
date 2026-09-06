@@ -10,7 +10,7 @@ interface StepProgressBarProps {
 
 export function StepProgressBar({ currentStep, stepReached, onStepClick }: StepProgressBarProps) {
   return (
-    <div className="flex items-center gap-1 px-4 py-3 bg-white border-b border-gray-100">
+    <div className="flex items-center gap-1 px-3 py-3 bg-white border-b border-gray-100">
       {BUILD_STEPS.map((step, idx) => {
         const info = STEP_INFO[step]
         const isCurrent = step === currentStep
@@ -21,14 +21,14 @@ export function StepProgressBar({ currentStep, stepReached, onStepClick }: StepP
         const clickable = isReachable && !isCurrent && !!onStepClick
 
         return (
-          <div key={step} className="flex items-center flex-1">
+          <div key={step} className="flex min-w-0 items-center flex-1">
             <button
               type="button"
               disabled={!clickable}
               onClick={() => clickable && onStepClick?.(step)}
               title={clickable ? `回到「${info.label}」` : undefined}
               aria-current={isCurrent ? 'step' : undefined}
-              className={`flex items-center gap-2 flex-1 rounded-lg px-1.5 py-1 -mx-1.5 text-left transition-colors ${
+              className={`flex min-w-0 flex-col sm:flex-row items-center gap-1 sm:gap-2 flex-1 rounded-lg px-1 py-1 text-left transition-colors ${
                 clickable ? 'cursor-pointer hover:bg-sky-50' : 'cursor-default'
               }`}
             >
@@ -43,7 +43,7 @@ export function StepProgressBar({ currentStep, stepReached, onStepClick }: StepP
                 {isCompleted ? '✓' : info.number}
               </div>
               <span
-                className={`text-xs truncate ${
+                className={`max-w-full text-[10px] sm:text-xs truncate ${
                   isCurrent ? 'text-sky-600 font-semibold' : isCompleted ? 'text-green-600' : 'text-gray-400'
                 }`}
               >
@@ -51,7 +51,7 @@ export function StepProgressBar({ currentStep, stepReached, onStepClick }: StepP
               </span>
             </button>
             {idx < BUILD_STEPS.length - 1 && (
-              <div className={`h-0.5 w-4 mx-1 ${idx < stepReached ? 'bg-green-300' : 'bg-gray-200'}`} />
+              <div className={`h-0.5 w-2 sm:w-4 shrink-0 mx-0.5 sm:mx-1 ${idx < stepReached ? 'bg-green-300' : 'bg-gray-200'}`} />
             )}
           </div>
         )

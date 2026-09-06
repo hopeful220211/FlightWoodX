@@ -88,7 +88,7 @@ export function SocketHighlights() {
         if (occupiedSockets.has(key)) continue
 
         // 计算连接点的世界坐标
-        const worldPos = connector.position.clone().applyQuaternion(instQuat).add(instPos)
+        const worldPos = connector.position.clone().multiply(new THREE.Vector3(...(inst.scale ?? [1, 1, 1]))).applyQuaternion(instQuat).add(instPos)
         sockets.push({
           instanceId: inst.instanceId,
           socketId: connector.id,

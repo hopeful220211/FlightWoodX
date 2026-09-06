@@ -90,8 +90,11 @@ export function checkDualMainboard(parts: PartInstance[]): Violation | null {
     }
   }
 
-  const tilt0 = Math.max(Math.abs(mainboards[0].rotation[0]), Math.abs(mainboards[0].rotation[2]))
-  const tilt1 = Math.max(Math.abs(mainboards[1].rotation[0]), Math.abs(mainboards[1].rotation[2]))
+  // XYZ Euler 的同一平面有多种角度表示（例如 [π, 0, π] 仍然水平）。
+  // 比较旋转后板面法向与世界 Y 轴，不能用各 Euler 分量的绝对值判断倾斜。
+  const tilt = ([x, y, z]: [number, number, number]) => Math.acos(Math.min(1, Math.abs(Math.cos(x) * Math.cos(z) - Math.sin(x) * Math.sin(y) * Math.sin(z))))
+  const tilt0 = tilt(mainboards[0].rotation)
+  const tilt1 = tilt(mainboards[1].rotation)
   if (tilt0 > 0.1 || tilt1 > 0.1) {
     return {
       id: 'mainboard-level',

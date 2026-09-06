@@ -7,7 +7,7 @@
  * 硬件解耦红线：SimAdapter 只通过 CommandProgram 与积木编辑器通信。
  * 换真机只需实现另一个 DroneAdapter，不改积木、不改课程。
  */
-import { COMMAND_LIMITS } from '@fwx/shared'
+import { COMMAND_LIMITS, CommandProgramSchema } from '@fwx/shared'
 import type {
   DroneAdapter,
   CommandProgram,
@@ -59,6 +59,8 @@ export class SimAdapter implements DroneAdapter {
   private events: string[] = []
   private commandIndex = 0
   private collided = false
+  private failureReason: string | null = null
+  private cancelSleep: (() => void) | null = null
 
   constructor(options: SimAdapterOptions = {}) {
     this.speed = options.speed ?? 1
@@ -74,6 +76,7 @@ export class SimAdapter implements DroneAdapter {
   }
 
   async execute(program: CommandProgram, hooks: ExecHooks): Promise<void> {
+    if (this.running) throw new Error('程序正在运行，请等待停止后再运行')
     this.hooks = hooks
     this.running = true
     this.aborted = false
@@ -83,33 +86,30 @@ export class SimAdapter implements DroneAdapter {
     this.state.heading = 0
     this.state.isFlying = false
     this.state.lockedAxes.clear()
+    this.state.ledColor = [0, 0, 0]
     this.collided = false
-
-    // 先 emit 一帧初始状态（让 3D 无人机回到起点），emitTelemetry 内含起点碰撞检查
-    this.emitTelemetry()
+    this.failureReason = null
 
     try {
-      await this.runCommands(program.commands)
-
-      const result: RunResult = {
-        success: !this.aborted,
-        events: this.events,
-      }
-      this.hooks.onFinish?.(result)
+      const parsed = CommandProgramSchema.safeParse(program)
+      if (!parsed.success) throw new Error('程序格式不正确，请返回编程页检查积木')
+      this.emitTelemetry()
+      await this.runCommands(parsed.data.commands)
     } catch (err) {
-      const result: RunResult = {
-        success: false,
-        events: [...this.events, `Error: ${err instanceof Error ? err.message : 'unknown'}`],
-      }
-      this.hooks.onFinish?.(result)
+      this.failureReason = err instanceof Error ? err.message : '程序运行失败'
+      this.events.push(this.failureReason)
     } finally {
       this.running = false
     }
+    const result: RunResult = { success: !this.aborted && !this.failureReason, events: [...this.events] }
+    this.hooks.onFinish?.(result)
   }
 
   stop(): void {
+    if (!this.running || this.aborted) return
     this.aborted = true
-    this.running = false
+    this.events.push('已停止')
+    this.cancelSleep?.()
   }
 
   isRunning(): boolean {
@@ -125,10 +125,16 @@ export class SimAdapter implements DroneAdapter {
     return this.collided
   }
 
+  getFailureReason(): string | null { return this.failureReason }
+
   // ===== Command execution =====
 
   private async runCommands(commands: Command[]): Promise<void> {
     for (const cmd of commands) {
+      if (this.aborted) return
+      if (this.commandIndex >= 10_000) throw new Error('运行指令过多，请缩短循环后重试')
+      // Yield to browser input even for loops that only contain instantaneous commands.
+      if (this.commandIndex > 0 && this.commandIndex % 50 === 0) await this.sleep(0)
       if (this.aborted) return
       this.hooks.onCommandStart?.(this.commandIndex, cmd)
       this.commandIndex++
@@ -140,12 +146,14 @@ export class SimAdapter implements DroneAdapter {
     switch (cmd.type) {
       case 'takeoff': {
         this.state.isFlying = true
-        await this.animateMove(0, cmd.params.altitudeCm, 0, 30)
+        await this.animateMove(0, cmd.params.altitudeCm - this.state.pos[1], 0, 30)
+        if (this.aborted) break
         this.events.push(`takeoff to ${cmd.params.altitudeCm}cm`)
         break
       }
       case 'land': {
         await this.animateMove(0, -this.state.pos[1], 0, 30)
+        if (this.aborted) break
         this.state.isFlying = false
         this.events.push('landed')
         break
@@ -156,11 +164,11 @@ export class SimAdapter implements DroneAdapter {
         const [dx, dy, dz] = this.directionToVector(direction, distanceCm)
 
         // Check locked axes
-        if (this.state.lockedAxes.has('forward') && dz !== 0) {
+        if (this.state.lockedAxes.has('forward') && ['forward', 'back'].includes(direction)) {
           this.events.push(`move ${direction} blocked (forward axis locked)`)
           break
         }
-        if (this.state.lockedAxes.has('lateral') && dx !== 0) {
+        if (this.state.lockedAxes.has('lateral') && ['left', 'right'].includes(direction)) {
           this.events.push(`move ${direction} blocked (lateral axis locked)`)
           break
         }
@@ -176,15 +184,17 @@ export class SimAdapter implements DroneAdapter {
       }
       case 'rotate': {
         const targetHeading = this.state.heading + cmd.params.degrees
-        const steps = Math.max(1, Math.abs(cmd.params.degrees) / 5)
+        const steps = Math.max(1, Math.ceil(Math.abs(cmd.params.degrees) / 5))
         const stepDeg = cmd.params.degrees / steps
 
         for (let i = 0; i < steps && !this.aborted; i++) {
           this.state.heading += stepDeg
           this.emitTelemetry()
-          await this.sleep(this.tickMs)
+          await this.sleep(this.tickMs / this.speed)
         }
+        if (this.aborted) break
         this.state.heading = targetHeading
+        this.emitTelemetry()
         this.events.push(`rotate ${cmd.params.degrees}deg`)
         break
       }
@@ -195,6 +205,7 @@ export class SimAdapter implements DroneAdapter {
           this.emitTelemetry()
           await this.sleep(this.tickMs)
         }
+        if (this.aborted) break
         this.events.push(`hover ${cmd.params.durationMs}ms`)
         break
       }
@@ -215,6 +226,9 @@ export class SimAdapter implements DroneAdapter {
           this.emitTelemetry()
           await this.sleep(this.tickMs)
           waited += this.tickMs
+        }
+        if (!this.aborted && waited >= maxWait && !this.evaluateCondition(cmd.params.condition)) {
+          throw new Error('等待条件在 10 秒内未满足，程序已停止')
         }
         break
       }
@@ -250,6 +264,9 @@ export class SimAdapter implements DroneAdapter {
         while (!this.aborted && iterations < maxIter && this.evaluateCondition(cmd.params.condition)) {
           await this.runCommands(cmd.params.body)
           iterations++
+        }
+        if (!this.aborted && iterations >= maxIter && this.evaluateCondition(cmd.params.condition)) {
+          throw new Error(`循环达到 ${maxIter} 次上限，程序已停止`)
         }
         break
       }
@@ -367,6 +384,15 @@ export class SimAdapter implements DroneAdapter {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    if (this.aborted) return Promise.resolve()
+    return new Promise(resolve => {
+      const finish = () => {
+        clearTimeout(timer)
+        this.cancelSleep = null
+        resolve()
+      }
+      const timer = setTimeout(finish, ms)
+      this.cancelSleep = finish
+    })
   }
 }

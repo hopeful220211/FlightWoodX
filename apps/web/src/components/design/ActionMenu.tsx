@@ -6,18 +6,25 @@ import { Trash2, FlipVertical2, Repeat } from 'lucide-react'
 import { partsData } from '../../data/parts'
 import { getCachedPartConnectors } from '../../hooks/usePartConnectors'
 import { computePerpendicularSnap, quaternionToEuler } from './snap'
+import { transformPartTree } from './assemblyTransforms'
+import type { PartInstance } from '../../types/design'
 
 export function ActionMenu() {
   const selectedInstanceId = useDesignStore((state) => state.selectedInstanceId)
   const activeDesign = useDesignStore((state) => state.getActiveDesign())
   const removePartFromActiveDesign = useDesignStore((state) => state.removePartFromActiveDesign)
-  const updatePartInActiveDesign = useDesignStore((state) => state.updatePartInActiveDesign)
   const setSelectedInstanceId = useDesignStore((state) => state.setSelectedInstanceId)
 
   if (!selectedInstanceId || !activeDesign) return null
 
   const instance = activeDesign.parts.find((p) => p.instanceId === selectedInstanceId)
   if (!instance) return null
+
+  const updatePartInActiveDesign = (instanceId: string, updates: Partial<PartInstance>) => {
+    useDesignStore.setState(state => ({ designs: state.designs.map(design => design.id === state.activeDesignId
+      ? { ...design, parts: transformPartTree(design.parts, instanceId, updates), updatedAt: new Date().toISOString() }
+      : design) }))
+  }
 
   // Position menu above the selected part
   const menuPosition: [number, number, number] = [
@@ -60,7 +67,7 @@ export function ActionMenu() {
     // 计算连接点的世界坐标（作为旋转中心）
     const parentPos = new THREE.Vector3(...parentInst.position)
     const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
-    const pivotPoint = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
+    const pivotPoint = socket.position.clone().multiply(new THREE.Vector3(...(parentInst.scale ?? [1, 1, 1]))).applyQuaternion(parentQuat).add(parentPos)
 
     // 当前零件的位置和旋转
     const currentPos = new THREE.Vector3(...instance.position)
@@ -108,7 +115,8 @@ export function ActionMenu() {
     const childConns = getCachedPartConnectors(part.modelUrl)
     // Prefer plugs; if none (e.g. mainboard has only sockets), use sockets
     const plugs = childConns.filter((c) => c.type === 'plug')
-    const usableConns = plugs.length > 0 ? plugs : childConns.filter((c) => c.type === 'socket')
+    const occupiedByChildren = new Set(activeDesign.parts.filter(p => p.attachedTo?.parentInstanceId === inst.instanceId).map(p => p.attachedTo!.parentConnectorId))
+    const usableConns = (plugs.length > 0 ? plugs : childConns.filter((c) => c.type === 'socket')).filter(c => !occupiedByChildren.has(c.id))
     if (!usableConns.length) return
 
     const currentId = inst.activeConnectorId ?? usableConns[0]!.id
@@ -121,8 +129,11 @@ export function ActionMenu() {
 
     const parentPos = new THREE.Vector3(...parentInst.position)
     const parentQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(...parentInst.rotation))
-    const socketWorldPosition = socket.position.clone().applyQuaternion(parentQuat).add(parentPos)
-    const socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+    const socketWorldPosition = socket.position.clone().multiply(new THREE.Vector3(...(parentInst.scale ?? [1, 1, 1]))).applyQuaternion(parentQuat).add(parentPos)
+    let socketWorldQuaternion = parentQuat.clone().multiply(socket.quaternion.clone())
+    if (socket.type === 'plug' && nextPlug.type === 'plug') {
+      socketWorldQuaternion = socketWorldQuaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI))
+    }
 
     const { position: newPos, quaternion: newQuaternion } = computePerpendicularSnap({
       socketWorldPosition,
@@ -149,7 +160,7 @@ export function ActionMenu() {
         <button
           onClick={handleDelete}
           className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-red-50 text-gray-600 hover:text-red-500 transition-colors"
-          title="删除"
+          title={activeDesign.parts.some(p => p.attachedTo?.parentInstanceId === instance.instanceId) ? '删除（含已连接的子零件）' : '删除'}
         >
           <Trash2 size={18} />
         </button>

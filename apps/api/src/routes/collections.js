@@ -5,6 +5,7 @@ const Collection = require('../models/Collection')
 const CollectionItem = require('../models/CollectionItem')
 const CommunityPost = require('../models/CommunityPost')
 const Reaction = require('../models/Reaction')
+const { publicPostStages, isPublicPost } = require('../lib/communityVisibility')
 
 const router = express.Router()
 
@@ -70,6 +71,7 @@ async function itemsForCollection(collectionId, viewerId) {
 
   const rows = await CommunityPost.aggregate([
     { $match: { _id: { $in: postIds } } },
+    ...publicPostStages(),
     {
       $lookup: {
         from: 'reactions',
@@ -145,6 +147,7 @@ async function resolveCoverUrl(collection) {
     if (latest) coverPostId = latest.postId
   }
   if (!coverPostId) return undefined
+  if (!await isPublicPost(coverPostId)) return undefined
   const post = await CommunityPost.findById(coverPostId)
     .populate('projectId', 'coverUrl')
     .lean()
@@ -208,7 +211,7 @@ router.get('/memberships', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const { name, description, isPublic } = req.body
-    const trimmed = (name || '').trim()
+    const trimmed = typeof name === 'string' ? name.trim() : ''
     if (!trimmed) return res.status(400).json({ error: '请填写合集名称' })
 
     const doc = await Collection.create({
@@ -347,7 +350,7 @@ router.post('/:id/items', authenticate, async (req, res) => {
       return res.status(404).json({ error: '合集不存在' })
     }
 
-    const postExists = await CommunityPost.exists({ _id: postId })
+    const postExists = await isPublicPost(postId)
     if (!postExists) return res.status(404).json({ error: '作品不存在' })
 
     // 幂等加入：唯一索引 (collectionId, postId) + upsert；并发重复触发 11000 → 视作已加入。

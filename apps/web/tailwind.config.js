@@ -67,7 +67,7 @@ export default {
         error: '#ef4444',
       },
       fontFamily: {
-        sans: ['Inter', 'MiSans', 'system-ui', 'sans-serif'],
+        sans: ['MiSans', 'system-ui', 'sans-serif'],
         display: ['"DingTalk JinBuTi"', 'MiSans', 'system-ui', 'sans-serif'],
         /* ── RFC-020：英文/数字展示字体（标题、大数据），中文正文仍走 sans ── */
         grotesk: ['MiSans', '"PingFang SC"', 'system-ui', 'sans-serif'],

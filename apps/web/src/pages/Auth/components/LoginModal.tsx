@@ -95,7 +95,7 @@ export function LoginModal() {
         role="dialog"
         aria-modal="true"
         aria-label="登录"
-        className="relative w-full max-w-sm rounded-2xl bg-white p-7 shadow-[0_28px_70px_-24px_rgba(11,58,104,0.5)] ring-1 ring-sky-100 animate-[fadeInUp_180ms_ease-out]"
+        className="relative max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-7 shadow-[0_28px_70px_-24px_rgba(11,58,104,0.5)] ring-1 ring-sky-100 animate-[fadeInUp_180ms_ease-out]"
       >
         {/* 关闭按钮 */}
         <button
@@ -119,8 +119,9 @@ export function LoginModal() {
         {/* 表单 */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className={labelCls}>邮箱</label>
+            <label htmlFor="login-email" className={labelCls}>邮箱</label>
             <input
+              id="login-email"
               type="email"
               required
               value={email}
@@ -132,8 +133,9 @@ export function LoginModal() {
             />
           </div>
           <div>
-            <label className={labelCls}>密码</label>
+            <label htmlFor="login-password" className={labelCls}>密码</label>
             <input
+              id="login-password"
               type="password"
               required
               minLength={6}

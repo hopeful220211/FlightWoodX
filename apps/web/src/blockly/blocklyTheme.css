@@ -83,3 +83,10 @@
 .coding-blockly-shell .blocklyFlyoutScrollbar {
   display: none !important;
 }
+
+@media (max-width: 639px) {
+  .coding-blockly-shell .blocklyToolbox { padding: 8px 3px; }
+  .coding-blockly-shell .blocklyTreeRowContentContainer { gap: 5px; padding: 4px; }
+  .coding-blockly-shell .blocklyToolboxCategoryLabel { font-size: 12px; }
+  .coding-blockly-shell .fwx-cat-icon { width: 20px; height: 20px; background-size: 13px; }
+}
