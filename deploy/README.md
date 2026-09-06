@@ -99,6 +99,8 @@ docker compose -p flightwoodx --env-file deploy/.env -f deploy/docker-compose.ym
 
 仅调整 nginx 路由时，不重建 Web/API/Mongo。先用相同 Compose 文件、现有证书、API 镜像及已验证的 `WEB_DIST_DIR` 启动唯一命名的临时 nginx，使用 `run --no-deps` 且只将 443 映射到 `127.0.0.1:18443`。以 `curl --resolve flightwoodx.com:18443:127.0.0.1` 验证 HTTPS（禁止跳过证书校验）、`/dashboard` 和 `/dashboard/`、真实图片/模型及缺失二进制资源；配置和实际响应全部通过后再仅重建正式 nginx。只停止并删除这次创建的临时容器，不删卷。SPA 的 `try_files` 只试文件，不试目录，否则 `public/dashboard` 会截获工作台页面。
 
+路由提交 `cc23746` 远端 CI 通过后，已执行上述真实 nginx 回环验证：两个工作台地址均 200、HTML 摘要一致、PNG/GLB 文件头正确、缺失资源 404、API 200。2026-09-07 04:13:24 只更新正式 nginx，公开网址再次验证通过；API/Mongo 未重建。
+
 实际切换：2026-09-07 02:33:58，提交 `f5b12b3`、镜像 `flightwoodx-api:f5b12b3`。原镜像另保留为 `flightwoodx-api:rollback-20260907`。03:17 左右服务器更新到 `a71e822`，日志与 0600 文件权限确认 403 根因后，仅整理生成 dist 的 919 个条目；244 个正式资源及 5 个缺失资源 404 检查通过。回滚必须继续保留新上传卷和 `/uploads` 反代，先验证旧镜像的 disk 支持；不能直接套回旧 OSS/无上传挂载的配置。旧版本不认识自制来源引用，禁止用整库旧备份覆盖新记录；必要时先暂停写入，避免旧客户端改写新格式作品。
 
 ### 已确认的历史 localhost 封面修复
