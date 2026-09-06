@@ -4,7 +4,7 @@
 # 或经 deploy/docker-compose.yml（context: ..）自动构建。
 
 # ---- Stage 1: builder —— 装全量依赖 + 构建共享包 CJS（这些产物不进最终镜像）----
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 # 原生模块(bcrypt)需编译工具；node 头文件走国内镜像，避免 nodejs.org 在国内拉不动
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
  && rm -rf /var/lib/apt/lists/*
@@ -31,7 +31,7 @@ RUN pnpm --filter @fwx/shared build:cjs \
  && pnpm --filter @fwx/geometry build:cjs
 
 # ---- Stage 2: runtime —— 只装生产依赖 + 拷源码与已构建 CJS ----
-FROM node:20-slim AS runtime
+FROM node:22-slim AS runtime
 # 运行时 --prod 安装同样会编译 bcrypt，需相同编译工具与 node 头文件镜像
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
  && rm -rf /var/lib/apt/lists/*

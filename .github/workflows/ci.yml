@@ -59,7 +59,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -94,7 +94,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - name: Install dependencies and browser
         run: |
@@ -122,3 +122,46 @@ jobs:
           done
           curl -fsS http://127.0.0.1:4173/api/health
           pnpm --filter web test:e2e
+
+  docker-smoke:
+    name: API container smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Build API production image
+        run: docker build --file apps/api/Dockerfile --tag fwx-api:ci .
+      - name: Verify container against isolated MongoDB
+        shell: bash
+        run: |
+          set -euo pipefail
+          export JWT_SECRET="$(openssl rand -hex 48)"
+          docker run --detach --name fwx-api-smoke --network host \
+            --env NODE_ENV=production --env JWT_SECRET \
+            --env MONGODB_URI=mongodb://127.0.0.1:27017/fwx_container_smoke \
+            --env PORT=3000 --env STORAGE_DRIVER=disk fwx-api:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:3000/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          docker exec fwx-api-smoke node -e '
+            fetch("http://127.0.0.1:3000/api/health").then(async response => {
+              const health = await response.json();
+              if (!response.ok || health.status !== "OK" || health.db !== "connected") process.exit(1);
+              console.log("API container health: OK; MongoDB connected");
+            }).catch(() => process.exit(1));
+          '
+      - name: Container logs and cleanup
+        if: always()
+        run: |
+          docker logs fwx-api-smoke || true
+          docker rm --force fwx-api-smoke || true

@@ -79,7 +79,7 @@ FlightWoodX 是一个木质榫卯无人机 STEAM 教育平台。当前仓库已�
 | 范围 | 当前选择 | 用途 |
 | --- | --- | --- |
 | 仓库结构 | pnpm workspace monorepo | 统一管理 Web、API 和四个共享包 |
-| Node.js | 20 或更高 | 前后端构建、测试和 API 运行 |
+| Node.js | 22 LTS，最低 22.12.0 | 前后端构建、测试和 API 运行；CI 与 Docker 使用 22 |
 | 包管理器 | pnpm 9.12.0 | 冻结安装和 workspace 链接 |
 | TypeScript | 根 5.5+，应用实际 5.9.x | Web 与共享包类型检查；API 使用有限 JS 检查 |
 | CI | GitHub Actions | Harness、类型、测试、lint、安全和生产构建 |
@@ -495,7 +495,7 @@ README.txt
 
 ### 9.1 启动和中间件
 
-apps/api 是 Node.js 20+、CommonJS JavaScript、Express 和 Mongoose 组成的单体 API。
+apps/api 是 Node.js 22 LTS（最低 22.12.0）、CommonJS JavaScript、Express 和 Mongoose 组成的单体 API。
 
 关键入口：
 
@@ -915,7 +915,7 @@ Harness Engineering 在这里不是单独安装的第三方框架，也不是只
 
 ### 16.1 前置条件
 
-- Node.js 20 或更高。
+- Node.js 22 LTS，最低 22.12.0。
 - Corepack。
 - pnpm 9.12.0。
 - 本地 MongoDB，或一个可用且受控的 MongoDB URI。
@@ -1018,7 +1018,7 @@ flowchart LR
 deploy 目录包含：
 
 - Docker Compose：nginx、api、mongo。
-- Node 20 多阶段 API 镜像。
+- Node 22 多阶段 API 镜像；CI 独立构建镜像并连接临时 MongoDB 验证健康接口，不部署生产。
 - HTTPS 和 Certbot 配置。
 - Atlas 迁移脚本。
 - OSS 资产上传脚本。

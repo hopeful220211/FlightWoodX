@@ -1,12 +1,12 @@
 import { randomBytes } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import type { BrowserContext, Locator, Page } from '@playwright/test'
-import { DroneDesignSnapshotSchema } from '@fwx/parts-schema'
+import { DroneDesignSnapshotSchema, PART_REGISTRY } from '@fwx/parts-schema'
 import type { DroneDesignSnapshot } from '@fwx/parts-schema'
 
 /**
  * Requires a running local Web app and its isolated API/database; no mocks or production writes.
- * Each test creates a unique e2e_* account in that database. Retain or discard the whole test
+ * Each user-flow test creates a unique e2e_* account. Retain or discard the whole test
  * database after the run; these tests never delete an existing account or unrelated work.
  * Credentials only live in memory. Tracing/video are disabled in playwright.config.ts.
  */
@@ -213,4 +213,48 @@ test.describe('mobile 390 × 844', () => {
     await runSimulation(page)
     expect(failures).toEqual([])
   })
+})
+
+test('read-only: every registered official model and thumbnail is served as a valid binary asset', async ({ request, baseURL }) => {
+  if (!baseURL) throw new Error('The local test origin is required.')
+  const origin = new URL(baseURL).origin
+  expect(PART_REGISTRY.length, 'The registry must contain official parts').toBeGreaterThan(0)
+
+  for (const part of PART_REGISTRY) {
+    await test.step(`${part.partNumber}: model and thumbnail`, async () => {
+      const assets = [
+        { kind: 'glb', path: part.modelPath },
+        { kind: 'png', path: `/thumbnails/${part.thumbnailFile}` },
+      ] as const
+
+      for (const asset of assets) {
+        const url = new URL(asset.path, baseURL)
+        // API requests do not pass through the browser's route guard. Validate before
+        // issuing any GET and never follow redirects to a potentially external host.
+        expect(url.origin, `${part.partNumber} must use same-origin assets`).toBe(origin)
+        expect(url.username || url.password, 'Asset URLs must not contain credentials').toBe('')
+        const response = await request.get(url.href, { maxRedirects: 0 })
+        try {
+          expect(response.status(), asset.path).toBe(200)
+          expect(response.headers()['content-type'] ?? '', asset.path).not.toContain('text/html')
+          const body = await response.body()
+
+          if (asset.kind === 'glb') {
+            expect(body.length, asset.path).toBeGreaterThanOrEqual(12)
+            expect(body.subarray(0, 4).toString('ascii'), asset.path).toBe('glTF')
+            expect(body.readUInt32LE(4), `${asset.path}: GLB version`).toBe(2)
+            expect(body.readUInt32LE(8), `${asset.path}: declared binary length`).toBe(body.length)
+          } else {
+            expect(body.length, asset.path).toBeGreaterThanOrEqual(24)
+            expect(body.subarray(0, 8).toString('hex'), asset.path).toBe('89504e470d0a1a0a')
+            expect(body.subarray(12, 16).toString('ascii'), `${asset.path}: PNG header`).toBe('IHDR')
+            expect(body.readUInt32BE(16), `${asset.path}: width`).toBeGreaterThan(0)
+            expect(body.readUInt32BE(20), `${asset.path}: height`).toBeGreaterThan(0)
+          }
+        } finally {
+          await response.dispose()
+        }
+      }
+    })
+  }
 })
