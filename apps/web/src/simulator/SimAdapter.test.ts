@@ -49,7 +49,97 @@ describe('SimAdapter while loop limits', () => {
 })
 
 const makeProgram = (commands: Command[]): CommandProgram => ({ ...programWithWhile(2), commands })
-afterEach(() => vi.useRealTimers())
+afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers() })
+
+function delayTimerCallbacks(minimumDelayMs: number) {
+  vi.useFakeTimers()
+  const schedule = globalThis.setTimeout
+  vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, ms, ...args) =>
+    schedule(callback, Math.max(ms ?? 0, minimumDelayMs), ...args))
+}
+
+describe('SimAdapter elapsed time under delayed browser callbacks', () => {
+  it('finishes a ten-second flight without multiplying its duration by late ticks', async () => {
+    delayTimerCallbacks(250)
+    const adapter = new SimAdapter()
+    const finished = vi.fn()
+    const execution = adapter.execute(makeProgram([
+      { type: 'takeoff', params: { altitudeCm: 100 } },
+      { type: 'move', params: { direction: 'forward', distanceCm: 100, speedCmS: 30 } },
+      { type: 'land', params: {} },
+    ]), { onFinish: finished })
+    try {
+      await vi.advanceTimersByTimeAsync(11_000)
+      expect(finished).toHaveBeenCalledTimes(1)
+      expect(finished.mock.calls[0][0].success).toBe(true)
+      expect(adapter.getState().pos[1]).toBeCloseTo(0)
+      expect(adapter.getState().pos[2]).toBeCloseTo(100)
+    } finally { adapter.stop(); await execution }
+  })
+
+  it('keeps rotation and hover durations independent of callback count', async () => {
+    delayTimerCallbacks(250)
+    const adapter = new SimAdapter()
+    const finished = vi.fn()
+    const execution = adapter.execute(makeProgram([
+      { type: 'rotate', params: { degrees: 180 } },
+      { type: 'hover', params: { durationMs: 1000 } },
+    ]), { onFinish: finished })
+    try {
+      await vi.advanceTimersByTimeAsync(3500)
+      expect(finished).toHaveBeenCalledTimes(1)
+      expect(adapter.getState().heading).toBe(180)
+    } finally { adapter.stop(); await execution }
+  })
+
+  it('times out an unmet condition after ten elapsed seconds rather than 200 callbacks', async () => {
+    delayTimerCallbacks(250)
+    const adapter = new SimAdapter()
+    const finished = vi.fn()
+    const execution = adapter.execute(makeProgram([
+      { type: 'waitUntil', params: { condition: { sensor: 'battery', op: '<', value: 0 } } },
+    ]), { onFinish: finished })
+    try {
+      await vi.advanceTimersByTimeAsync(10_000)
+      expect(finished).toHaveBeenCalledTimes(1)
+      expect(finished.mock.calls[0][0].success).toBe(false)
+      expect(adapter.getFailureReason()).toContain('10 秒')
+    } finally { adapter.stop(); await execution }
+  })
+
+  it('does not skip an obstacle between positions after a long-delayed callback', async () => {
+    delayTimerCallbacks(2000)
+    const adapter = new SimAdapter({ obstacles: [{ posCm: [0, 0, 50], radiusCm: 1 }] })
+    const finished = vi.fn()
+    const execution = adapter.execute(makeProgram([
+      { type: 'move', params: { direction: 'forward', distanceCm: 100, speedCmS: 100 } },
+    ]), { onFinish: finished })
+    try {
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(finished).toHaveBeenCalledTimes(1)
+      expect(finished.mock.calls[0][0].success).toBe(false)
+      expect(adapter.hasCollided()).toBe(true)
+      expect(adapter.getState().pos[2]).toBeLessThanOrEqual(50)
+      expect(finished.mock.calls[0][0].events).not.toContain('move forward 100cm')
+    } finally { adapter.stop(); await execution }
+  })
+
+  it('preserves the speed multiplier while stopping immediately between delayed ticks', async () => {
+    delayTimerCallbacks(250)
+    const adapter = new SimAdapter({ speed: 2 })
+    const finished = vi.fn()
+    const execution = adapter.execute(makeProgram([
+      { type: 'move', params: { direction: 'forward', distanceCm: 100, speedCmS: 100 } },
+    ]), { onFinish: finished })
+    await vi.advanceTimersByTimeAsync(250)
+    expect(adapter.getState().pos[2]).toBeCloseTo(50)
+    adapter.stop()
+    await execution
+    expect(adapter.getState().pos[2]).toBeCloseTo(50)
+    expect(finished.mock.calls[0][0].success).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+})
 
 describe('SimAdapter stop, reset and failure behavior', () => {
   it('stops a rotation at its current heading instead of snapping to the target', async () => {

@@ -183,28 +183,17 @@ export class SimAdapter implements DroneAdapter {
         break
       }
       case 'rotate': {
-        const targetHeading = this.state.heading + cmd.params.degrees
+        const startHeading = this.state.heading
         const steps = Math.max(1, Math.ceil(Math.abs(cmd.params.degrees) / 5))
-        const stepDeg = cmd.params.degrees / steps
-
-        for (let i = 0; i < steps && !this.aborted; i++) {
-          this.state.heading += stepDeg
-          this.emitTelemetry()
-          await this.sleep(this.tickMs / this.speed)
-        }
+        await this.animateFor(steps * this.tickMs / this.speed, progress => {
+          this.state.heading = startHeading + cmd.params.degrees * progress
+        })
         if (this.aborted) break
-        this.state.heading = targetHeading
-        this.emitTelemetry()
         this.events.push(`rotate ${cmd.params.degrees}deg`)
         break
       }
       case 'hover': {
-        const duration = cmd.params.durationMs / this.speed
-        const ticks = Math.ceil(duration / this.tickMs)
-        for (let i = 0; i < ticks && !this.aborted; i++) {
-          this.emitTelemetry()
-          await this.sleep(this.tickMs)
-        }
+        await this.animateFor(cmd.params.durationMs / this.speed, () => {})
         if (this.aborted) break
         this.events.push(`hover ${cmd.params.durationMs}ms`)
         break
@@ -216,19 +205,16 @@ export class SimAdapter implements DroneAdapter {
         break
       }
       case 'waitUntil': {
-        let waited = 0
-        const maxWait = 10000 // 10s max
-        while (!this.aborted && waited < maxWait) {
+        const deadline = performance.now() + 10000
+        while (!this.aborted) {
           if (this.evaluateCondition(cmd.params.condition)) {
             this.events.push(`waitUntil ${cmd.params.condition.sensor} ${cmd.params.condition.op} ${cmd.params.condition.value} — triggered`)
             break
           }
+          const remaining = deadline - performance.now()
+          if (remaining <= 0) throw new Error('等待条件在 10 秒内未满足，程序已停止')
           this.emitTelemetry()
-          await this.sleep(this.tickMs)
-          waited += this.tickMs
-        }
-        if (!this.aborted && waited >= maxWait && !this.evaluateCondition(cmd.params.condition)) {
-          throw new Error('等待条件在 10 秒内未满足，程序已停止')
+          await this.sleep(Math.max(1, Math.min(this.tickMs, Math.ceil(remaining))))
         }
         break
       }
@@ -296,17 +282,56 @@ export class SimAdapter implements DroneAdapter {
     if (dist === 0) return
 
     const duration = (dist / speedCmS) * 1000 / this.speed
-    const steps = Math.max(1, Math.ceil(duration / this.tickMs))
-    const sx = dx / steps
-    const sy = dy / steps
-    const sz = dz / steps
+    const [x, y, z] = this.state.pos
+    await this.animateFor(duration, progress => {
+      this.advancePosition([x + dx * progress, y + dy * progress, z + dz * progress])
+    })
+  }
 
-    for (let i = 0; i < steps && !this.aborted; i++) {
-      this.state.pos[0] += sx
-      this.state.pos[1] += sy
-      this.state.pos[2] += sz
+  /** Timers schedule updates; elapsed monotonic time, not callback count, sets progress. */
+  private async animateFor(durationMs: number, update: (progress: number) => void): Promise<void> {
+    const started = performance.now()
+    while (!this.aborted) {
+      const elapsed = performance.now() - started
+      const progress = durationMs > 0 ? Math.min(1, elapsed / durationMs) : 1
+      update(progress)
       this.emitTelemetry()
-      await this.sleep(this.tickMs)
+      if (progress >= 1 || this.aborted) return
+      await this.sleep(Math.max(1, Math.min(this.tickMs, Math.ceil(durationMs - elapsed))))
+    }
+  }
+
+  /** Sweep the whole XZ segment so a late update cannot jump through a forbidden column. */
+  private advancePosition(next: [number, number, number]): void {
+    const start = this.state.pos
+    const delta = next.map((value, axis) => value - start[axis])
+    const a = delta[0] ** 2 + delta[2] ** 2
+    let firstHit = Infinity
+    if (a > 0) {
+      for (const obstacle of this.obstacles) {
+        const x = start[0] - obstacle.posCm[0]
+        const z = start[2] - obstacle.posCm[2]
+        const radius = obstacle.radiusCm + DRONE_RADIUS_CM
+        const b = 2 * (x * delta[0] + z * delta[2])
+        const c = x * x + z * z - radius * radius
+        const discriminant = b * b - 4 * a * c
+        if (c < 0) { firstHit = 0; break }
+        if (discriminant <= 0) continue
+        const entry = (-b - Math.sqrt(discriminant)) / (2 * a)
+        if (entry >= 0 && entry < 1) firstHit = Math.min(firstHit, entry)
+      }
+    }
+    if (firstHit !== Infinity) {
+      this.state.pos = [
+        start[0] + delta[0] * firstHit,
+        start[1] + delta[1] * firstHit,
+        start[2] + delta[2] * firstHit,
+      ]
+      this.collided = true
+      this.aborted = true
+      this.events.push('💥 撞到障碍物')
+    } else {
+      this.state.pos = next
     }
   }
 
