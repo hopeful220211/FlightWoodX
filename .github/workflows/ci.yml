@@ -6,12 +6,14 @@ on:
     branches:
       - main
       - platform-2.0
+      - production
       - "preview/**"
       - "codex/**"
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Do not interrupt a running production transfer or cutover.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/production' }}
 
 permissions:
   contents: read
@@ -62,6 +64,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Set up production-compatible Python
+        if: matrix.name == 'Tests'
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: '3.10'
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -102,6 +110,9 @@ jobs:
           pnpm --filter web exec playwright install --with-deps chromium
       - name: Build production bundle and API dependencies
         run: pnpm build && pnpm --filter api build:runtime-deps
+        env:
+          VITE_ASSET_BASE: ''
+          VITE_API_URL: /api
       - name: Start isolated application and verify core flow
         env:
           CI: true
@@ -122,6 +133,22 @@ jobs:
           done
           curl -fsS http://127.0.0.1:4173/api/health
           pnpm --filter web test:e2e
+
+      - name: Package the exact browser-tested public bundle
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          mkdir -m 700 "$RUNNER_TEMP/fwx-web-release"
+          node deploy/automation/package-web.mjs apps/web/dist "$RELEASE_SHA" "$RUNNER_TEMP/fwx-web-release/web.tar.gz" > "$RUNNER_TEMP/fwx-web-release/web.sha256"
+
+      - name: Retain the tested frontend release
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: web-release-${{ github.sha }}
+          path: ${{ runner.temp }}/fwx-web-release/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
 
   docker-smoke:
     name: API container smoke
@@ -165,3 +192,38 @@ jobs:
         run: |
           docker logs fwx-api-smoke || true
           docker rm --force fwx-api-smoke || true
+
+  deploy-production:
+    name: Publish tested frontend
+    needs: [verify, browser, docker-smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: ecs-production
+    concurrency:
+      group: ecs-production
+      cancel-in-progress: false
+    steps:
+      - name: Check out this trusted production commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up Node.js without installing project dependencies
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+      - name: Download this run's browser-tested release
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: web-release-${{ github.sha }}
+          path: ${{ runner.temp }}/fwx-web-release
+      - name: Publish frontend and verify the public website
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          FWX_DEPLOY_HOST: ${{ vars.FWX_DEPLOY_HOST }}
+          FWX_DEPLOY_PORT: ${{ vars.FWX_DEPLOY_PORT }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          node deploy/automation/send-web.mjs publish "$RELEASE_SHA" "$RUNNER_TEMP/fwx-web-release/web.tar.gz" "$(cat "$RUNNER_TEMP/fwx-web-release/web.sha256")"

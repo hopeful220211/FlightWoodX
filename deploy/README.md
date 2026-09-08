@@ -3,6 +3,8 @@
 零密码骨架：所有凭证走 `deploy/.env`（已被 `.gitignore` 忽略），仓库不含任何真实 AK/SK/连接串。
 目标机：阿里云 ECS 成都 · Ubuntu 22.04 · 2C2G · 3Mbps。当前发布默认把官方模型、缩略图、纹理和优化图片同源托管；OSS 可用性与权限通过实际验证后再启用。用户上传由独立的 `STORAGE_DRIVER` 控制。
 
+2026-09-08 起的日常前端自动发布配置见 [`automation/README.md`](automation/README.md)。是否已完成首次安装和上线，以 `CURRENT_STATUS.md` 为准；不要将下方全量 `deploy.sh` 直接挂到自动发布作业。
+
 > 2026-09-07：线上 OSS 返回 403，当前登录账号控制台显示未开通。此次已有 ECS 升级采用磁盘覆盖配置，原凭据不改、不新购服务。备份恢复已验证；实际发布结果见 `CURRENT_STATUS.md`。
 
 ## 架构

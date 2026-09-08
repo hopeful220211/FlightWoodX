@@ -10,6 +10,7 @@
 
 ## 当前计划
 
+- [`active/2026-09-08-automated-web-release.md`](./active/2026-09-08-automated-web-release.md)：受限 GitHub→ECS 前端发布、首次授权和正式验收。
 - [`active/2026-09-07-review-readiness.md`](./active/2026-09-07-review-readiness.md)：评审前现有官网功能、界面与线上验证修复。
 
 进行中的计划放在 `docs/exec-plans/active/`，结束后按实际结果移入 `completed/`。目录位置不能替代文档状态和验证证据。
