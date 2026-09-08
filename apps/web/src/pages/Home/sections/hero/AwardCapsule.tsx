@@ -18,7 +18,7 @@ export function AwardCapsule({ onClick, delay = 0 }: AwardCapsuleProps) {
       }}
     >
       <Trophy size={14} className="text-[#E8B530]" />
-      <span>Red Dot 2024 · iF 2026 · IDEA · G-Mark</span>
+      <span>Red Dot 2024 · iF 2026 · IDEA</span>
     </button>
   )
 }

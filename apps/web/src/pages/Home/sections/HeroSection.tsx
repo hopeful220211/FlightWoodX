@@ -111,7 +111,7 @@ export function HeroSection() {
                   <div className="flex items-start gap-3">
                     <Trophy size={20} className="mt-0.5 text-[#E8B530] shrink-0" />
                     <div>
-                      <div className="font-display text-2xl font-semibold text-sky-900">10+ 项</div>
+                      <div className="font-display text-2xl font-semibold text-sky-900">3 项</div>
                       <div className="text-sm text-sky-600/70">全球设计大奖</div>
                     </div>
                   </div>

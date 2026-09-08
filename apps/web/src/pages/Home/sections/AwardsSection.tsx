@@ -21,12 +21,6 @@ const awards = [
     year: '2025',
     img: '/optimized/picture/awards/IDEA.webp',
   },
-  {
-    name: 'G-Mark',
-    subtitle: 'Award',
-    year: '2025',
-    img: '/optimized/picture/awards/gmark.webp',
-  },
 ]
 
 function AwardBadge({ award, delay }: { award: typeof awards[number]; delay: number }) {
@@ -64,11 +58,11 @@ export function AwardsSection() {
           <SectionHeading
             eyebrow="拿过的奖"
             title="这几个国际设计奖，我们拿到了"
-            lead="红点、iF、IDEA、G-Mark，下面这四个都在手上。"
+            lead="红点、iF、IDEA，下面这三个都在手上。"
           />
         </ScrollReveal>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 justify-items-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 justify-items-center">
           {awards.map((award, i) => (
             <AwardBadge key={award.name} award={award} delay={i * 150} />
           ))}
