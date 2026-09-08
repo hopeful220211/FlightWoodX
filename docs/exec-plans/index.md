@@ -2,7 +2,7 @@
 
 > 状态：生效中的计划导航与格式规则
 >
-> 更新时间：2026-08-17
+> 更新时间：2026-09-08
 >
 > 适用范围：跨文件、跨模块或需要独立验证记录的仓库工作
 >
@@ -10,13 +10,13 @@
 
 ## 当前计划
 
-- [`active/2026-09-08-automated-web-release.md`](./active/2026-09-08-automated-web-release.md)：受限 GitHub→ECS 前端发布、首次授权和正式验收。
 - [`active/2026-09-07-review-readiness.md`](./active/2026-09-07-review-readiness.md)：评审前现有官网功能、界面与线上验证修复。
 
 进行中的计划放在 `docs/exec-plans/active/`，结束后按实际结果移入 `completed/`。目录位置不能替代文档状态和验证证据。
 
 ## 已结束记录
 
+- [`completed/2026-09-08-automated-web-release.md`](./completed/2026-09-08-automated-web-release.md)：受限 GitHub→ECS 前端发布、首次安装、真实权限检查、三奖更正上线及受控回退恢复验收。
 - [`completed/2026-08-15-harness-foundation.md`](./completed/2026-08-15-harness-foundation.md)：建立分层规则、知识入口、项目 Skill、静态门禁并完成本地工程基线重验；未重验产品浏览器路径或目标环境。
 - [`completed/2026-08-17-github-handoff.md`](./completed/2026-08-17-github-handoff.md)：建立详细项目手册、重验工程基线，并把当前 tree 作为不扩散本机祖先的 GitHub 快照交付。
 

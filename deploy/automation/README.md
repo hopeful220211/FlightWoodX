@@ -1,6 +1,6 @@
 # 前端自动发布
 
-> 状态：实现与本地隔离检查已完成；GitHub 配置已建立，首次服务器安装和真实发布待验证
+> 状态：首次服务器安装、受限 SSH、GitHub 自动发布及真实回退恢复已验证
 >
 > 更新时间：2026-09-08
 >
@@ -28,6 +28,8 @@ gh run list --branch production --limit 3
 ```
 
 `production` 是独立发布分支，默认分支仍为 `main`，不将历史 main 或任意开发分支自动合并上线。生产环境名为 `ecs-production`，部署分支只允许 `production`；分支保护要求 8 个工程/浏览器/容器检查，管理员同样受限，禁止强推与删除。部署的并发组不取消正在切换的版本。普通开发分支不能获取生产密钥。
+
+换电脑开发无需复制部署私钥：登录有权限的 GitHub 账号，接续 [当前状态](../../CURRENT_STATUS.md) 指定的分支即可。开发分支只推送代码不会自动上线；推进受保护的 `production` 才会发布。首次安装已经完成，不要重复执行 bootstrap。
 
 ## 首次安装
 
@@ -86,6 +88,8 @@ SSH 协议只接受 `status`、`publish <40位SHA> <64位归档摘要>`（归档
 - `python3 -B deploy/automation/test_server.py` 和 `test_bootstrap.py`：隔离临时文件、模拟容器；不能代替真实 ECS 验收。
 - `pnpm run harness`、完整 `pnpm run ci` 和当前提交的 GitHub 作业仍为必经检查。
 - 远端既有 `Tests` 作业固定 Python 3.10，覆盖当前 Ubuntu 22.04 服务器解释器版本；不能只用本机较新 Python 的结果证明兼容。
-- 当前实际配置/安装/上线结果见 [CURRENT_STATUS.md](../../CURRENT_STATUS.md) 和[实施记录](../../docs/exec-plans/active/2026-09-08-automated-web-release.md)。
+- 2026-09-08 已实测：拒绝任意命令/PTY/转发、真实 GitHub 自动发布、旧首页及入口逐字节摘要回退核对、同一测试归档恢复和三个正式视口的奖项展示。没有在正式站注入故障，不能将受控回退写成故障自动回退演练。
+- 首次旧站无 `release.json`，所以首次成功状态的 `previousCommit:null` 正常；服务器仍保存 `previousDirectory`。`rollback <当前SHA>` 可恢复该目录，此后 `currentCommit:null`；恢复新版应再次 `publish` 同一测试归档，不能执行 `rollback null`。回退须等原 GitHub 发布作业整体结束，避免与客户端公网复核互相干扰。
+- 当前实际配置/安装/上线结果见 [CURRENT_STATUS.md](../../CURRENT_STATUS.md) 和[实施记录](../../docs/exec-plans/completed/2026-09-08-automated-web-release.md)。
 
 依据：[GitHub 部署环境](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments)、[环境 Secrets](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)、[OpenSSH 强制命令限制](https://man.openbsd.org/sshd.8)。

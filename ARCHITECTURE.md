@@ -227,7 +227,7 @@ API 当前记录方法、路径、状态码和耗时，并提供数据库感知�
 
 ### 前端发布边界（2026-09-08 补充）
 
-日常前端发布使用受保护的 `production` 分支和 `ecs-production` 环境。GitHub 的 8 项检查包含现有固定浏览器 E2E 与 API 容器 smoke；浏览器验证后的同一构建携带提交 SHA 和逐文件摘要，经专用受限 SSH 账号发送至现有 ECS。服务器 root-owned 固定发布器校验全新候选，只切换 nginx，保留旧目录并在验证失败时回退；API、Mongo、上传卷、证书和发布器自身不由前端归档升级。当前实现与 GitHub 配置已建立，服务器首次安装和真实发布仍待验收；操作与剩余限制见 [`deploy/automation/README.md`](deploy/automation/README.md) 和 [`CURRENT_STATUS.md`](CURRENT_STATUS.md)。上述 E2E 和容器 smoke 已补齐，不沿用本节早期基线的待补结论；完整监控仍未建立。
+日常前端发布使用受保护的 `production` 分支和 `ecs-production` 环境。GitHub 的 8 项检查包含现有固定浏览器 E2E 与 API 容器 smoke；浏览器验证后的同一构建携带提交 SHA 和逐文件摘要，经专用受限 SSH 账号发送至现有 ECS。服务器 root-owned 固定发布器校验全新候选，只切换 nginx，保留旧目录并在验证失败时回退；API、Mongo、上传卷、证书和发布器自身不由前端归档升级。2026-09-08 已完成首次安装、真实权限限制、自动发布、受控回退和恢复验收；故障自动补偿只在隔离测试中验证，不等于正式站故障演练。操作与剩余限制见 [`deploy/automation/README.md`](deploy/automation/README.md) 和 [`CURRENT_STATUS.md`](CURRENT_STATUS.md)。上述 E2E 和容器 smoke 已补齐，不沿用本节早期基线的待补结论；完整监控仍未建立。
 
 ## 8. 已知架构收敛项
 

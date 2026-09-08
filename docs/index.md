@@ -2,7 +2,7 @@
 
 > 状态：生效中的文档导航
 >
-> 更新时间：2026-09-07
+> 更新时间：2026-09-08
 >
 > 适用范围：仓库级事实、产品规格、质量要求、执行计划与历史资料的查找顺序
 >
@@ -23,11 +23,12 @@
 
 ## 当前事实
 
-- [`PROJECT_GUIDE.md`](./PROJECT_GUIDE.md)：技术栈、目录、模块、数据流、安全、运行、GitHub 接续、进度和后续开发的完整交接说明。
+- [`PROJECT_GUIDE.md`](./PROJECT_GUIDE.md)：技术栈、目录、模块与开发方法的交接说明；8 月正文为历史快照，当前进度和分支先读 `CURRENT_STATUS.md`。
 - [`AGENTS.md`](../AGENTS.md)：全仓治理、产品真值、模块边界、安全规则和完成定义。
 - [`apps/web/AGENTS.md`](../apps/web/AGENTS.md)、[`apps/api/AGENTS.md`](../apps/api/AGENTS.md)、[`packages/AGENTS.md`](../packages/AGENTS.md)：靠近代码的模块规则；进入相应目录时读取。
 - [`ARCHITECTURE.md`](../ARCHITECTURE.md)：当前运行时组件、正式数据来源和主要数据流。
 - [`CURRENT_STATUS.md`](../CURRENT_STATUS.md)：最近一次有日期、commit、命令和人工证据的状态快照。
+- [`deploy/automation/README.md`](../deploy/automation/README.md)：受保护生产分支、前端发布、回退与凭据维护的操作说明。
 
 当前事实只在上述文件更新。其他文档应链接它们，不复制一份并行状态。
 
@@ -48,7 +49,8 @@
 ## 执行计划
 
 - [`exec-plans/index.md`](./exec-plans/index.md)：计划格式、状态规则和索引。
-- [`exec-plans/active/2026-09-07-review-readiness.md`](./exec-plans/active/2026-09-07-review-readiness.md)：本轮官网、拼装、编程、保存、鉴权与生产部署验收记录；等待正式发布。
+- [`exec-plans/completed/2026-09-08-automated-web-release.md`](./exec-plans/completed/2026-09-08-automated-web-release.md)：受限前端自动发布、首次授权、三奖更正上线及真实回退恢复记录。
+- [`exec-plans/active/2026-09-07-review-readiness.md`](./exec-plans/active/2026-09-07-review-readiness.md)：官网、拼装、编程、保存、鉴权与已发布修复的记录；剩余正式业务验收以当前状态为准。
 - [`exec-plans/completed/2026-08-17-github-handoff.md`](./exec-plans/completed/2026-08-17-github-handoff.md)：详细手册、完整验证和安全 GitHub 快照交付记录。
 - [`exec-plans/completed/2026-08-15-harness-foundation.md`](./exec-plans/completed/2026-08-15-harness-foundation.md)：本轮 Harness 规则、文档、Skill、自动门禁与清理记录。
 
